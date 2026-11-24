@@ -65,7 +65,7 @@ npm run build:website        # Static portfolio & showcase website
 | **Standalone HTML5 Draft** | Self-contained single HTML | **Included (Core)** | Automated static + 4-viewport Creative QA |
 | **Unity Ads** | MRAID 3.0 single HTML (<= 5 MB) | **Included (Core)** | Automated static rule check + mock MRAID 3.0 host tests *(official Unity Ads certification & physical-device QA remain separate)* |
 | **AppLovin** | MRAID 2.0 single HTML (<= 5 MB) | **Included (Core)** | Automated static rule check + mock MRAID 2.0 host tests *(AppLovin Playable Preview & official acceptance remain separate)* |
-| **Google Ads, Meta, ironSource, Mintegral, TikTok** | Network-specific wrappers & validators | **Pro Roadmap** | Planned commercial Studio Pro Packs |
+| **Google Ads, Meta, ironSource, Mintegral, TikTok** | Network-specific wrappers & validators | **On Request** | Need another ad network? Contact [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Custom%20Ad-Network%20Export%20Request) |
 
 > **Honest QA Boundary:** Automated tests and `tora_qa` prove engineering health only. Always inspect real exported screenshots/video, test on physical iOS/Android devices, and run each ad network's official preview tool before launching paid UA campaigns.
 
@@ -93,6 +93,6 @@ npm run test:mcp           # MCP server + editor end-to-end integration tests
 ## Licensing & Commercial Services
 
 - **Internal Game Studios (Free):** Free to clone, customize, and ship playable ads for your **own** games under the Tora Source-Available Studio License ([`LICENSE`](LICENSE)). Hosted/SaaS clones are prohibited.
-- **Agencies & Client Production (Commercial License):** Agencies or contractors building playable ads for third-party clients require a commercial license.
-- **Done-For-You Playable Production & Setup:** Need production-ready playable ads shipped fast for Unity Ads & AppLovin, or custom Tora pipeline integration for your UA team? Open an issue or reach out via this repository for agency licensing and production sprints.
+- **Agencies & Client Production (Commercial License):** Agencies or contractors building playable ads for third-party clients require a commercial license — email [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Tora%20Commercial%20%2F%20Agency%20License).
+- **Done-For-You Playable Production & Custom Networks:** Need production-ready playable ads shipped fast for Unity Ads & AppLovin, custom ad-network adapters (Google Ads, Meta, ironSource, Mintegral, TikTok), or team setup? Email [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Custom%20Playable%20Sprint%20with%20Tora).
 - **Contributing:** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
