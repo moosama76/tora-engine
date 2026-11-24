@@ -1,0 +1,221 @@
+[
+  {
+    "file": "valid-reviewed-ua.json",
+    "valid": true
+  },
+  {
+    "file": "valid-blocked-applovin.json",
+    "valid": true
+  },
+  {
+    "file": "valid-blocked-mintegral.json",
+    "valid": true
+  },
+  {
+    "file": "valid-inclusive-size.json",
+    "valid": true
+  },
+  {
+    "file": "valid-exact-host-exception.json",
+    "valid": true
+  },
+  {
+    "file": "valid-separate-zip-candidate.json",
+    "valid": true
+  },
+  {
+    "file": "invalid-unknown-root.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unknown-rule-field.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unknown-critical-key.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-missing-critical-rule.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-future-version.json",
+    "valid": false,
+    "code": "E_RULE_VERSION"
+  },
+  {
+    "file": "invalid-minor-version.json",
+    "valid": false,
+    "code": "E_RULE_VERSION"
+  },
+  {
+    "file": "invalid-invalid-review-date.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-invalid-century-leap.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-review-timestamp.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-invalid-source-date.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-source-after-review.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unsafe-profile-id.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-profile-channel-mismatch.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-missing-source.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-empty-verified-source.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-duplicate-sources.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-http-source.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-credential-source.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-spoofed-source.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-wildcard-exception.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-cdn-exception.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unrequired-exception.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-missing-host-exception.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-bundled-mraid.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unknown-mraid.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-wrong-operator.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-negative-size.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-huge-size.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-string-size.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unsafe-entry.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-empty-reason.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unknown-status.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-verified-and-candidate.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-unverified-and-value.json",
+    "valid": false,
+    "code": "E_RULE_PACK"
+  },
+  {
+    "file": "invalid-duplicate.json",
+    "valid": false,
+    "code": "E_JSON_INVALID"
+  },
+  {
+    "file": "invalid-escaped-duplicate.json",
+    "valid": false,
+    "code": "E_JSON_INVALID"
+  },
+  {
+    "file": "invalid-nonfinite.json",
+    "valid": false,
+    "code": "E_JSON_INVALID"
+  },
+  {
+    "file": "invalid-malformed.json",
+    "valid": false,
+    "code": "E_JSON_INVALID"
+  },
+  {
+    "file": "invalid-trailing.json",
+    "valid": false,
+    "code": "E_JSON_INVALID"
+  }
+]

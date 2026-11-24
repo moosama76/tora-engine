@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tora Playables"
+  short_description: "Create editable playables with Tora art and review"
+  default_prompt: "Use $tora-playables to create an editable playable ad with cohesive art and satisfying feedback."

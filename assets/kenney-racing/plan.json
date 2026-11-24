@@ -1,0 +1,129 @@
+{
+  "format": "tora-native-asset-plan-1",
+  "source": {
+    "id": "kenney-racing-pack",
+    "author": "Kenney",
+    "sourceUrl": "https://kenney.nl/assets/racing-pack",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "licenseFile": "assets/kenney-racing/source/racing-pack/extracted/License.txt",
+    "licenseSha256": "sha256:eb4d367a2b5024535fcfc3e65615d63d9ed9c9fa8d63bfbeb67ac907dc421683",
+    "archive": "assets/kenney-racing/source/racing-pack/kenney_racing-pack.zip",
+    "archiveSha256": "sha256:a5e5252082e2bcbac177402d3bde3aa161fd81aeb246a36a1ec39255d1f30480",
+    "attributionRequired": false
+  },
+  "visualDirection": "Top-down miniature delivery city with asphalt roads, bright toy-like cars, grass, and compact race-control UI.",
+  "preparation": "Faithful original PNG files; native components perform only sizing and affine rotation.",
+  "files": [
+    {
+      "id": "car.blue",
+      "file": "assets/kenney-racing/imported/car.blue.png",
+      "sha256": "sha256:751ba6d8dd82b74e65205ca052e061f86818b3d2b95b411d8580f80c5c43012e",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Cars/car_blue_1.png",
+        "sourceSha256": "sha256:aae03c3369f00db344182e426876bd9dc59875dc51583379fded2e469e8883cb",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "car.red",
+      "file": "assets/kenney-racing/imported/car.red.png",
+      "sha256": "sha256:862ce75f023b0a8b8ae5648f762a20e90d0f08b11ac8b71e314930dd6bcb0a35",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Cars/car_red_1.png",
+        "sourceSha256": "sha256:18b02b61145659e5045404175778cd49d71a8f29fb12b4de3dcd8661c55141be",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "car.yellow",
+      "file": "assets/kenney-racing/imported/car.yellow.png",
+      "sha256": "sha256:a5051133cd10f92100e66fe84052825a057e61a0dde28bcc2bb3a7747af66422",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Cars/car_yellow_1.png",
+        "sourceSha256": "sha256:5f67d40f787646f30befa03fa51e307d562e803ebb7450a160412bbb0ad7e937",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "car.green",
+      "file": "assets/kenney-racing/imported/car.green.png",
+      "sha256": "sha256:5aff42680fe4d7ab08050003bd3995873b6a464e6267c7d2f1b2dd49ec1e641a",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Cars/car_green_1.png",
+        "sourceSha256": "sha256:22ab853d90abd969f3eafe0acd3665d255fcd2ee0a5b02ab19e1880d74e8f1e5",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "road.vertical",
+      "file": "assets/kenney-racing/imported/road.vertical.png",
+      "sha256": "sha256:ad441ab1f877b90b5aa9d9bace5ba09de994f52860737a87e9bb1866cc7ee1d8",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Tiles/Asphalt road/road_asphalt01.png",
+        "sourceSha256": "sha256:f622411a058bb8aa95febf5c2eb355ccc8d850de3abbe4722cbdd3fabf7d7028",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "road.horizontal",
+      "file": "assets/kenney-racing/imported/road.horizontal.png",
+      "sha256": "sha256:18d99aedef788b4cc9871bb30540c880995e7d13fc17744b898c1b3fea20a240",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Tiles/Asphalt road/road_asphalt02.png",
+        "sourceSha256": "sha256:3dd232e7c1b544566623aefe4afdb832ded47115a0ee9cdd47d71a35d4d31c5c",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "road.plain",
+      "file": "assets/kenney-racing/imported/road.plain.png",
+      "sha256": "sha256:3299e6509176db046ff2f1b73e82a3882d7d1d1b950cc92b231f9e3b364274a6",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Tiles/Asphalt road/road_asphalt22.png",
+        "sourceSha256": "sha256:dc2df40e30a4331ac1b889cf74edc08c7bf8d36df5143c215520cd4c11100f99",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "tree",
+      "file": "assets/kenney-racing/imported/tree.png",
+      "sha256": "sha256:bb77abf6f48237729819151579f0e4dc48b68c59b7e124b33f4738090bc57055",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Objects/tree_small.png",
+        "sourceSha256": "sha256:89fcd1676384fa704f5580925e88e715c2f61f10fdba25381f0d3b32ce1e4fc9",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "lights",
+      "file": "assets/kenney-racing/imported/lights.png",
+      "sha256": "sha256:4b61dff7095fbef0551281ae3348958e524bfe7c90a90dc81b3e1bee2758dd65",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Objects/lights.png",
+        "sourceSha256": "sha256:905ca1ad07d4f62acb2bc43203c3dc4998a5b2ff808fa5a2f071e6ffea6714d4",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "barrier",
+      "file": "assets/kenney-racing/imported/barrier.png",
+      "sha256": "sha256:a3fd4122fe851c59830ef9ad6bbc44288b4adc1364d51c113d45cdb39a64398c",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-racing/source/racing-pack/extracted/PNG/Objects/barrier_red.png",
+        "sourceSha256": "sha256:566d701cb8046a67a89bddf52c41b75cc562789f1ae772c6e38b2d370f4a42f3",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    }
+  ]
+}

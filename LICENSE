@@ -1,0 +1,45 @@
+Tora Source-Available Studio License (v1.0)
+
+Copyright (c) 2026 Tora Playables. All rights reserved.
+
+This license governs use of the Tora source code and accompanying tools in this
+repository ("the Software"). By cloning, installing, modifying, or running the
+Software, you agree to these terms.
+
+1. Permitted Internal Studio Use (Free)
+You may use, copy, modify, and run the Software locally or on private internal
+infrastructure at no charge to design, author, test, and export playable ads
+strictly for games or applications owned and published by you or your
+organization ("Internal Use").
+
+Playable ad artifacts (standalone HTML, Unity Ads, AppLovin, and project
+bundles) exported by you for your own games under Internal Use belong to you,
+subject to any separate third-party media licenses referenced in those assets.
+
+2. Commercial Restrictions (Paid License Required)
+Without a separate written commercial license from Tora Playables, you may NOT:
+  a) Hosted / Competing Service: Offer all or any substantial portion of the
+     Software (original or modified) to third parties as a hosted service,
+     managed platform, cloud API, or competing playable-ad authoring product.
+  b) Client / Agency Delivery: Use the Software as an agency, contractor, or
+     service provider to produce, deliver, or monetize playable ads on behalf
+     of third-party clients.
+  c) Circumvention: Remove or bypass license, attribution, or provenance
+     notices included in the Software.
+
+3. Commercial & Agency Licensing
+Agencies delivering client playables, enterprise studios requiring SLA support,
+and teams needing commercial ad-network Pro packs may obtain a commercial
+license by contacting the Tora Playables maintainers via this repository.
+
+4. Third-Party Media & Dependencies
+Bundled sample assets in `assets/` and open-source software dependencies retain
+their respective original licenses (such as CC0-1.0, MIT, or Apache-2.0) as
+documented in their accompanying provenance and lockfiles.
+
+5. Disclaimer & Limitation of Liability
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, AD-NETWORK ACCEPTANCE, OR NON-INFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM USE OF THE SOFTWARE.

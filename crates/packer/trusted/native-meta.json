@@ -1,0 +1,46 @@
+{
+  "renderer": {
+    "backend": "canvas2d",
+    "version": "tora-native-1"
+  },
+  "entry": "scripts/lean/native/runtime.mjs",
+  "compiler": {
+    "name": "esbuild",
+    "version": "0.28.2"
+  },
+  "preprocessor": {
+    "name": "typescript",
+    "version": "5.9.3",
+    "target": "es5",
+    "module": "esnext",
+    "downlevelIteration": true
+  },
+  "flags": {
+    "bundle": true,
+    "platform": "browser",
+    "target": [
+      "es2019",
+      "safari13"
+    ],
+    "format": "iife",
+    "minify": true,
+    "charset": "ascii",
+    "legalComments": "none",
+    "sourcemap": false,
+    "globalName": "ToraNative"
+  },
+  "inputs": [
+    "scripts/lean/scene-document.mjs",
+    "scripts/lean/native/match-board.mjs",
+    "scripts/lean/native/physics-2d.mjs",
+    "scripts/lean/native/path-network.mjs",
+    "scripts/lean/native/pixel-text.mjs",
+    "scripts/lean/native/presentation.mjs",
+    "packages/adapters/src/index.ts",
+    "packages/adapters/src/unity.ts",
+    "packages/adapters/src/applovin.ts",
+    "scripts/lean/native/runtime.mjs"
+  ],
+  "javascriptBytes": 140828,
+  "externalImports": []
+}

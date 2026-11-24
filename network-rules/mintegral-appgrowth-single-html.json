@@ -1,0 +1,236 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "mintegral-appgrowth-single-html",
+  "networkId": "mintegral",
+  "channelId": "appgrowth-single-html",
+  "rulesVersion": "2026-10-21-review-1",
+  "reviewedAt": "2026-10-21",
+  "sources": [
+    {
+      "id": "assets",
+      "url": "https://helpcenter.mintegral.com/en/docs/asset-specs",
+      "title": "Mintegral AppGrowth asset specifications",
+      "checkedAt": "2026-10-21",
+      "notes": "Single HTML row and companion artwork documented."
+    },
+    {
+      "id": "upload",
+      "url": "https://helpcenter.mintegral.com/en/docs/creative-guide-step-by-step/creative-review-process-guide",
+      "title": "Mintegral creative upload guide",
+      "checkedAt": "2026-10-21",
+      "notes": "Current guide still documents URL/ZIP upload; it does not verify the exact single-HTML submission path."
+    },
+    {
+      "id": "preview",
+      "url": "https://helpcenter.mintegral.com/en/docs/playable-ad-guide",
+      "title": "Mintegral playable testing guide",
+      "checkedAt": "2026-10-21",
+      "notes": "Mindworks redirect resolves to Playturbo. Public tester is accessible and accepts ZIP only; its linked PDF now supplies the vendor API contract. Probe did not reach Test Success."
+    },
+    {
+      "id": "contract",
+      "url": "https://www.playturbo.com/_nuxt/doc/en-doc.86decc5.pdf",
+      "title": "Mindworks / Playturbo required playable test items",
+      "checkedAt": "2026-10-21",
+      "notes": "Downloaded PDF is linked by the live official tester. Documents install/gameReady/gameEnd/gameRetry host methods, gameStart/gameClose callbacks and ZIP naming/layout; not a MRAID integration."
+    },
+    {
+      "id": "tester",
+      "url": "https://www.playturbo.com/review",
+      "title": "Live official Playturbo playable tester",
+      "checkedAt": "2026-10-21",
+      "notes": "Anonymous file input accepts .zip. Exploratory Probe.zip accepted; initial partial lifecycle checks, HTML failure, and subsequent hosted-iframe timeouts. No engine artifact or successful official result."
+    }
+  ],
+  "rules": {
+    "uploadSize": {
+      "status": "verified",
+      "value": {
+        "limitBytes": 5000000,
+        "operator": "<=",
+        "byteBasis": "conservative-decimal-mb"
+      },
+      "sources": [
+        "assets"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Asset specification states maximum 5 MB for the single HTML asset; decimal conversion is conservative. This is not approval of any ZIP container or selected submission path."
+    },
+    "packaging": {
+      "status": "unverified",
+      "reason": "Single HTML is listed as an asset, but the live official tester accepts ZIP only with matching archive/folder/HTML names. No single-HTML submission/test workflow has been verified; never silently relabel this profile as ZIP.",
+      "sources": [
+        "assets",
+        "upload",
+        "contract",
+        "tester"
+      ],
+      "candidate": {
+        "kind": "single-html",
+        "entryFile": "index.html",
+        "minified": true
+      }
+    },
+    "inline": {
+      "status": "unverified",
+      "reason": "Guide specifies base64 assets and no dynamic resource requests, but selected single-HTML workflow and any host-script provision remain unverified. Do not borrow a MRAID script exception.",
+      "sources": [
+        "contract",
+        "tester"
+      ]
+    },
+    "mraid": {
+      "status": "unverified",
+      "reason": "Recovered guide uses window.install/gameReady/gameEnd/gameRetry and global gameStart/gameClose, not a documented MRAID version. The legacy MRAID-only typed field cannot express this contract; keep it unverified until an explicit vendor host model and verified workflow are implemented.",
+      "sources": [
+        "contract",
+        "tester"
+      ]
+    },
+    "autoplay": {
+      "status": "unverified",
+      "reason": "Guide documents host-invoked gameStart/gameClose. A separate background/resume/viewability contract for the selected single-HTML submission path remains unverified; candidate timing is local policy only.",
+      "sources": [
+        "contract"
+      ],
+      "candidate": {
+        "audio": "muted-until-first-interaction",
+        "onHidden": "mute-and-pause",
+        "timerStart": "first-interaction"
+      }
+    },
+    "firstClick": {
+      "status": "unverified",
+      "reason": "Guide requires the install interface and forbids automatic redirects. Distinct CTA and no first-gameplay-tap redirect remain local policy; selected-workflow CTA behavior has not passed the official test.",
+      "sources": [
+        "contract",
+        "tester"
+      ],
+      "candidate": "distinct-cta-only"
+    },
+    "viewability": {
+      "status": "unverified",
+      "reason": "Guide documents global gameStart/gameClose callbacks, not MRAID ready/viewableChange or a queryable initial viewability state. Do not invent those APIs for this profile.",
+      "sources": [
+        "contract",
+        "tester"
+      ]
+    },
+    "orientations": {
+      "status": "verified",
+      "value": "both",
+      "sources": [
+        "contract"
+      ],
+      "basis": "public-documentation",
+      "notes": "The linked official test guide requires portrait/landscape adaptation and free rotation. This is not a physical-device result."
+    },
+    "preview": {
+      "status": "unverified",
+      "reason": "Public official tester and contract are now readable, but tester accepts ZIP only, and the exploratory probe did not reach Test Success. Single-HTML candidate and actual engine integration remain unverified.",
+      "sources": [
+        "preview",
+        "contract",
+        "tester"
+      ],
+      "candidate": {
+        "url": "https://www.playturbo.com/review",
+        "instructions": "Live control accepts ZIP, not raw HTML. For a separately selected ZIP path use Name.zip containing Name/Name.html, play to end, exercise explicit install and any replay, and retain complete Test Success evidence. Last probe failed HTML checking; follow-up iframe loads timed out. Do not claim engine acceptance."
+      }
+    },
+    "companionAssets": {
+      "status": "verified",
+      "value": [
+        {
+          "id": "app-icon",
+          "scope": "campaign",
+          "dimensions": [
+            {
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "formats": [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp"
+          ],
+          "size": {
+            "limitBytes": 5000000,
+            "operator": "<=",
+            "byteBasis": "conservative-decimal-mb"
+          }
+        },
+        {
+          "id": "main-image",
+          "scope": "campaign",
+          "dimensions": [
+            {
+              "width": 1200,
+              "height": 627
+            },
+            {
+              "width": 1200,
+              "height": 628
+            }
+          ],
+          "formats": [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp"
+          ],
+          "size": {
+            "limitBytes": 5000000,
+            "operator": "<=",
+            "byteBasis": "conservative-decimal-mb"
+          }
+        }
+      ],
+      "sources": [
+        "assets"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Campaign artwork is separate from playable upload bytes; decimal limits are conservative."
+    }
+  },
+  "additionalRules": [
+    {
+      "id": "mintegral-vendor-host-contract",
+      "critical": true,
+      "review": {
+        "status": "verified",
+        "value": {
+          "creativeCallsHost": [
+            "window.install()",
+            "window.gameReady()",
+            "window.gameEnd()",
+            "window.gameRetry()"
+          ],
+          "hostCallsCreative": [
+            "gameStart()",
+            "gameClose()"
+          ],
+          "gameReadyAfter": "resources-loaded",
+          "gameEndAfter": "win-or-loss",
+          "retry": "required-only-if-replay-is-offered",
+          "ctaVisibility": "throughout-playable"
+        },
+        "sources": [
+          "contract"
+        ],
+        "basis": "public-documentation",
+        "notes": "Recovered public contract is evidence, not executable rule data. The evaluator deliberately blocks this unsupported critical vendor extension until the host model and actual adapter are implemented and the selected workflow is verified."
+      }
+    }
+  ],
+  "unresolved": [
+    "Verify one actual submission path. The current profile remains single-HTML; the live tester requires a separately modelled ZIP path, never an alias.",
+    "Implement a typed non-MRAID vendor host contract and evaluator only after selected-workflow verification; do not map Mintegral install/readiness to AppLovin or Unity APIs.",
+    "Obtain a complete successful official test of the actual engine artifact. The exploratory probe had an HTML validation failure; subsequent public CDN iframe loads timed out in this environment.",
+    "Account access is not available. Campaign upload acceptance, Offer-selected store destination and companion artwork submission remain untested."
+  ]
+}

@@ -1,0 +1,5137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tora:creative-project:2.1.0",
+  "title": "Creative Project 2.1 native scene",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "2.1.0"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+    },
+    "revisionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "generationOrigin": {
+      "const": "human-authored"
+    },
+    "creativeBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "goal": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048
+        },
+        "language": {
+          "const": "en"
+        }
+      },
+      "required": [
+        "goal",
+        "language"
+      ]
+    },
+    "base": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "native-scene"
+        },
+        "runtimeId": {
+          "const": "tora-native"
+        },
+        "runtimeVersion": {
+          "const": "1.0.0"
+        },
+        "width": {
+          "type": "number",
+          "minimum": 240,
+          "maximum": 2048
+        },
+        "height": {
+          "type": "number",
+          "minimum": 240,
+          "maximum": 2048
+        },
+        "startScene": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+        },
+        "storeUrl": {
+          "type": "string",
+          "pattern": "^https://(play\\.google\\.com/store/apps/details\\?id=[a-zA-Z0-9._-]+|apps\\.apple\\.com/[a-zA-Z0-9/._?=&-]+)$"
+        }
+      },
+      "required": [
+        "kind",
+        "runtimeId",
+        "runtimeVersion",
+        "width",
+        "height",
+        "startScene",
+        "storeUrl"
+      ]
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "role": {
+            "enum": [
+              "interactive",
+              "end-card"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "role"
+        ]
+      },
+      "maxItems": 16,
+      "minItems": 1
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.group.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "clip": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "clip"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.rectangle.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "stroke": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "strokeWidth": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 64
+                  },
+                  "pixelFrame": {
+                    "type": "boolean"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 256
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "radius"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.ellipse.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "stroke": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "strokeWidth": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 64
+                  },
+                  "pixelFrame": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fill",
+                  "stroke",
+                  "strokeWidth"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.path.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "stroke": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "strokeWidth": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 64
+                  },
+                  "pixelFrame": {
+                    "type": "boolean"
+                  },
+                  "commands": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "const": "M"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            }
+                          ],
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": false
+                        },
+                        {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "const": "L"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            }
+                          ],
+                          "minItems": 3,
+                          "maxItems": 3,
+                          "items": false
+                        },
+                        {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "const": "C"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            }
+                          ],
+                          "minItems": 7,
+                          "maxItems": 7,
+                          "items": false
+                        },
+                        {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "const": "Q"
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            },
+                            {
+                              "type": "number",
+                              "minimum": -4096,
+                              "maximum": 4096
+                            }
+                          ],
+                          "minItems": 5,
+                          "maxItems": 5,
+                          "items": false
+                        },
+                        {
+                          "type": "array",
+                          "prefixItems": [
+                            {
+                              "const": "Z"
+                            }
+                          ],
+                          "minItems": 1,
+                          "maxItems": 1,
+                          "items": false
+                        }
+                      ]
+                    },
+                    "maxItems": 256
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "commands"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.image.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fit": {
+                    "enum": [
+                      "contain",
+                      "cover",
+                      "stretch"
+                    ]
+                  },
+                  "smoothing": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fit"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.sprite.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fit": {
+                    "enum": [
+                      "contain",
+                      "cover",
+                      "stretch"
+                    ]
+                  },
+                  "frameCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 16
+                  },
+                  "frameColumns": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 16
+                  },
+                  "frameRate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 24
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fit",
+                  "frameCount",
+                  "frameColumns",
+                  "frameRate"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.walk-sprite.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "fit": {
+                    "enum": [
+                      "contain",
+                      "cover",
+                      "stretch"
+                    ]
+                  },
+                  "frameCount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 16
+                  },
+                  "frameColumns": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 16
+                  },
+                  "frameRate": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 24
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "fit",
+                  "frameCount",
+                  "frameColumns",
+                  "frameRate"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.text.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "fontSize": {
+                    "type": "number",
+                    "minimum": 6,
+                    "maximum": 240
+                  },
+                  "fontFamily": {
+                    "enum": [
+                      "sans-serif",
+                      "serif",
+                      "monospace",
+                      "pixel"
+                    ]
+                  },
+                  "fontWeight": {
+                    "enum": [
+                      "400",
+                      "600",
+                      "700",
+                      "900"
+                    ]
+                  },
+                  "align": {
+                    "enum": [
+                      "left",
+                      "center",
+                      "right"
+                    ]
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "wrap": {
+                    "type": "boolean"
+                  },
+                  "autoFit": {
+                    "type": "boolean"
+                  },
+                  "minFontSize": {
+                    "type": "number",
+                    "minimum": 8,
+                    "maximum": 120
+                  },
+                  "padding": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 64
+                  },
+                  "lineHeight": {
+                    "type": "number",
+                    "minimum": 0.9,
+                    "maximum": 2.5
+                  },
+                  "pixelPanel": {
+                    "type": "boolean"
+                  },
+                  "panelFill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "panelStroke": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "text",
+                  "fontSize",
+                  "fontFamily",
+                  "fontWeight",
+                  "align",
+                  "color"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.button.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "fill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "stroke": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "strokeWidth": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 64
+                  },
+                  "pixelFrame": {
+                    "type": "boolean"
+                  },
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 256
+                  },
+                  "hoverFill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "pressedFill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "disabledFill": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "presentation": {
+                    "enum": [
+                      "flat",
+                      "pixel-cta",
+                      "shiny-cta"
+                    ]
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "enabled",
+                  "fill",
+                  "stroke",
+                  "strokeWidth",
+                  "radius",
+                  "hoverFill",
+                  "pressedFill",
+                  "disabledFill"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.stage3d.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "skyColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "hemiSkyColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "hemiGroundColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "hemiIntensity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  },
+                  "sunColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "sunIntensity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  },
+                  "sunX": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "sunY": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "sunZ": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "cameraX": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "cameraY": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "cameraZ": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "cameraFov": {
+                    "type": "number",
+                    "minimum": 10,
+                    "maximum": 110
+                  },
+                  "landscapeCameraX": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "landscapeCameraY": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "landscapeCameraZ": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "landscapeCameraFov": {
+                    "type": "number",
+                    "minimum": 10,
+                    "maximum": 110
+                  },
+                  "lookAtX": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "lookAtY": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "lookAtZ": {
+                    "type": "number",
+                    "minimum": -200,
+                    "maximum": 200
+                  },
+                  "followTargetId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "followZFactor": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "introLift": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "skyColor",
+                  "hemiSkyColor",
+                  "hemiGroundColor",
+                  "hemiIntensity",
+                  "sunColor",
+                  "sunIntensity",
+                  "sunX",
+                  "sunY",
+                  "sunZ",
+                  "cameraX",
+                  "cameraY",
+                  "cameraZ",
+                  "cameraFov",
+                  "landscapeCameraX",
+                  "landscapeCameraY",
+                  "landscapeCameraZ",
+                  "landscapeCameraFov",
+                  "lookAtX",
+                  "lookAtY",
+                  "lookAtZ"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "contract": {
+                "const": "native.mesh3d.v1"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "parentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "order": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "transform": {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "minItems": 6,
+                "maxItems": 6
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "width": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "height": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 4096
+                  },
+                  "visible": {
+                    "type": "boolean"
+                  },
+                  "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "primitive": {
+                    "enum": [
+                      "group",
+                      "mesh",
+                      "box",
+                      "sphere",
+                      "cylinder",
+                      "ring",
+                      "circle",
+                      "fairway",
+                      "cup",
+                      "garden"
+                    ]
+                  },
+                  "x": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "z": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "rx": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "ry": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "rz": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "sx": {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  },
+                  "sy": {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  },
+                  "sz": {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "useTexture": {
+                    "type": "boolean"
+                  },
+                  "unlit": {
+                    "type": "boolean"
+                  },
+                  "doubleSide": {
+                    "type": "boolean"
+                  },
+                  "openEnded": {
+                    "type": "boolean"
+                  },
+                  "radiusTop": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 50
+                  },
+                  "radiusBottom": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 50
+                  },
+                  "innerRadius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 50
+                  },
+                  "waveFlag": {
+                    "type": "boolean"
+                  },
+                  "dropShadowOf": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "fairwayRamp": {
+                    "type": "boolean"
+                  },
+                  "cupX": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "cupZ": {
+                    "type": "number",
+                    "minimum": -100,
+                    "maximum": 100
+                  },
+                  "cupRadius": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 2
+                  },
+                  "confetti": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "width",
+                  "height",
+                  "visible",
+                  "opacity",
+                  "primitive",
+                  "x",
+                  "y",
+                  "z",
+                  "rx",
+                  "ry",
+                  "rz",
+                  "sx",
+                  "sy",
+                  "sz",
+                  "color",
+                  "useTexture"
+                ]
+              },
+              "assetSlots": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "slotId": {
+                      "const": "source"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "slotId",
+                    "assetId"
+                  ]
+                },
+                "maxItems": 1
+              },
+              "prototype": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "contract",
+              "sceneId",
+              "order",
+              "transform",
+              "parameters",
+              "assetSlots",
+              "prototype"
+            ]
+          }
+        ]
+      },
+      "maxItems": 384
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "type": {
+                "const": "number"
+              },
+              "initial": {
+                "type": "number",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "type",
+              "initial"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "type": {
+                "const": "boolean"
+              },
+              "initial": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "type",
+              "initial"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 80
+              },
+              "type": {
+                "const": "string"
+              },
+              "initial": {
+                "type": "string",
+                "maxLength": 512
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "type",
+              "initial"
+            ]
+          }
+        ]
+      },
+      "maxItems": 64
+    },
+    "gameplay": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "responsive-layout"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "scaleX": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 4
+                  },
+                  "scaleY": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 4
+                  },
+                  "anchor": {
+                    "enum": [
+                      "none",
+                      "top-left",
+                      "top-center",
+                      "top-right",
+                      "center-left",
+                      "center",
+                      "center-right",
+                      "bottom-left",
+                      "bottom-center",
+                      "bottom-right"
+                    ]
+                  },
+                  "respectSafeArea": {
+                    "type": "boolean"
+                  },
+                  "marginX": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1024
+                  },
+                  "marginY": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1024
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "scaleX",
+                  "scaleY"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "drag"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "axis": {
+                    "enum": [
+                      "x",
+                      "y",
+                      "both"
+                    ]
+                  },
+                  "minX": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "maxX": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "minY": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "maxY": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  }
+                },
+                "required": [
+                  "axis"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "motion"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "vx": {
+                    "type": "number",
+                    "minimum": -2000,
+                    "maximum": 2000
+                  },
+                  "vy": {
+                    "type": "number",
+                    "minimum": -2000,
+                    "maximum": 2000
+                  },
+                  "gravity": {
+                    "type": "number",
+                    "minimum": -2000,
+                    "maximum": 2000
+                  }
+                },
+                "required": [
+                  "vx",
+                  "vy",
+                  "gravity"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "collider"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "shape": {
+                    "enum": [
+                      "box",
+                      "circle"
+                    ]
+                  }
+                },
+                "required": [
+                  "shape"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "timer"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "seconds": {
+                    "type": "number",
+                    "minimum": 0.016666666666666666,
+                    "maximum": 120
+                  },
+                  "repeat": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "seconds",
+                  "repeat"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "match-board"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "rows": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 8
+                  },
+                  "columns": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 8
+                  },
+                  "seed": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "rows",
+                  "columns",
+                  "seed"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "match-tile"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "row": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 15
+                  },
+                  "column": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 15
+                  },
+                  "group": {
+                    "enum": [
+                      "sun",
+                      "leaf",
+                      "drop",
+                      "carrot",
+                      "corn",
+                      "tomato",
+                      "eggplant",
+                      "pumpkin"
+                    ]
+                  }
+                },
+                "required": [
+                  "row",
+                  "column",
+                  "group"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "animation"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "property": {
+                    "enum": [
+                      "opacity",
+                      "x",
+                      "y",
+                      "scale",
+                      "scaleX",
+                      "scaleY",
+                      "rotation"
+                    ]
+                  },
+                  "from": {
+                    "type": "number",
+                    "minimum": -10000,
+                    "maximum": 10000
+                  },
+                  "to": {
+                    "type": "number",
+                    "minimum": -10000,
+                    "maximum": 10000
+                  },
+                  "seconds": {
+                    "type": "number",
+                    "minimum": 0.016666666666666666,
+                    "maximum": 120
+                  },
+                  "loop": {
+                    "type": "boolean"
+                  },
+                  "fromCurrent": {
+                    "type": "boolean"
+                  },
+                  "delay": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 30
+                  },
+                  "easing": {
+                    "enum": [
+                      "linear",
+                      "ease-in",
+                      "ease-out",
+                      "ease-in-out",
+                      "back-out"
+                    ]
+                  }
+                },
+                "required": [
+                  "property",
+                  "from",
+                  "to",
+                  "seconds",
+                  "loop"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "emitter"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 128
+                  },
+                  "color": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "speed": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "lifetime": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 5
+                  },
+                  "gravity": {
+                    "type": "number",
+                    "minimum": -2000,
+                    "maximum": 2000
+                  },
+                  "spread": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 360
+                  },
+                  "shape": {
+                    "enum": [
+                      "circle",
+                      "square",
+                      "pixel-confetti",
+                      "confetti"
+                    ]
+                  },
+                  "coverage": {
+                    "enum": [
+                      "local",
+                      "screen"
+                    ]
+                  },
+                  "origin": {
+                    "enum": [
+                      "center",
+                      "anchor"
+                    ]
+                  },
+                  "direction": {
+                    "type": "number",
+                    "minimum": -360,
+                    "maximum": 360
+                  },
+                  "color2": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "color3": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  }
+                },
+                "required": [
+                  "count",
+                  "color",
+                  "speed"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "audio"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "bus": {
+                    "enum": [
+                      "sfx",
+                      "music",
+                      "voice",
+                      "stinger"
+                    ]
+                  },
+                  "loop": {
+                    "type": "boolean"
+                  },
+                  "volume": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "frequency": {
+                    "type": "number",
+                    "minimum": 50,
+                    "maximum": 2000
+                  },
+                  "seconds": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 2
+                  },
+                  "cooldownMs": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 2000
+                  },
+                  "pitchJitter": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.25
+                  },
+                  "pitchVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "pitchStep": {
+                    "type": "number",
+                    "minimum": -24,
+                    "maximum": 24
+                  },
+                  "role": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "allowSynthFallback": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "loop",
+                  "volume",
+                  "frequency",
+                  "seconds"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "press-feedback"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "scaleDown": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 1
+                  },
+                  "springBackSeconds": {
+                    "type": "number",
+                    "minimum": 0.016666666666666666,
+                    "maximum": 2
+                  },
+                  "liftShadow": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "scaleDown",
+                  "springBackSeconds",
+                  "liftShadow"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "tutorial-hand"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "targetId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "destinationId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "mode": {
+                    "enum": [
+                      "tap",
+                      "drag",
+                      "swipe"
+                    ]
+                  },
+                  "idleDelaySeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 30
+                  },
+                  "hideOnFirstInput": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "targetId",
+                  "mode",
+                  "idleDelaySeconds",
+                  "hideOnFirstInput"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "physics-body"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "dynamic",
+                      "static",
+                      "kinematic"
+                    ]
+                  },
+                  "shape": {
+                    "enum": [
+                      "circle",
+                      "box"
+                    ]
+                  },
+                  "restitution": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1.5
+                  },
+                  "friction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                  },
+                  "linearDamping": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "gravity": {
+                    "type": "number",
+                    "minimum": -2000,
+                    "maximum": 2000
+                  },
+                  "maxSpeed": {
+                    "type": "number",
+                    "minimum": 10,
+                    "maximum": 4000
+                  },
+                  "restSpeed": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "restDelaySeconds": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 2
+                  },
+                  "wallBounce": {
+                    "type": "boolean"
+                  },
+                  "spinToRotation": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "shape",
+                  "restitution",
+                  "friction",
+                  "linearDamping",
+                  "gravity",
+                  "maxSpeed",
+                  "restSpeed",
+                  "restDelaySeconds",
+                  "wallBounce",
+                  "spinToRotation"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "aim-launch"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "dragMode": {
+                    "enum": [
+                      "on-body",
+                      "anywhere"
+                    ]
+                  },
+                  "minPullPx": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 200
+                  },
+                  "maxPullPx": {
+                    "type": "number",
+                    "minimum": 20,
+                    "maximum": 600
+                  },
+                  "minSpeed": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 2000
+                  },
+                  "maxSpeed": {
+                    "type": "number",
+                    "minimum": 20,
+                    "maximum": 4000
+                  },
+                  "invert": {
+                    "type": "boolean"
+                  },
+                  "onlyWhenAtRest": {
+                    "type": "boolean"
+                  },
+                  "showTrajectory": {
+                    "type": "boolean"
+                  },
+                  "trajectoryDots": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 16
+                  },
+                  "trajectoryBounces": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2
+                  },
+                  "trajectoryColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "powerVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  }
+                },
+                "required": [
+                  "dragMode",
+                  "minPullPx",
+                  "maxPullPx",
+                  "minSpeed",
+                  "maxSpeed",
+                  "invert",
+                  "onlyWhenAtRest",
+                  "showTrajectory",
+                  "trajectoryDots",
+                  "trajectoryBounces",
+                  "trajectoryColor"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "capture-zone"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "radius": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 256
+                  },
+                  "maxCaptureSpeed": {
+                    "type": "number",
+                    "minimum": 10,
+                    "maximum": 4000
+                  },
+                  "pullStrength": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "stopBody": {
+                    "type": "boolean"
+                  },
+                  "hideCaptured": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "radius",
+                  "maxCaptureSpeed",
+                  "pullStrength",
+                  "stopBody",
+                  "hideCaptured"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "oscillate"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "axis": {
+                    "enum": [
+                      "x",
+                      "y"
+                    ]
+                  },
+                  "amplitude": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1024
+                  },
+                  "periodSeconds": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 60
+                  },
+                  "phase": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "axis",
+                  "amplitude",
+                  "periodSeconds",
+                  "phase"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "path-network"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "nodes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                        },
+                        "x": {
+                          "type": "number",
+                          "minimum": -4096,
+                          "maximum": 4096
+                        },
+                        "y": {
+                          "type": "number",
+                          "minimum": -4096,
+                          "maximum": 4096
+                        },
+                        "holdSeconds": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 60
+                        },
+                        "cost": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "x",
+                        "y"
+                      ]
+                    },
+                    "maxItems": 64,
+                    "minItems": 2
+                  },
+                  "edges": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                        },
+                        "from": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                        },
+                        "to": {
+                          "type": "string",
+                          "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                        },
+                        "speedScale": {
+                          "type": "number",
+                          "minimum": 0.05,
+                          "maximum": 20
+                        },
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "bidirectional": {
+                          "type": "boolean"
+                        },
+                        "cost": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "from",
+                        "to"
+                      ]
+                    },
+                    "maxItems": 128,
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "nodes",
+                  "edges"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "path-agent"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "networkBehaviorId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "startNode": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "targetNode": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "speed": {
+                    "type": "number",
+                    "minimum": 5,
+                    "maximum": 1200
+                  },
+                  "speedMultiplierVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "spacing": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 256
+                  },
+                  "cornerRadius": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 128
+                  },
+                  "orientToPath": {
+                    "enum": [
+                      "none",
+                      "rotate",
+                      "flip-x",
+                      "iso-4"
+                    ]
+                  },
+                  "loop": {
+                    "enum": [
+                      "none",
+                      "ping-pong",
+                      "cycle"
+                    ]
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "networkBehaviorId",
+                  "startNode",
+                  "targetNode",
+                  "speed",
+                  "spacing",
+                  "cornerRadius",
+                  "orientToPath",
+                  "loop",
+                  "active"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "path-gate"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "networkBehaviorId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "nodeId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "mode": {
+                    "enum": [
+                      "open",
+                      "closed",
+                      "cycle"
+                    ]
+                  },
+                  "openSeconds": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 60
+                  },
+                  "closedSeconds": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 60
+                  },
+                  "holdSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "phaseOffsetSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 60
+                  }
+                },
+                "required": [
+                  "networkBehaviorId",
+                  "nodeId",
+                  "mode",
+                  "openSeconds",
+                  "closedSeconds",
+                  "holdSeconds",
+                  "phaseOffsetSeconds"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "value-meter"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "variableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "min": {
+                    "type": "number",
+                    "minimum": -1000000000,
+                    "maximum": 1000000000
+                  },
+                  "max": {
+                    "type": "number",
+                    "minimum": -1000000000,
+                    "maximum": 1000000000
+                  },
+                  "axis": {
+                    "enum": [
+                      "x",
+                      "y"
+                    ]
+                  },
+                  "direction": {
+                    "enum": [
+                      "positive",
+                      "negative"
+                    ]
+                  },
+                  "smoothingSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 2
+                  }
+                },
+                "required": [
+                  "variableId",
+                  "min",
+                  "max",
+                  "axis",
+                  "direction",
+                  "smoothingSeconds"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "camera-follow"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "targetId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "minX": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "maxX": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "minY": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "maxY": {
+                    "type": "number",
+                    "minimum": -4096,
+                    "maximum": 4096
+                  },
+                  "smoothing": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 30
+                  },
+                  "zoom": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 2.5
+                  }
+                },
+                "required": [
+                  "targetId",
+                  "minX",
+                  "maxX",
+                  "minY",
+                  "maxY",
+                  "smoothing",
+                  "zoom"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "physics-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "dynamic",
+                      "static",
+                      "kinematic"
+                    ]
+                  },
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0.02,
+                    "maximum": 5
+                  },
+                  "hx": {
+                    "type": "number",
+                    "minimum": 0.02,
+                    "maximum": 50
+                  },
+                  "hz": {
+                    "type": "number",
+                    "minimum": 0.02,
+                    "maximum": 50
+                  },
+                  "angle": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "friction": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                  },
+                  "restitution": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1.5
+                  },
+                  "maxSpeed": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 50
+                  },
+                  "boundsX": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 50
+                  },
+                  "boundsZ": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 50
+                  },
+                  "ramp": {
+                    "type": "boolean"
+                  },
+                  "rampHeight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10
+                  },
+                  "restSpeed": {
+                    "type": "number",
+                    "minimum": 0.005,
+                    "maximum": 2
+                  },
+                  "restDelaySeconds": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 2
+                  }
+                },
+                "required": [
+                  "mode",
+                  "radius",
+                  "hx",
+                  "hz",
+                  "angle",
+                  "friction",
+                  "restitution",
+                  "maxSpeed",
+                  "boundsX",
+                  "boundsZ",
+                  "ramp",
+                  "restSpeed",
+                  "restDelaySeconds"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "oscillate-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "axis": {
+                    "enum": [
+                      "x",
+                      "y",
+                      "z"
+                    ]
+                  },
+                  "amplitude": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                  },
+                  "angularSpeed": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 20
+                  },
+                  "phase": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  }
+                },
+                "required": [
+                  "axis",
+                  "amplitude",
+                  "angularSpeed",
+                  "phase"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "aim-launch-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "stageId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "dragMode": {
+                    "enum": [
+                      "on-body",
+                      "anywhere"
+                    ]
+                  },
+                  "dragScale": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 20
+                  },
+                  "minPullPx": {
+                    "type": "number",
+                    "minimum": 4,
+                    "maximum": 100
+                  },
+                  "maxSpeed": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 50
+                  },
+                  "minSpeed": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 10
+                  },
+                  "hitRadiusPx": {
+                    "type": "number",
+                    "minimum": 20,
+                    "maximum": 400
+                  },
+                  "showTrajectory": {
+                    "type": "boolean"
+                  },
+                  "trajectoryDots": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 24
+                  },
+                  "powerVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  }
+                },
+                "required": [
+                  "stageId",
+                  "dragMode",
+                  "dragScale",
+                  "minPullPx",
+                  "maxSpeed",
+                  "minSpeed",
+                  "hitRadiusPx",
+                  "showTrajectory",
+                  "trajectoryDots"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "capture-zone-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "radius": {
+                    "type": "number",
+                    "minimum": 0.05,
+                    "maximum": 3
+                  },
+                  "maxCaptureSpeed": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 20
+                  },
+                  "heightTolerance": {
+                    "type": "number",
+                    "minimum": 0.02,
+                    "maximum": 2
+                  },
+                  "holdSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 5
+                  }
+                },
+                "required": [
+                  "radius",
+                  "maxCaptureSpeed",
+                  "heightTolerance",
+                  "holdSeconds"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          }
+        ]
+      },
+      "maxItems": 384
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "click"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "boundaryExit"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "validMatch"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "invalidMatch"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "matchClear"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "launch"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "bodyRest"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "bodyJump"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "pathBlocked"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "bodyBounce"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "otherId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "zoneCapture"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "otherId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "pathArrive"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "nodeId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "contactBegin"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "otherId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "sceneEnter"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "sceneId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "sceneExit"
+              },
+              "sceneId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "sceneId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "timer"
+              },
+              "behaviorId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "behaviorId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "variableChange"
+              },
+              "variableId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "variableId"
+            ]
+          }
+        ]
+      },
+      "maxItems": 256
+    },
+    "eventBindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+          },
+          "eventId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+          },
+          "condition": {
+            "$ref": "#/$defs/Condition"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setComponent"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "key": {
+                      "type": "string",
+                      "maxLength": 512
+                    },
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "number",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "string",
+                          "maxLength": 512
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "key",
+                    "value"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setAsset"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "assetId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "assetId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "copyMatchAsset"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "boardId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "boardId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "resetMatch"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "hintMatch"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "set"
+                    },
+                    "variableId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "value": {
+                      "oneOf": [
+                        {
+                          "type": "number",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "string",
+                          "maxLength": 512
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "variableId",
+                    "value"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "add"
+                    },
+                    "variableId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "variableId",
+                    "value"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "spawn"
+                    },
+                    "prototypeId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "x": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "prototypeId",
+                    "x",
+                    "y"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "spawnAt"
+                    },
+                    "prototypeId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "targetComponentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "offsetX": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "offsetY": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "prototypeId",
+                    "targetComponentId",
+                    "offsetX",
+                    "offsetY"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "spawnOnPath"
+                    },
+                    "prototypeId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "networkBehaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "startNode": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "targetNode": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "prototypeId",
+                    "networkBehaviorId",
+                    "startNode",
+                    "targetNode"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setVelocity"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "vx": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "vy": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "vx",
+                    "vy"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "applyImpulse"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "ix": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "iy": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "ix",
+                    "iy"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setPosition"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "x": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "x",
+                    "y"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "stopBody"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setPathEdge"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "edgeId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "cost": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId",
+                    "edgeId",
+                    "enabled"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setPathTarget"
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "targetNode": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "componentId",
+                    "targetNode"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "setPathGate"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "mode": {
+                      "enum": [
+                        "open",
+                        "closed",
+                        "cycle"
+                      ]
+                    },
+                    "holdSeconds": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId",
+                    "mode",
+                    "holdSeconds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "compute"
+                    },
+                    "variableId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "op": {
+                      "enum": [
+                        "add",
+                        "sub",
+                        "mul",
+                        "div",
+                        "min",
+                        "max",
+                        "set"
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "operandVariableId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "round": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "variableId",
+                    "op"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "despawn"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "restart"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "store"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "changeScene"
+                    },
+                    "sceneId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "sceneId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "cameraShake"
+                    },
+                    "intensity": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "intensity",
+                    "seconds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "screenFlash"
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                    },
+                    "opacity": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "color",
+                    "opacity",
+                    "seconds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "floatingText"
+                    },
+                    "text": {
+                      "type": "string",
+                      "maxLength": 512
+                    },
+                    "componentId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                    },
+                    "fontSize": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "risePx": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "text",
+                    "componentId",
+                    "color",
+                    "fontSize",
+                    "risePx",
+                    "seconds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "animate"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "stopAnimation"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "emit"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "playAudio"
+                    },
+                    "behaviorId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "behaviorId"
+                  ]
+                }
+              ]
+            },
+            "maxItems": 32,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "actions"
+        ]
+      },
+      "maxItems": 384
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+          },
+          "hash": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "mime": {
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "audio/wav",
+              "audio/mpeg",
+              "model/tora-mesh"
+            ]
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "rights": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "provenance": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "id",
+          "hash",
+          "mime",
+          "bytes",
+          "rights"
+        ]
+      },
+      "maxItems": 256
+    },
+    "tombstones": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+      },
+      "maxItems": 4096,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "projectId",
+    "revisionId",
+    "generationOrigin",
+    "creativeBrief",
+    "base",
+    "scenes",
+    "components",
+    "variables",
+    "gameplay",
+    "events",
+    "eventBindings",
+    "assets",
+    "tombstones"
+  ],
+  "$defs": {
+    "Condition": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "variableId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+            },
+            "op": {
+              "enum": [
+                "eq",
+                "ne",
+                "lt",
+                "lte",
+                "gt",
+                "gte"
+              ]
+            },
+            "value": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "maxLength": 512
+                }
+              ]
+            }
+          },
+          "required": [
+            "variableId",
+            "op",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "variableId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+            },
+            "op": {
+              "enum": [
+                "eq",
+                "ne",
+                "lt",
+                "lte",
+                "gt",
+                "gte"
+              ]
+            },
+            "compareVariableId": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+            }
+          },
+          "required": [
+            "variableId",
+            "op",
+            "compareVariableId"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "maxItems": 8,
+              "minItems": 1
+            }
+          },
+          "required": [
+            "all"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "any": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Condition"
+              },
+              "maxItems": 8,
+              "minItems": 1
+            }
+          },
+          "required": [
+            "any"
+          ]
+        }
+      ]
+    }
+  }
+}

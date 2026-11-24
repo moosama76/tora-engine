@@ -1,0 +1,29 @@
+{
+  "format": "tora-role-fixture-1",
+  "module": "harvest-restore",
+  "roleVersion": 1,
+  "roles": {
+    "winEvent": {
+      "bindingId": "harvest.restore.3",
+      "eventId": "harvest.restore.3.event",
+      "cueBehaviorId": "harvest.audio.complete.play",
+      "cueComponentId": "harvest.audio.complete"
+    },
+    "timeoutEvent": {
+      "bindingId": "harvest.deadline.cta",
+      "eventId": "harvest.deadline.cta.event"
+    },
+    "primaryCta": {
+      "componentId": "harvest.cta",
+      "labelId": "harvest.cta.label",
+      "bindingId": "harvest.cta.click"
+    },
+    "outcomePanel": {
+      "componentId": "harvest.board.lock"
+    },
+    "rewardCue": {
+      "behaviorId": "harvest.audio.complete.play",
+      "componentId": "harvest.audio.complete"
+    }
+  }
+}

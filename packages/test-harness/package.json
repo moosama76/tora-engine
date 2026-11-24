@@ -1,0 +1,15 @@
+{
+  "name": "@playable/test-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@playable/runtime": "0.1.0",
+    "@playable/adapters": "0.1.0",
+    "@playable/render": "0.1.0",
+    "@playable/template-merge": "0.1.0"
+  }
+}

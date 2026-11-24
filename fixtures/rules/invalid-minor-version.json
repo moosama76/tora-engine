@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.1.0",
+  "profileId": "unity-ads-ua-playable",
+  "networkId": "unity-ads",
+  "channelId": "ua-playable",
+  "rulesVersion": "2026-10-17-review-1",
+  "reviewedAt": "2026-10-17",
+  "sources": [
+    {
+      "id": "specs",
+      "url": "https://docs.unity.com/en-us/grow/acquire/creatives/playable/specifications",
+      "title": "Unity Ads UA playable specifications",
+      "checkedAt": "2026-10-17",
+      "notes": "Dedicated UA document; Unity Exchange requirements are not substituted."
+    },
+    {
+      "id": "preview",
+      "url": "https://docs.unity.com/en-us/grow/acquire/creatives/creative-packs/test",
+      "title": "Unity Ads Ad Testing procedure",
+      "checkedAt": "2026-10-17",
+      "notes": "Public mobile preview instructions reviewed; not executed."
+    }
+  ],
+  "rules": {
+    "uploadSize": {
+      "status": "verified",
+      "value": {
+        "limitBytes": 5000000,
+        "operator": "<",
+        "byteBasis": "conservative-decimal-mb"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Strict comparator preserves under; decimal byte conversion is conservative local policy."
+    },
+    "packaging": {
+      "status": "verified",
+      "value": {
+        "kind": "single-html",
+        "entryFile": "index.html",
+        "minified": true
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Dedicated UA entry and inlining/minification requirements."
+    },
+    "inline": {
+      "status": "verified",
+      "value": {
+        "requireInlineAssets": true,
+        "externalRequests": "forbidden",
+        "requiredHostScripts": [],
+        "hostExceptions": []
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "UA host injects MRAID; no script-tag exception borrowed from Exchange. Optional analytics allowance is not implemented."
+    },
+    "mraid": {
+      "status": "verified",
+      "value": {
+        "version": "3.0",
+        "ready": "ready-event-or-state-not-loading",
+        "clickApi": "mraid.open"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "UA specifies MRAID 3 and CTA method; ready gating is conservative local policy."
+    },
+    "autoplay": {
+      "status": "verified",
+      "value": {
+        "audio": "muted-until-first-interaction",
+        "onHidden": "mute-and-pause",
+        "timerStart": "first-interaction"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Local muted-first-interaction and hidden-pause safety policy."
+    },
+    "firstClick": {
+      "status": "verified",
+      "value": "distinct-cta-only",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Deliberate CTA only; no automatic redirect."
+    },
+    "viewability": {
+      "status": "verified",
+      "value": {
+        "policy": "ready-and-visible",
+        "requiredEvents": [
+          "viewableChange"
+        ],
+        "allowInitialStateQuery": false
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "UA requires the visibility event before gameplay; adapter timing tests remain T016."
+    },
+    "orientations": {
+      "status": "verified",
+      "value": "both",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Both orientations selected for UA."
+    },
+    "preview": {
+      "status": "verified",
+      "value": {
+        "url": "https://docs.unity.com/en-us/grow/acquire/creatives/creative-packs/test",
+        "instructions": "Use Ad Testing for Unity Ads with an accessible HTTPS .html URL and QR code. Check gameplay and a deliberate CTA on both platforms."
+      },
+      "sources": [
+        "preview"
+      ],
+      "basis": "public-documentation",
+      "notes": "Public procedure only; no preview result claimed."
+    },
+    "companionAssets": {
+      "status": "verified",
+      "value": [],
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Single playable file scope; campaign setup is separate."
+    }
+  },
+  "additionalRules": [],
+  "unresolved": []
+}

@@ -1,0 +1,11 @@
+{
+  "name": "@playable/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./applovin": "./src/applovin.ts",
+    "./unity": "./src/unity.ts"
+  }
+}

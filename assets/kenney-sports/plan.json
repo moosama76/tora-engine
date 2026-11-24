@@ -1,0 +1,96 @@
+{
+  "format": "tora-native-asset-plan-1",
+  "source": {
+    "id": "kenney-sports-pack",
+    "author": "Kenney Vleugels",
+    "sourceUrl": "https://kenney.nl/assets/sports-pack",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "licenseFile": "assets/kenney-sports/source/sports-pack/extracted/License.txt",
+    "licenseSha256": "sha256:db46d2cddda5091d2b7ef82ef05555808b92da1572ffce44c3c5c10a8deda8d3",
+    "archive": "assets/kenney-sports/source/sports-pack/kenney_sports-pack.zip",
+    "archiveSha256": "sha256:d8629a1afd6b6dc48b5cb2074810166744e06ed097ea392fe7669bdcef376de5",
+    "attributionRequired": false
+  },
+  "visualDirection": "Top-down pixel mini golf with a calm green course, crisp white rails, a checkered cup flag, and a compact golf HUD.",
+  "preparation": "Faithful original PNG files; native components perform only sizing and affine rotation.",
+  "files": [
+    {
+      "id": "golf.ball",
+      "file": "assets/kenney-sports/imported/golf.ball.png",
+      "sha256": "sha256:d477e6645f4d948f7946d73336b2fb071f0f0f5480b57b8d3446f0e774d543e6",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Equipment/ball_golf.png",
+        "sourceSha256": "sha256:f2322d6fe1fc627662dec51198119ceb7c926faa47dfbcb9ad4118ca60b9de0c",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.flag",
+      "file": "assets/kenney-sports/imported/golf.flag.png",
+      "sha256": "sha256:27d377486307cc0640e3a75888c2e415d1ea2aa920870994ee2b805cb1948671",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Equipment/flag_checkered.png",
+        "sourceSha256": "sha256:e8bdfd3e045fa054ac49a0cddb8ea122f29988347f2da1db121e3e21e5a847c1",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.club",
+      "file": "assets/kenney-sports/imported/golf.club.png",
+      "sha256": "sha256:772c7add493c09c04226954337833bccc54281d6325b77ea1bb191c3935f1ea2",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Equipment/golf_club.png",
+        "sourceSha256": "sha256:df5d05ef80f7d27f26f930d3184f2dbab2fe719feb9f36a5fc425f1074c255ce",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.golfer",
+      "file": "assets/kenney-sports/imported/golf.golfer.png",
+      "sha256": "sha256:1e9b9c975e87d1037cc4bee3d0031b664b656a6eaf117a2a4651d1cfbd0adda4",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Green/characterGreen (1).png",
+        "sourceSha256": "sha256:66bb0d719d8f8e87cb6896f910a6559897662296c2d82efedc603af1fa4b27fd",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.rail.vertical",
+      "file": "assets/kenney-sports/imported/golf.rail.vertical.png",
+      "sha256": "sha256:35e8f7c0beacec176f2d55f9634dc337386e98db1e341e0af62c5ffe8863e55a",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Elements/element (1).png",
+        "sourceSha256": "sha256:6dfcbe47ad7bee34aabaae4f703d8c41fd2332f11c2f394d0457342afe1d6f4f",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.rail.horizontal",
+      "file": "assets/kenney-sports/imported/golf.rail.horizontal.png",
+      "sha256": "sha256:d1d072adaf93347ceeaaced2b0a1a3ed7fbe5461aa3aa441c62d6bd6195deca4",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Elements/element (2).png",
+        "sourceSha256": "sha256:f3f717509c26beac851852cdea6765a22aa2631bcfd9a52ebaece2438d34624b",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    },
+    {
+      "id": "golf.gate",
+      "file": "assets/kenney-sports/imported/golf.gate.png",
+      "sha256": "sha256:52309720f5c134df885042f2593e5fc6328b4b37ace085d047a76d206560e207",
+      "processing": {
+        "kind": "png-rgba8-conversion",
+        "sourceFile": "assets/kenney-sports/source/sports-pack/extracted/PNG/Elements/element (16).png",
+        "sourceSha256": "sha256:4678fb25eaf5df3790abdd25fef7f14319cb5ded61497e0b236945829632c2ec",
+        "tool": "Pillow Image.convert(RGBA)"
+      }
+    }
+  ]
+}

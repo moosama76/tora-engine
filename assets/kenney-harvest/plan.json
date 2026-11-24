@@ -1,0 +1,1252 @@
+{
+  "assets": [
+    {
+      "id": "farm-0008",
+      "file": "imported/Tiles/tile_0008.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0008.png",
+        "sourceHash": "sha256:b586292cb3ed31ec582102e49a27bd3dd358beea4e5a9cfeec710d3368825505",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0014",
+      "file": "imported/Tiles/tile_0014.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0014.png",
+        "sourceHash": "sha256:e1961fae496aa1a857137c4e7b0e18df7466a1fcabd7efd3478caff8ab21327c",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0015",
+      "file": "imported/Tiles/tile_0015.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0015.png",
+        "sourceHash": "sha256:a08209bb9e5f46f9780a684dbb5b4dfe5a0a9c4116659d6afe5c4943177aa12e",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0020",
+      "file": "imported/Tiles/tile_0020.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0020.png",
+        "sourceHash": "sha256:a0ec879940172ab50e1837de4237b75070ea4858c63d55de4e0d0e64affe9ecc",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0025",
+      "file": "imported/Tiles/tile_0025.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0025.png",
+        "sourceHash": "sha256:c3c2fe0f7c520b0698a7ed5b57dadb823c6a811cf9ab0c47494012240984b247",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0026",
+      "file": "imported/Tiles/tile_0026.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0026.png",
+        "sourceHash": "sha256:99d85f5a918dd71f3c36b42c4fd02d7dc2c268dba07a76a28158e94368c51cb4",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0027",
+      "file": "imported/Tiles/tile_0027.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0027.png",
+        "sourceHash": "sha256:d10e887f19618da0014bea4c0c50b08e6fda00d02629566daac644e60129ff29",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0029",
+      "file": "imported/Tiles/tile_0029.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0029.png",
+        "sourceHash": "sha256:5062471e241546c7ada8cf7d4f870fef07bed89c0fd3d18f52f74428aa156518",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0032",
+      "file": "imported/Tiles/tile_0032.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0032.png",
+        "sourceHash": "sha256:939ed05ae8cc755ac521f0df00fedae98ef507eb4430d82cdd2502c3aa0d2052",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0037",
+      "file": "imported/Tiles/tile_0037.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0037.png",
+        "sourceHash": "sha256:85f1d3c7b09c50ad4eeb86f25bd001d91b4beaab08dc7d89388d3bed1f40be44",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0039",
+      "file": "imported/Tiles/tile_0039.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0039.png",
+        "sourceHash": "sha256:ca686c2febc931b6f063c087331b67d517f9dd141078b86f3f0c6085e79f6fa9",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0041",
+      "file": "imported/Tiles/tile_0041.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0041.png",
+        "sourceHash": "sha256:c1500d8be6a8decc744440268dfc6922de2f3ae74b814a2b04ead3e75770c1d6",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0044",
+      "file": "imported/Tiles/tile_0044.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0044.png",
+        "sourceHash": "sha256:6ec2cbd09336b2fef40b06326ed8ca4a70d2aa5d32d6d97f2cab0a2c4bf46f0b",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0047",
+      "file": "imported/Tiles/tile_0047.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0047.png",
+        "sourceHash": "sha256:590cb4cd5360b95dcaf16154b6803f073ae71c8b5a53d116a7758e8e283a10fb",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0055",
+      "file": "imported/Tiles/tile_0055.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0055.png",
+        "sourceHash": "sha256:57b698af1feb3283c757ceff1d8a58e97b9ea1a867d5351d1af29b71645da599",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0060",
+      "file": "imported/Tiles/tile_0060.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0060.png",
+        "sourceHash": "sha256:93df3adb4afd58abbf99b0a5c2bddcc488642642cad1d0a58535598e0bd3baa9",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0061",
+      "file": "imported/Tiles/tile_0061.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0061.png",
+        "sourceHash": "sha256:ddff9b87afdef2a10145f16f5bb5c25ea8a44999654c76a2821f8a06d6b894f6",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0062",
+      "file": "imported/Tiles/tile_0062.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0062.png",
+        "sourceHash": "sha256:84328a333cb4668d7a1ecb61a8eeaf904acfd9aeef968f6339427d0b34a74faa",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0066",
+      "file": "imported/Tiles/tile_0066.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0066.png",
+        "sourceHash": "sha256:aad4faa339ceabd1cbbdaa63700b467e7e89e54d75c4a12abcac3bbed6e69a2e",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0077",
+      "file": "imported/Tiles/tile_0077.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0077.png",
+        "sourceHash": "sha256:b1449a752d629cd58676a621b82a5b7103efaa1dae46ff303a113e4e68da7394",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0083",
+      "file": "imported/Tiles/tile_0083.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0083.png",
+        "sourceHash": "sha256:b5339da5af23312212765be3de0dc2eb444d5aa91a3f53915a7ade52521907fd",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0093",
+      "file": "imported/Tiles/tile_0093.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0093.png",
+        "sourceHash": "sha256:706412fb3937a491c2dce5ff22c742be80f440154ffb23e0013182dada30b9f9",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0094",
+      "file": "imported/Tiles/tile_0094.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0094.png",
+        "sourceHash": "sha256:b428a86fbb46fa9b5b15149610be533c0206906f0e13ee5064696412f8691411",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0095",
+      "file": "imported/Tiles/tile_0095.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0095.png",
+        "sourceHash": "sha256:d4ffc9b8ebdd5f386656f0a7a642fc39019b2f3f7298bec5f2018761d9bd0e46",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0105",
+      "file": "imported/Tiles/tile_0105.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0105.png",
+        "sourceHash": "sha256:7e1ff6979057ef9d89fa83c39839df5b81ac4b3ec4968ca94a970ccf5a73d86d",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0106",
+      "file": "imported/Tiles/tile_0106.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0106.png",
+        "sourceHash": "sha256:0c71ba82415da64d5c0f42a7f282e1c975aa390269202e32c0f8b5f171d7876b",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0107",
+      "file": "imported/Tiles/tile_0107.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0107.png",
+        "sourceHash": "sha256:36c8cbbd68a7f6411426ba6905140ca3849fb3ffda772439550f0e8d206aeefa",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0109",
+      "file": "imported/Tiles/tile_0109.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0109.png",
+        "sourceHash": "sha256:99ff05604454eb995c382cf1bfb4a09e1c3d0b5aaf463588ce496fc715f7df02",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0114",
+      "file": "imported/Tiles/tile_0114.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0114.png",
+        "sourceHash": "sha256:28a9a4784944538627a1a5002303684f5a8efbbe568f335589c3dbe19da42654",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0116",
+      "file": "imported/Tiles/tile_0116.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0116.png",
+        "sourceHash": "sha256:58658da7b299ba21cb34c6ba5e6e7d2c00a1267db8a3aa17225a87a0ca4774c4",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0117",
+      "file": "imported/Tiles/tile_0117.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0117.png",
+        "sourceHash": "sha256:e6901f3cff9d1ca895c719ca1f240efb56ba5cd69cf63208fc133eb73d32bbdf",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0118",
+      "file": "imported/Tiles/tile_0118.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0118.png",
+        "sourceHash": "sha256:bee046612005433f22fa229ee09cc1c68350a0fd4feaf16dfb4c92af6d0788f2",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0119",
+      "file": "imported/Tiles/tile_0119.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0119.png",
+        "sourceHash": "sha256:6dd8aeb63676496b39c6414442c9209dec4d81bcf67d8750dd804468b08ef9f2",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0122",
+      "file": "imported/Tiles/tile_0122.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0122.png",
+        "sourceHash": "sha256:9a3a9ad75218b5f8ebe0b479e84d22dfc11873c125ff4a7a5d9d08b4fc71d2a1",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0127",
+      "file": "imported/Tiles/tile_0127.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0127.png",
+        "sourceHash": "sha256:b18b51ffeb7f62338d580c714cb58b887fbaafbb07058ec97f71b450ab2e1d1d",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "farm-0064",
+      "file": "imported/Tiles/tile_0064.png",
+      "mime": "image/png",
+      "rights": "Kenney Tiny Farm, CC0-1.0. https://kenney.nl/assets/tiny-farm",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-tiny-farm",
+        "sourceFile": "Tiles/tile_0064.png",
+        "sourceHash": "sha256:c146c53431f20ff4470301820230d9cbcaf75f006c6a9ca9954f88d2a8ceb6bf",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/tiny-farm",
+        "styleFamily": "kenney-tiny-farm"
+      }
+    },
+    {
+      "id": "audio-ambient",
+      "file": "audio/ambient.mp3",
+      "mime": "audio/mpeg",
+      "rights": "Zane Little Music, CC0-1.0. https://opengameart.org/content/flowerbed-fields-loop",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "zane-little-flowerbed-fields",
+        "sourceFile": "audio/ambient.mp3",
+        "sourceHash": "sha256:9fed4c4bbd32f5a00ab534d07a3e88b29e11da592f5762412f22ba2125a4dd49",
+        "author": "Zane Little Music",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/flowerbed-fields-loop",
+        "styleFamily": "zane-little-chiptune"
+      }
+    },
+    {
+      "id": "audio-match",
+      "file": "audio/match.mp3",
+      "mime": "audio/mpeg",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/interface-sounds",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-interface-sounds",
+        "sourceFile": "audio/match.mp3",
+        "sourceHash": "sha256:512991c24e5daeaf3ed78616a5444e4d3d86245121f75cc69fe84c4ad53318b3",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+        "styleFamily": "kenney-interface-sounds"
+      }
+    },
+    {
+      "id": "audio-reject",
+      "file": "audio/reject.mp3",
+      "mime": "audio/mpeg",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/interface-sounds",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-interface-sounds",
+        "sourceFile": "audio/reject.mp3",
+        "sourceHash": "sha256:321919c4f4c98286a32dd2d37204d2786608480eaa3dae1978188821f5a7efd1",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+        "styleFamily": "kenney-interface-sounds"
+      }
+    },
+    {
+      "id": "audio-victory",
+      "file": "audio/victory.mp3",
+      "mime": "audio/mpeg",
+      "rights": "MintoDog, CC0-1.0. https://opengameart.org/content/cozy-puzzle-jingle-result",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "mintodog-cozy-puzzle-jingle",
+        "sourceFile": "audio/victory.mp3",
+        "sourceHash": "sha256:7f577c8cbac65dfa1c5b00c3ed75df118ee595b8910b861a18a0e295da9ffbe6",
+        "author": "MintoDog",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/cozy-puzzle-jingle-result",
+        "styleFamily": "cozy-acoustic-audio"
+      }
+    },
+    {
+      "id": "audio-complete",
+      "file": "audio/complete.mp3",
+      "mime": "audio/mpeg",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/music-jingles",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-music-jingles",
+        "sourceFile": "audio/complete.mp3",
+        "sourceHash": "sha256:eb4430e8d08f0c8331bb843a5a24c58ee581a76e8264d55111b41f992bbd1fd8",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/music-jingles",
+        "styleFamily": "kenney-music-jingles"
+      }
+    }
+  ],
+  "tiles": {
+    "carrot": "farm-0008",
+    "corn": "farm-0032",
+    "tomato": "farm-0044",
+    "eggplant": "farm-0020",
+    "pumpkin": "farm-0055"
+  },
+  "audio": {
+    "ambient": "audio-ambient",
+    "match": "audio-match",
+    "reject": "audio-reject",
+    "complete": "audio-victory",
+    "loss": "audio-complete"
+  },
+  "world": [
+    {
+      "id": "edge-left-0",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-left-1",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-left-2",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 96,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-left-3",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 144,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-left-4",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 192,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-left-5",
+      "assetId": "farm-0015",
+      "x": -24,
+      "y": 240,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-0",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-1",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-2",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 96,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-3",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 144,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-4",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 192,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "edge-right-5",
+      "assetId": "farm-0015",
+      "x": 366,
+      "y": 240,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-0",
+      "assetId": "farm-0025",
+      "x": 174,
+      "y": 100,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-1",
+      "assetId": "farm-0025",
+      "x": 174,
+      "y": 132,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-2",
+      "assetId": "farm-0025",
+      "x": 174,
+      "y": 164,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-3",
+      "assetId": "farm-0025",
+      "x": 174,
+      "y": 196,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-4",
+      "assetId": "farm-0025",
+      "x": 174,
+      "y": 228,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "path-end",
+      "assetId": "farm-0037",
+      "x": 174,
+      "y": 260,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-0-0",
+      "assetId": "farm-0060",
+      "x": 16,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-0-1",
+      "assetId": "farm-0061",
+      "x": 64,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-0-2",
+      "assetId": "farm-0062",
+      "x": 112,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-1-0",
+      "assetId": "farm-0060",
+      "x": 16,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-1-1",
+      "assetId": "farm-0061",
+      "x": 64,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "bed-1-2",
+      "assetId": "farm-0062",
+      "x": 112,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "orchard-dead-0",
+      "assetId": "farm-0014",
+      "x": 16,
+      "y": 4,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 1
+    },
+    {
+      "id": "orchard-grown-0",
+      "assetId": "farm-0015",
+      "x": 16,
+      "y": 4,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 1
+    },
+    {
+      "id": "orchard-dead-1",
+      "assetId": "farm-0014",
+      "x": 72,
+      "y": 4,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 1
+    },
+    {
+      "id": "orchard-grown-1",
+      "assetId": "farm-0027",
+      "x": 72,
+      "y": 4,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 1
+    },
+    {
+      "id": "orchard-dead-2",
+      "assetId": "farm-0014",
+      "x": 16,
+      "y": 56,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 1
+    },
+    {
+      "id": "orchard-grown-2",
+      "assetId": "farm-0015",
+      "x": 16,
+      "y": 56,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 1
+    },
+    {
+      "id": "orchard-dead-3",
+      "assetId": "farm-0014",
+      "x": 72,
+      "y": 56,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 1
+    },
+    {
+      "id": "orchard-grown-3",
+      "assetId": "farm-0027",
+      "x": 72,
+      "y": 56,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 1
+    },
+    {
+      "id": "crop-0-0",
+      "assetId": "farm-0029",
+      "x": 16,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "crop-0-1",
+      "assetId": "farm-0041",
+      "x": 64,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "crop-0-2",
+      "assetId": "farm-0066",
+      "x": 112,
+      "y": 132,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "crop-1-0",
+      "assetId": "farm-0029",
+      "x": 16,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "crop-1-1",
+      "assetId": "farm-0041",
+      "x": 64,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "crop-1-2",
+      "assetId": "farm-0066",
+      "x": 112,
+      "y": 196,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 2
+    },
+    {
+      "id": "ruin-0",
+      "assetId": "farm-0077",
+      "x": 224,
+      "y": 42,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 3
+    },
+    {
+      "id": "ruin-1",
+      "assetId": "farm-0014",
+      "x": 288,
+      "y": 42,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 3
+    },
+    {
+      "id": "ruin-2",
+      "assetId": "farm-0077",
+      "x": 224,
+      "y": 106,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 3
+    },
+    {
+      "id": "ruin-3",
+      "assetId": "farm-0026",
+      "x": 288,
+      "y": 106,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0,
+      "hideAt": 3
+    },
+    {
+      "id": "barn-wall-0",
+      "assetId": "farm-0114",
+      "x": 220,
+      "y": 144,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-wall-1",
+      "assetId": "farm-0127",
+      "x": 268,
+      "y": 144,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-wall-2",
+      "assetId": "farm-0116",
+      "x": 316,
+      "y": 144,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-0-0",
+      "assetId": "farm-0093",
+      "x": 220,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-0-1",
+      "assetId": "farm-0094",
+      "x": 268,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-0-2",
+      "assetId": "farm-0095",
+      "x": 316,
+      "y": 0,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-1-0",
+      "assetId": "farm-0105",
+      "x": 220,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-1-1",
+      "assetId": "farm-0106",
+      "x": 268,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-1-2",
+      "assetId": "farm-0107",
+      "x": 316,
+      "y": 48,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-2-0",
+      "assetId": "farm-0117",
+      "x": 220,
+      "y": 96,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-2-1",
+      "assetId": "farm-0118",
+      "x": 268,
+      "y": 96,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "barn-roof-2-2",
+      "assetId": "farm-0119",
+      "x": 316,
+      "y": 96,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 3
+    },
+    {
+      "id": "farmer",
+      "assetId": "farm-0109",
+      "x": 162,
+      "y": 82,
+      "width": 48,
+      "height": 48,
+      "unlockAt": 0
+    },
+    {
+      "id": "hen",
+      "assetId": "farm-0122",
+      "x": 278,
+      "y": 206,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 3
+    },
+    {
+      "id": "produce-crate",
+      "assetId": "farm-0047",
+      "x": 320,
+      "y": 184,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 3
+    },
+    {
+      "id": "pumpkin-decor",
+      "assetId": "farm-0055",
+      "x": 320,
+      "y": 230,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "sunflower-decor",
+      "assetId": "farm-0083",
+      "x": 238,
+      "y": 238,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "barn-path-0",
+      "assetId": "farm-0060",
+      "x": 202,
+      "y": 244,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "barn-path-1",
+      "assetId": "farm-0061",
+      "x": 234,
+      "y": 244,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "barn-path-2",
+      "assetId": "farm-0062",
+      "x": 266,
+      "y": 244,
+      "width": 32,
+      "height": 32,
+      "unlockAt": 0
+    },
+    {
+      "id": "grass-near-path",
+      "assetId": "farm-0064",
+      "x": 144,
+      "y": 22,
+      "width": 16,
+      "height": 16,
+      "unlockAt": 0
+    }
+  ],
+  "seed": 1873
+}

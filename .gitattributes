@@ -1,0 +1,46 @@
+* text=auto eol=lf
+# Preserve the exact downloaded CC0 notices and their recorded source hashes.
+fixtures/projects/License-Kenney.txt -text
+fixtures/compression/animals/LICENSE-art.txt -text
+fixtures/traffic-tycoon/licenses/*.txt -text
+
+# Downloaded Mini Golf source meshes/materials/notices are byte-hashed originals.
+fixtures/mini-golf/models/* -text
+fixtures/mini-golf/licenses/*.txt -text
+# First Move license originals retain their source provenance bytes.
+fixtures/first-move/licenses/*.txt -text
+
+# Every validated fixture is an exact-byte source input, including hidden RGB,
+# original license line endings, authored model files and compressed test cases.
+# -text preserves bytes while keeping normal text diffs available for JSON/OBJ.
+fixtures/** -text
+
+# Preserve downloaded Harvest sources and the exact bytes referenced by provenance.
+assets/kenney-harvest/source/** -text
+
+# Trusted compiled bundles/shells and historical evidence carry exact SHA identities.
+crates/packer/trusted/** -text
+docs/evidence/** -text
+
+# Explicit binary handling: no text conversion or misleading line-based diffs.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.mp4 binary
+*.webm binary
+*.bin binary
+*.wasm binary
+*.zip binary
+*.gz binary
+*.pdf binary
+*.nul binary

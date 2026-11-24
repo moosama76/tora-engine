@@ -1,0 +1,45 @@
+{
+  "name": "tora-playables",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev:editor": "node scripts/serve-editor.mjs",
+    "mcp:tora": "node scripts/lean/native/mcp-server.mjs",
+    "agent": "node scripts/lean/native/agent-cli.mjs",
+    "build:editor": "node scripts/build-editor.mjs",
+    "build:pages-editor": "node scripts/build-pages-editor.mjs",
+    "build:website": "node scripts/build-tora-website.mjs",
+    "browsers:install": "playwright install chromium",
+    "schema:generate": "node scripts/m2/generate-project-v21.mjs",
+    "schema:check": "node scripts/m2/generate-project-v21.mjs --check",
+    "packer:generate": "node scripts/generate-packer-bundle.mjs",
+    "packer:check": "node scripts/generate-packer-bundle.mjs --check",
+    "typecheck": "node scripts/typecheck.mjs",
+    "lint": "eslint packages scripts tests eslint.config.mjs",
+    "test:host": "node --test tests/host/*.test.mjs",
+    "test:editor": "node --test tests/lean/scene-document.test.mjs tests/editor/*.test.mjs",
+    "test:native": "node scripts/lean/native/verify.mjs",
+    "test:mcp": "node --test tests/native/mcp.test.mjs",
+    "test": "npm run test:host && npm run test:editor && npm run test:native",
+    "verify:native": "bash scripts/verify-native.sh",
+    "verify": "npm run verify:native"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/three": "0.183.1",
+    "esbuild": "0.28.2",
+    "eslint": "10.13.0",
+    "playwright": "1.64.1",
+    "three": "0.186.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.2"
+  }
+}

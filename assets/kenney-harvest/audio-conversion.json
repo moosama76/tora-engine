@@ -1,0 +1,72 @@
+{
+  "method": "Sourced audio format conversion only",
+  "browser": "156.0.8078.4",
+  "script": "scripts/lean/native/prepare-harvest-audio.mjs",
+  "cues": [
+    {
+      "id": "audio-match",
+      "role": "match",
+      "sourceId": "kenney-interface-sounds",
+      "input": "source/interface-sounds/Audio/confirmation_001.ogg",
+      "duration": 0.2898125,
+      "file": "audio/match.wav",
+      "sha256": "sha256:af3edb505a18579e2ef0c18841f68810a7a8b25831fd72211ef903081d8517a3",
+      "sourceSha256": "sha256:063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+      "sourceDuration": 0.2898125,
+      "peak": 0.7130444306880236,
+      "clipped": 0
+    },
+    {
+      "id": "audio-reject",
+      "role": "reject",
+      "sourceId": "kenney-interface-sounds",
+      "input": "source/interface-sounds/Audio/error_004.ogg",
+      "duration": 0.1015625,
+      "file": "audio/reject.wav",
+      "sha256": "sha256:6456a50ace1edd8db4909d28ad2b1a5db8ac08a15e827b4ccca9051937d9ac97",
+      "sourceSha256": "sha256:0b574cea597d96507e782ae9764f88482ce49f46e931e57054bf7150047f2d69",
+      "sourceDuration": 0.1015625,
+      "peak": 0.707334041595459,
+      "clipped": 0
+    },
+    {
+      "id": "audio-repair",
+      "role": "repair",
+      "sourceId": "kenney-music-jingles",
+      "input": "source/music-jingles/OGG/jingles_NES/jingles_NES09.ogg",
+      "duration": 0.443875,
+      "file": "audio/repair.wav",
+      "sha256": "sha256:62aa4cfddf12c05db125bf63d34657960b974d37610722914e379e19270ec6dc",
+      "sourceSha256": "sha256:4924318115351d89bb69ab719e514933cc7ecac2947570824ed97d162508819e",
+      "sourceDuration": 0.443875,
+      "peak": 0.5689902305603027,
+      "clipped": 0
+    },
+    {
+      "id": "audio-complete",
+      "role": "complete",
+      "sourceId": "kenney-music-jingles",
+      "input": "source/music-jingles/OGG/jingles_NES/jingles_NES00.ogg",
+      "duration": 1.7578125,
+      "file": "audio/complete.wav",
+      "sha256": "sha256:dc309f2b90270422ad756c39e7b2888863ae5c2e09feabc28bfea4f60fd5d9ea",
+      "sourceSha256": "sha256:1010c9b566d6c090ff03a4aaaf7439e26eb4cc4f20373800d0b7e6a9057b795d",
+      "sourceDuration": 1.7578125,
+      "peak": 0.5387580394744873,
+      "clipped": 0
+    },
+    {
+      "id": "audio-ambient",
+      "role": "ambient",
+      "sourceId": "zane-little-flowerbed-fields",
+      "input": "source/flowerbed-fields/flowerbed_fields.ogg",
+      "duration": 16,
+      "file": "audio/ambient.wav",
+      "sha256": "sha256:815e7e7b87cb1cb2a61e0e54683eb2fea44dddd4b6d9fadc4413c12342612131",
+      "sourceSha256": "sha256:99607b996cc43c1891afcbf7c2c8d8aad1009266cea358d4753e3c50b1332d36",
+      "sourceDuration": 105.931,
+      "peak": 0.40089502930641174,
+      "clipped": 0
+    }
+  ]
+}

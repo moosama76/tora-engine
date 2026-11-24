@@ -1,0 +1,361 @@
+{
+  "format": "tora-native-asset-plan-1",
+  "source": {
+    "id": "kenney-isometric-city-collection",
+    "author": "Kenney",
+    "sourceUrl": "https://kenney.nl/assets/isometric-tiles-city",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "licenseFiles": [
+      "fixtures/traffic-tycoon/licenses/isometric-tiles-city.txt",
+      "fixtures/traffic-tycoon/licenses/isometric-tiles-buildings.txt",
+      "fixtures/traffic-tycoon/licenses/isometric-tiles-landscape.txt",
+      "fixtures/traffic-tycoon/licenses/isometric-tiles-vehicles.txt"
+    ],
+    "attributionRequired": false
+  },
+  "visualDirection": "Sunlit isometric waterfront metropolis with turquoise harbor canal, tree-lined waterfront boulevard with live ambient traffic, multi-story downtown skyline, crosswalks, open-center architectural blueprint road gaps, and an express delivery highway from Depot to Market.",
+  "preparation": "Faithful pixel compositing, PNG-8 alpha quantization, and 4-frame directional sprite packing from verified CC0 Kenney isometric packs.",
+  "projection": {
+    "originX": 408,
+    "originY": 66,
+    "canvasW": 884,
+    "canvasH": 490,
+    "halfW": 66,
+    "halfH": 33,
+    "cols": 7,
+    "rows": 6
+  },
+  "files": [
+    {
+      "id": "city.base",
+      "file": "assets/tora-traffic/imported/city.base.png",
+      "bytes": 21710,
+      "sha256": "sha256:05c630ffdea1293e90da6228fdd411b50c7adb3dbdcdfd767abc6efcfedcc859",
+      "processing": {
+        "kind": "isometric-tile-composite",
+        "sourceFiles": [
+          ".data/T028/originals/isometric-tiles-landscape/PNG/landscapeTiles_067.png",
+          ".data/T028/originals/isometric-tiles-landscape/PNG/landscapeTiles_066.png",
+          "fixtures/traffic-tycoon/assets/city74.png",
+          ".data/T028/originals/isometric-tiles-city/PNG/cityTiles_067.png",
+          "fixtures/traffic-tycoon/assets/city52.png",
+          "fixtures/traffic-tycoon/assets/city73.png",
+          "fixtures/traffic-tycoon/assets/city81.png",
+          "fixtures/traffic-tycoon/assets/city36.png",
+          "fixtures/traffic-tycoon/assets/city57.png",
+          "fixtures/traffic-tycoon/assets/city56.png",
+          "fixtures/traffic-tycoon/assets/city64.png",
+          ".data/T028/originals/isometric-tiles-city/PNG/cityTiles_122.png",
+          ".data/T028/originals/isometric-tiles-city/PNG/cityTiles_126.png"
+        ],
+        "sourceSha256": [
+          "sha256:c48731777960773ae997a50bc3c32740e6adac112230d0a317416bb688d39fd9",
+          "sha256:afd246b92a8818eab8281cc69906ef19942450df78790985fde07d9587fd333d",
+          "sha256:469fc3ae1398d61cd68f7a02dd32c88de963dfd643878ae54ad7344e2ab2e330",
+          "sha256:ad2c037b9851dc89173b50c80bfdbbb711552aacca51f75fe8b442abf9c9c2b7",
+          "sha256:25ef1590bf809ebdc489501d54c222970de6d9f74dd80868840540fa7be69e0a",
+          "sha256:49e6aba3b5128720198f31815dde87afc2e6e794a7373855fc05a90d2a3baa36",
+          "sha256:e648daf0d7f34ab616c00a4e0b8bb08941f0e482f523154a00dbf05ddf34cd28",
+          "sha256:30d29a922c13313d0c7a347cdbfc1fbfae31181b4fbb9a181e9825ca06569e68",
+          "sha256:ceb316a6a60895f85e909cca950423a8e79adfeef774ccc8855a4aafb46cf792",
+          "sha256:cb6a66c8ea0adfc30ef26e96149a065b26e6b3672086639fa0499776cfbef2fc",
+          "sha256:8d89292511d1a817ba5a7b25b65e45e942b617f09a02efdb21219ae84b2f77fa",
+          "sha256:8c897987dc900cd6a5fb9a63eec52b65a1515f4800dfc26861fb067ab5f8b78c",
+          "sha256:d80899723f19acbc65bf5a112da68e5fb8233cd343f8db42c4c9bee1234a452a"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "road.gap1",
+      "file": "assets/tora-traffic/imported/road.gap1.png",
+      "bytes": 1962,
+      "sha256": "sha256:d8a11146a2af2c50e3c04106c4e9d7f5834c6752e580d897acfed17a2bb9ac4b",
+      "processing": {
+        "kind": "isometric-road-patch",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/city81.png"
+        ],
+        "sourceSha256": [
+          "sha256:e648daf0d7f34ab616c00a4e0b8bb08941f0e482f523154a00dbf05ddf34cd28"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "road.gap2",
+      "file": "assets/tora-traffic/imported/road.gap2.png",
+      "bytes": 1895,
+      "sha256": "sha256:31e642cb2b02c6e1a5afedf20652a2c3734c4cfe1fba8175ef82a45a5c535280",
+      "processing": {
+        "kind": "isometric-road-patch",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/city73.png"
+        ],
+        "sourceSha256": [
+          "sha256:49e6aba3b5128720198f31815dde87afc2e6e794a7373855fc05a90d2a3baa36"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "road.gap3",
+      "file": "assets/tora-traffic/imported/road.gap3.png",
+      "bytes": 1974,
+      "sha256": "sha256:d462434799eed511059a3e8c82e74741d7377d746c128a40c12138b5fb25a4fb",
+      "processing": {
+        "kind": "isometric-road-patch",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/city81.png"
+        ],
+        "sourceSha256": [
+          "sha256:e648daf0d7f34ab616c00a4e0b8bb08941f0e482f523154a00dbf05ddf34cd28"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.depot",
+      "file": "assets/tora-traffic/imported/building.depot.png",
+      "bytes": 2395,
+      "sha256": "sha256:4ccbe3b27c9d28a9e5999a0f858a83f20509f4dd3b5f52ec0aa37be4b4c8d322",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building25.png",
+          "fixtures/traffic-tycoon/assets/building84.png"
+        ],
+        "sourceSha256": [
+          "sha256:c7267a6d69ca61dc318229a9c220d829dfcad484da838b70aba0109011b70e55",
+          "sha256:d9cc9fd8dff05a18efa76a24b0ec0e6b6f2d0903aedf3bebb6756b973ca2f771"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.market",
+      "file": "assets/tora-traffic/imported/building.market.png",
+      "bytes": 2618,
+      "sha256": "sha256:62735a83a5bc319a2defea1116ef35d40a353279c300cb9729bea7865ac42a5f",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building18.png",
+          "fixtures/traffic-tycoon/assets/building69.png"
+        ],
+        "sourceSha256": [
+          "sha256:6555b9e8c6fce9784d9863978f6a8a28e68c769c006763c74a8226dc60323572",
+          "sha256:2e7109e87ecd52078a9c19749772dbc38ab13d28c4e1581f26290d19dc98a533"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.cafe",
+      "file": "assets/tora-traffic/imported/building.cafe.png",
+      "bytes": 1768,
+      "sha256": "sha256:44bedae303b01a89c042b501af451f74bff6f6ea6bc32bb1e83ac157a42709ca",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building43.png",
+          "fixtures/traffic-tycoon/assets/building88.png"
+        ],
+        "sourceSha256": [
+          "sha256:463faba51512fb648df969fd5cf02cb8b396781211968c94804863ad9c9cc9f8",
+          "sha256:ea1e8d936bbaf1ed420b57f9f821d12dc5c256d3474a9cb91d5b8204a70bed90"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.office",
+      "file": "assets/tora-traffic/imported/building.office.png",
+      "bytes": 1979,
+      "sha256": "sha256:1f0dfca7ca0db9ce3599db4620b9a3c854cacf210866c3d8c5882e64c8cc2375",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building15.png",
+          "fixtures/traffic-tycoon/assets/building96.png"
+        ],
+        "sourceSha256": [
+          "sha256:2f6a0d0f2f6ababe8ca9f2b224a299a93e6662ab32d42638d4ac5cc66a30f184",
+          "sha256:6f4df540ccec17ea28376cb203b60dfc3b00bc2a7db672f69ad62c53c5091993"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.house",
+      "file": "assets/tora-traffic/imported/building.house.png",
+      "bytes": 1905,
+      "sha256": "sha256:d1a369fd12ae8a6b06d6d195dcdd681d1a67d3bfcce4146e81bca07b57ab100d",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building32.png",
+          "fixtures/traffic-tycoon/assets/building80.png"
+        ],
+        "sourceSha256": [
+          "sha256:e5fbebf8701a3c368cb978bfe43eded585edf58eb0148a61acb227369b74c888",
+          "sha256:d150cc972eab92f4cdcea34a3ce7fe512af34bf18330c7fbfdcdd7cc53b58fa3"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.tower",
+      "file": "assets/tora-traffic/imported/building.tower.png",
+      "bytes": 2510,
+      "sha256": "sha256:fb5925c412905e55af811ee2c64364c94e22089a84a0bf201c80883a1bede454",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building11.png",
+          "fixtures/traffic-tycoon/assets/building84.png"
+        ],
+        "sourceSha256": [
+          "sha256:9230fda45d8c4e91005710bc6d38a2664410250f8462bd6ae05024e30477400a",
+          "sha256:d9cc9fd8dff05a18efa76a24b0ec0e6b6f2d0903aedf3bebb6756b973ca2f771"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.shop",
+      "file": "assets/tora-traffic/imported/building.shop.png",
+      "bytes": 1935,
+      "sha256": "sha256:055ef471ac646336f11f4e4285ee3d4ef7d550d0baa86d27e97f5e02229beec7",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building0.png",
+          "fixtures/traffic-tycoon/assets/building69.png"
+        ],
+        "sourceSha256": [
+          "sha256:d6f183657fb305a7bdce8d7741299b9711492c8c7441ecc806e32b3cd31a3c63",
+          "sha256:2e7109e87ecd52078a9c19749772dbc38ab13d28c4e1581f26290d19dc98a533"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "building.villa",
+      "file": "assets/tora-traffic/imported/building.villa.png",
+      "bytes": 2136,
+      "sha256": "sha256:5ce688db2a30550ee48c9a60e6cc1f32b36241627cc79967ab91881dde7e3585",
+      "processing": {
+        "kind": "isometric-building-stack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/building39.png",
+          "fixtures/traffic-tycoon/assets/building96.png"
+        ],
+        "sourceSha256": [
+          "sha256:3fdfc46bdd2db69bf9839394cbb8f492a403c5a0332c509f1bd788111d66901c",
+          "sha256:6f4df540ccec17ea28376cb203b60dfc3b00bc2a7db672f69ad62c53c5091993"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "prop.tree",
+      "file": "assets/tora-traffic/imported/prop.tree.png",
+      "bytes": 967,
+      "sha256": "sha256:1af07cd59a36de6f4e046a95f2e483b30ec28c5eccd9efc31434fbcec71819ad",
+      "processing": {
+        "kind": "png8-copy",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/tree.png"
+        ],
+        "sourceSha256": [
+          "sha256:3282ef8762d6965ea853bc60ae8035252ca1fc208e0c66e9464ae694d5f7760f"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "prop.lamp",
+      "file": "assets/tora-traffic/imported/prop.lamp.png",
+      "bytes": 833,
+      "sha256": "sha256:103f7d7ff94bae8feff408cf5a0faa277f7883166dbf8f3d0523a8db3a8af29a",
+      "processing": {
+        "kind": "png8-copy",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/lamp.png"
+        ],
+        "sourceSha256": [
+          "sha256:5619774ebbd3a9c270b4fc40edd997459b1da9ac874d8d17059601f98c5b2460"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "vehicle.taxi",
+      "file": "assets/tora-traffic/imported/vehicle.taxi.png",
+      "bytes": 2158,
+      "sha256": "sha256:efff6e7f5de7caf32eb2e502009455e44c2364fa4769a3a888b7ba36f2e3ce96",
+      "processing": {
+        "kind": "iso-4-sprite-pack",
+        "sourceFiles": [
+          "fixtures/traffic-tycoon/assets/taxiSE.png",
+          "fixtures/traffic-tycoon/assets/taxiSW.png",
+          "fixtures/traffic-tycoon/assets/taxiNW.png",
+          "fixtures/traffic-tycoon/assets/taxiNE.png"
+        ],
+        "sourceSha256": [
+          "sha256:c0e21d51d6cc908ace3a166c95f56cf85ed69243750848dc68e47f279d27840e",
+          "sha256:221ba984490965ce8eb80a9061c4acb3b80447533de1ff1abe9a8ca49f56e301",
+          "sha256:60377cfc398a2301c9cdb1fccf6ce783e634075089f47d186892d03f4ae560e6",
+          "sha256:dc4b5b1ef215d030b844d3d5403512e43154fd6f904764288445347c22ea62f1"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "vehicle.police",
+      "file": "assets/tora-traffic/imported/vehicle.police.png",
+      "bytes": 2153,
+      "sha256": "sha256:219a2714dbb5ab192fb1fc1934a093edc9f0eb1edc94ac0da81414feb475cc43",
+      "processing": {
+        "kind": "iso-4-sprite-pack",
+        "sourceFiles": [
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Police/police_SE.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Police/police_SW.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Police/police_NW.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Police/police_NE.png"
+        ],
+        "sourceSha256": [
+          "sha256:ddd985ef4676db731a85f6a97ec4b20e8cba4a51060f0f017059bc1a34e3cb67",
+          "sha256:6d2aa5ca6f293ceaf3886acf6f2d80660a21439a18f732eeb930b9f4d146d106",
+          "sha256:75b0e7ab196680b586761841111eafbfda029e1a0c1a450e438fee0ad7253288",
+          "sha256:b62e75c878070037df4232e2fc2490219683000308897b6f7d8b2c972fcdf791"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    },
+    {
+      "id": "vehicle.cargo",
+      "file": "assets/tora-traffic/imported/vehicle.cargo.png",
+      "bytes": 2210,
+      "sha256": "sha256:78634e15a6a438be558c99037423ba2a09870ee4ca2fe16e3ac0da6b0165541d",
+      "processing": {
+        "kind": "iso-4-sprite-pack",
+        "sourceFiles": [
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Garbage/garbage_SE.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Garbage/garbage_SW.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Garbage/garbage_NW.png",
+          ".data/T028/originals/isometric-tiles-vehicles/PNG/Garbage/garbage_NE.png"
+        ],
+        "sourceSha256": [
+          "sha256:5591ef53c091da7dec9636d810398bf25c07a5198213108eb17f41d577a6fcc4",
+          "sha256:8f67463b02ad808217596dabc22b9fa984b63004d7cdc8c3604af08bf95f668f",
+          "sha256:d75a3fdaebfc413addb76b1b0559317d70deac0b99c10acfe83643697cfb0407",
+          "sha256:589a02c75207ce99dcfa3ddc54e8014b7ba4977d86b0b5e64b248cdfeb68084e"
+        ],
+        "tool": "Pillow faithful compositing + PNG-8 quantization"
+      }
+    }
+  ]
+}

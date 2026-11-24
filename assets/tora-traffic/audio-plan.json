@@ -1,0 +1,125 @@
+{
+  "format": "tora-game-audio-plan-1",
+  "files": [
+    {
+      "id": "traffic.audio.ambient",
+      "role": "ambient",
+      "file": "assets/tora-traffic/audio/ambient.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 64261,
+      "sha256": "sha256:853ec0a6eba5ad33b291f11b7a79b5c2113a7553aa8cac6a5859bdbbd0f35a1c",
+      "durationSec": 16.065313,
+      "trimmedDurationSec": 16.013875,
+      "pitchContour": "indeterminate",
+      "rights": "3xBlast; CC0-1.0; https://opengameart.org/content/7-pop-punk-chiptune-tracks; attribution required: no",
+      "provenance": {
+        "sourceId": "3xblast-pop-punk-chiptune",
+        "sourceFiles": [
+          "assets/tora-traffic/source/now-this-is-a-waterpark.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:d5b88e522728f4ef69efcabf0178c0911968a74cda403ace582e181bd2b062cd"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 32
+      }
+    },
+    {
+      "id": "traffic.audio.tap",
+      "role": "tap",
+      "file": "assets/tora-traffic/audio/tap.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 1567,
+      "sha256": "sha256:6f83172de17fde5a6117923b903a71af963b3e4e666072b4e6a58bb91ecf6a53",
+      "durationSec": 0.261188,
+      "trimmedDurationSec": 0.18975,
+      "pitchContour": "rising",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/interface-sounds; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-interface-sounds",
+        "sourceFiles": [
+          "assets/kenney-harvest/source/interface-sounds/Audio/drop_002.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:4ac4d1cef7e936965cbf795852ca2020300b9e2ba7daa59f2bf4f1f7bf416218"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "traffic.audio.reward",
+      "role": "reward",
+      "file": "assets/tora-traffic/audio/reward.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 2664,
+      "sha256": "sha256:bd94dd1f7d2b0755afafad34989a8c3458115134528169ded8dd3abe2c3cd236",
+      "durationSec": 0.444063,
+      "trimmedDurationSec": 0.370875,
+      "pitchContour": "rising",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/interface-sounds; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-interface-sounds",
+        "sourceFiles": [
+          "assets/kenney-harvest/source/interface-sounds/Audio/maximize_006.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:f050b3bb77cb0b901bc8df43d2cc1872c353aebae10b4030cf8ae681726ad343"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "traffic.audio.win",
+      "role": "win",
+      "file": "assets/tora-traffic/audio/win.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 18338,
+      "sha256": "sha256:0b2daa4adc2c83917cb8671f9a1d3b197b8823f1ef44ccfa2fc2e99935506f37",
+      "durationSec": 3.056313,
+      "trimmedDurationSec": 2.591563,
+      "pitchContour": "rising",
+      "rights": "Fupi; CC0-1.0; https://opengameart.org/content/win-jingle; attribution required: no",
+      "provenance": {
+        "sourceId": "fupi-win-jingle",
+        "sourceFiles": [
+          "assets/free-audio/victory-cc0/win-jingle/WinGrandPiano.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:5a6d682a5d1213a878521d73016431378f95cf9e56e0acb071cdf45b84b1edca"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "traffic.audio.loss",
+      "role": "loss",
+      "file": "assets/tora-traffic/audio/loss.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 5172,
+      "sha256": "sha256:8d79bdd1de4e79c6334fc8125e6e6e2be6382d33ca6f17fc219c2680d83128af",
+      "durationSec": 0.862,
+      "trimmedDurationSec": 0.797438,
+      "pitchContour": "falling",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/music-jingles; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-music-jingles",
+        "sourceFiles": [
+          "assets/kenney-harvest/source/music-jingles/OGG/jingles_PIZZA/jingles_PIZZA11.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:072fe661c6ce8c7672afaf0af51e27533d6effe99d35584b01d864bde800ecc1"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    }
+  ]
+}

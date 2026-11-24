@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "unity-ads-ua-playable",
+  "networkId": "unity-ads",
+  "channelId": "ua-playable",
+  "rulesVersion": "2026-10-20-review-1",
+  "reviewedAt": "2026-11-20",
+  "sources": [
+    {
+      "id": "specs",
+      "url": "https://docs.unity.com/en-us/grow/acquire/creatives/playable/specifications",
+      "title": "Unity Ads UA playable specifications",
+      "checkedAt": "2026-11-20",
+      "notes": "UA source refreshed: host injects MRAID 3; sample queries initial visibility after ready and subscribes to viewableChange. Exchange requirements do not apply."
+    },
+    {
+      "id": "preview",
+      "url": "https://docs.unity.com/en-us/grow/acquire/creatives/creative-packs/test",
+      "title": "Unity Ads Ad Testing procedure",
+      "checkedAt": "2026-11-20",
+      "notes": "Public mobile preview instructions reviewed; not executed."
+    }
+  ],
+  "rules": {
+    "uploadSize": {
+      "status": "verified",
+      "value": {
+        "limitBytes": 5000000,
+        "operator": "<",
+        "byteBasis": "conservative-decimal-mb"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Strict comparator preserves under; decimal byte conversion is conservative local policy."
+    },
+    "packaging": {
+      "status": "verified",
+      "value": {
+        "kind": "single-html",
+        "entryFile": "index.html",
+        "minified": true
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Dedicated UA entry and inlining/minification requirements."
+    },
+    "inline": {
+      "status": "verified",
+      "value": {
+        "requireInlineAssets": true,
+        "externalRequests": "forbidden",
+        "requiredHostScripts": [],
+        "hostExceptions": []
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "UA host injects MRAID; no script-tag exception borrowed from Exchange. Optional analytics allowance is not implemented."
+    },
+    "mraid": {
+      "status": "verified",
+      "value": {
+        "version": "3.0",
+        "ready": "ready-event-or-state-not-loading",
+        "clickApi": "mraid.open"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "UA specifies MRAID 3 and CTA method; ready gating is conservative local policy."
+    },
+    "autoplay": {
+      "status": "verified",
+      "value": {
+        "audio": "muted-until-first-interaction",
+        "onHidden": "mute-and-pause",
+        "timerStart": "first-interaction"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Local muted-first-interaction and hidden-pause safety policy."
+    },
+    "firstClick": {
+      "status": "verified",
+      "value": "distinct-cta-only",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Deliberate CTA only; no automatic redirect."
+    },
+    "viewability": {
+      "status": "verified",
+      "value": {
+        "policy": "ready-and-visible",
+        "requiredEvents": [
+          "viewableChange"
+        ],
+        "allowInitialStateQuery": true
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "UA example registers viewableChange and queries isViewable after ready; hidden play pauses. Updated from the earlier event-only interpretation."
+    },
+    "orientations": {
+      "status": "verified",
+      "value": "both",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Both orientations selected for UA."
+    },
+    "preview": {
+      "status": "verified",
+      "value": {
+        "url": "https://docs.unity.com/en-us/grow/acquire/creatives/creative-packs/test",
+        "instructions": "Use Ad Testing for Unity Ads on iOS/Android. Host the exact index.html at an accessible HTTPS .html URL with Access-Control-Allow-Origin: *, or use the UA dashboard. Scan its QR code and check gameplay, orientations, background/resume and one deliberate CTA after gameplay. No official preview run is implied by rule review."
+      },
+      "sources": [
+        "preview"
+      ],
+      "basis": "public-documentation",
+      "notes": "Public procedure only; no preview result claimed."
+    },
+    "companionAssets": {
+      "status": "verified",
+      "value": [],
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Single playable file scope; campaign setup is separate."
+    }
+  },
+  "additionalRules": [],
+  "unresolved": []
+}

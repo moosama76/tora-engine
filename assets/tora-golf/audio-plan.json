@@ -1,0 +1,149 @@
+{
+  "format": "tora-game-audio-plan-1",
+  "files": [
+    {
+      "id": "golf.audio.ambient",
+      "role": "ambient",
+      "file": "assets/tora-golf/audio/ambient.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 64261,
+      "sha256": "sha256:17ef1ab22d7d568a697fc2e558aec18800829d364cca1cd6ac6278b50239e180",
+      "durationSec": 16.065313,
+      "trimmedDurationSec": 15.991188,
+      "pitchContour": "indeterminate",
+      "rights": "Tarush Singhal; CC0-1.0; https://opengameart.org/content/happy-ukelele-island-surfing-theme; attribution required: no",
+      "provenance": {
+        "sourceId": "tarush-singhal-happy-ukelele",
+        "sourceFiles": [
+          "assets/free-audio/cozy-warm/source/ukele.mp3"
+        ],
+        "sourceHashes": [
+          "sha256:371bfc606045dbaadc234696049d474f1b3473dc336fda8d0e183c17d9f1533f"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 32
+      }
+    },
+    {
+      "id": "golf.audio.strike",
+      "role": "tap",
+      "file": "assets/tora-golf/audio/strike.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 470,
+      "sha256": "sha256:a2f123069d192c8a8b71e644a302c3cd49e23b60701366515179e967418a0365",
+      "durationSec": 0.078375,
+      "trimmedDurationSec": 0.057438,
+      "pitchContour": "indeterminate",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/interface-sounds; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-interface-sounds",
+        "sourceFiles": [
+          "fixtures/mini-golf/audio/strike.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:2fa929138bc3a0f432696588f66eac94b8f6d463905ec8808c6461ce4b054292"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "golf.audio.bank",
+      "role": "bank",
+      "file": "assets/tora-golf/audio/bank.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 783,
+      "sha256": "sha256:8624dbf30e66bb863f52473c5cd42768cfc0d30de98f29defc407a2bd9ac8589",
+      "durationSec": 0.130625,
+      "trimmedDurationSec": 0.065187,
+      "pitchContour": "indeterminate",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/interface-sounds; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-interface-sounds",
+        "sourceFiles": [
+          "fixtures/mini-golf/audio/bank.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:0253d5f7d8d2afbbc370eac2a4539bb844239f0c98343e516d376b137c06d27c"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "golf.audio.cup",
+      "role": "reward",
+      "file": "assets/tora-golf/audio/cup.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 2351,
+      "sha256": "sha256:9fa0f0a699d50248c94bbbcca7a78da3bde92b89cad66c2c91fa694373591dc7",
+      "durationSec": 0.391813,
+      "trimmedDurationSec": 0.305875,
+      "pitchContour": "flat",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/interface-sounds; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-interface-sounds",
+        "sourceFiles": [
+          "fixtures/mini-golf/audio/cup.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:3091bf0be0497f825769ee0733ca7bdc3bcd59bd6c6e8f2ba8f93d580ff38022"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "golf.audio.win",
+      "role": "win",
+      "file": "assets/tora-golf/audio/win.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 12068,
+      "sha256": "sha256:8f137d695efc6b77306b2b8eed32196efecb499950ab75b9c747f9580a57aa39",
+      "durationSec": 2.011437,
+      "trimmedDurationSec": 1.9605,
+      "pitchContour": "indeterminate",
+      "rights": "Listener; CC0-1.0; https://opengameart.org/content/win-sound-effect; attribution required: no",
+      "provenance": {
+        "sourceId": "listener-win-sound-effect",
+        "sourceFiles": [
+          "assets/free-audio/victory-cc0/win-sound-effect/Win sound.wav"
+        ],
+        "sourceHashes": [
+          "sha256:e4bb5377bf9490ca9bc5bc4d3d957f1ec74b930450d8ad578d15fe1c4f319caf"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    },
+    {
+      "id": "golf.audio.loss",
+      "role": "loss",
+      "file": "assets/tora-golf/audio/loss.mp3",
+      "mime": "audio/mpeg",
+      "bytes": 8620,
+      "sha256": "sha256:b6efabc77dd9b15e012f4c5cbe727ab4bc54ba6cd6f647522dccfae74786ee30",
+      "durationSec": 1.43675,
+      "trimmedDurationSec": 1.373687,
+      "pitchContour": "falling",
+      "rights": "Kenney; CC0-1.0; https://kenney.nl/assets/music-jingles; attribution required: no",
+      "provenance": {
+        "sourceId": "kenney-music-jingles",
+        "sourceFiles": [
+          "assets/kenney-harvest/source/music-jingles/OGG/jingles_STEEL/jingles_STEEL14.ogg"
+        ],
+        "sourceHashes": [
+          "sha256:a24f6f6f76063d8e0442b15e660896ec4dd11a7be45d19f71088408e002c99f8"
+        ],
+        "license": "CC0-1.0",
+        "tool": "GStreamer lamemp3enc",
+        "bitrateKbps": 48
+      }
+    }
+  ]
+}

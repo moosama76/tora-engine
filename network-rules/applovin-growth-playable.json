@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "applovin-growth-playable",
+  "networkId": "applovin",
+  "channelId": "growth-playable",
+  "rulesVersion": "2026-11-24-review-3",
+  "reviewedAt": "2026-11-24",
+  "sources": [
+    {
+      "id": "specs",
+      "url": "https://support.applovin.com/en/growth/promoting-your-apps/welcome-to-applovin/creative-specs-and-guidelines",
+      "title": "AppLovin Growth creative specifications",
+      "checkedAt": "2026-11-24",
+      "notes": "Public HTML/MRAID/embedding requirements rechecked for native AppLovin wiring. Implementation is locally tested, not evidence of upload or SDK acceptance."
+    },
+    {
+      "id": "preview",
+      "url": "https://p.applov.in/playablePreview?create=1",
+      "title": "AppLovin Playable Preview",
+      "checkedAt": "2026-11-24",
+      "notes": "Public tool instructions reviewed. The current preview page contains the standard playable specifications and no separate Runtime Analysis requirement."
+    }
+  ],
+  "rules": {
+    "uploadSize": {
+      "status": "verified",
+      "value": {
+        "limitBytes": 5000000,
+        "operator": "<=",
+        "byteBasis": "conservative-decimal-mb"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Inclusive threshold; decimal byte conversion is conservative local policy."
+    },
+    "packaging": {
+      "status": "verified",
+      "value": {
+        "kind": "single-html",
+        "entryFile": "index.html",
+        "minified": true
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Single HTML documented; filename and minification are local defaults."
+    },
+    "inline": {
+      "status": "verified",
+      "sources": [
+        "specs",
+        "preview"
+      ],
+      "value": {
+        "requireInlineAssets": true,
+        "externalRequests": "forbidden",
+        "requiredHostScripts": [],
+        "hostExceptions": []
+      },
+      "basis": "conservative-local-policy",
+      "notes": "Current official specifications prohibit external resources/calls. Strict target emits no script exception and requires host-injected MRAID; actual SDK provisioning remains unverified."
+    },
+    "mraid": {
+      "status": "verified",
+      "value": {
+        "version": "2.0",
+        "ready": "ready-event-or-state-not-loading",
+        "clickApi": "mraid.open"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Version, readiness and CTA method documented."
+    },
+    "autoplay": {
+      "status": "verified",
+      "value": {
+        "audio": "muted-until-first-interaction",
+        "onHidden": "mute-and-pause",
+        "timerStart": "first-interaction"
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Interaction starts timing; hidden audio must stop. Pause progression is local policy."
+    },
+    "firstClick": {
+      "status": "verified",
+      "value": "distinct-cta-only",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "No first-touch or automatic store redirect."
+    },
+    "viewability": {
+      "status": "verified",
+      "value": {
+        "policy": "ready-and-visible",
+        "requiredEvents": [
+          "viewableChange"
+        ],
+        "allowInitialStateQuery": true
+      },
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Local conservative lifecycle gating."
+    },
+    "orientations": {
+      "status": "verified",
+      "value": "both",
+      "sources": [
+        "specs"
+      ],
+      "basis": "public-documentation",
+      "notes": "Both orientations documented."
+    },
+    "preview": {
+      "status": "verified",
+      "value": {
+        "url": "https://p.applov.in/playablePreview?create=1",
+        "instructions": "Load HTML in the public preview, test orientation and deliberate CTA, then repeat with its mobile preview apps. Save results."
+      },
+      "sources": [
+        "preview"
+      ],
+      "basis": "public-documentation",
+      "notes": "Procedure reviewed, not executed."
+    },
+    "companionAssets": {
+      "status": "verified",
+      "value": [],
+      "sources": [
+        "specs"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "This profile covers the single playable upload, not the entire campaign."
+    }
+  },
+  "additionalRules": [],
+  "unresolved": []
+}

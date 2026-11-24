@@ -1,0 +1,172 @@
+{
+  "format": "tora-native-3d-asset-plan-1",
+  "source": {
+    "id": "kenney-minigolf-kit",
+    "author": "Kenney",
+    "sourceUrl": "https://kenney.nl/assets/minigolf-kit",
+    "license": "CC0-1.0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "attributionRequired": false
+  },
+  "visualDirection": "Exact sunlit 3D Three.js WebGL2 Mini Golf Challenge diorama using Kenney CC0 minigolf-kit 3D geometry, continuous fairway with circular cup cutout, animated pennant, bank rails, moving gate, and uphill ramp.",
+  "files": [
+    {
+      "id": "golf.colormap",
+      "mime": "image/png",
+      "file": "assets/tora-golf/3d/colormap.png",
+      "bytes": 8706,
+      "sha256": "sha256:0d4947d34ff32acf4a359c7f22ca784e057e7e72f622170a9a77b6fc88fdb70e",
+      "processing": {
+        "kind": "png-verbatim-copy",
+        "sourceFile": "fixtures/mini-golf/models/Textures/colormap.png",
+        "sourceSha256": "sha256:0d4947d34ff32acf4a359c7f22ca784e057e7e72f622170a9a77b6fc88fdb70e"
+      }
+    },
+    {
+      "id": "mesh.open",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/open.t3d",
+      "bytes": 928,
+      "vertexCount": 24,
+      "indexCount": 72,
+      "sha256": "sha256:fda1da1eab4cbf4b1d05b9b93a50356f20434eb72b32e23c15a46ff46a2da0c4",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/open.obj",
+        "sourceSha256": "sha256:a6e4fe78f690511c7c4f3c25c0aa3f97c196f1a15b2770330ba2fdf49e8f8b98"
+      }
+    },
+    {
+      "id": "mesh.obstacle-block",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/obstacle-block.t3d",
+      "bytes": 2920,
+      "vertexCount": 72,
+      "indexCount": 300,
+      "sha256": "sha256:6c4e0d2f0690a034cf41e585c0817eb08a16660533fcabcb5e4ecff302729c30",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/obstacle-block.obj",
+        "sourceSha256": "sha256:62d9fe81a74fdbc08f92403923a660e650f5ae96d46cd8ed90bc3a06d68c66b6"
+      }
+    },
+    {
+      "id": "mesh.structure-gate",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/structure-gate.t3d",
+      "bytes": 2336,
+      "vertexCount": 56,
+      "indexCount": 264,
+      "sha256": "sha256:d96ac2e002785075b4b16d6842094cb6717d669c260de8446a081004500a6340",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/structure-gate.obj",
+        "sourceSha256": "sha256:7f12223eff57cdd23da8f398a7612f293cc16e864a432feedbf7dd356fc5ea10"
+      }
+    },
+    {
+      "id": "mesh.castle",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/castle.t3d",
+      "bytes": 9536,
+      "vertexCount": 230,
+      "indexCount": 1080,
+      "sha256": "sha256:034d1a82e4dd452377f507a21cdb4388a5c29856e9f8a0fe248e82a4452f11ab",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/castle.obj",
+        "sourceSha256": "sha256:9973466cab8dab6bdffd064f2bf14a3e301ea6d4e198e4dca24fd38054c6ec04"
+      }
+    },
+    {
+      "id": "mesh.flag-red",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/flag-red.t3d",
+      "bytes": 4376,
+      "vertexCount": 104,
+      "indexCount": 516,
+      "sha256": "sha256:4efb42be1a92e444e783be12a8af5df9952c6854a9df70f2f2d3cfcf68b5416c",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/flag-red.obj",
+        "sourceSha256": "sha256:7dc5c97504ed651884d0a27675244aeec7893ee05929e0e588919350833c8130"
+      }
+    },
+    {
+      "id": "mesh.ball-blue",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/ball-blue.t3d",
+      "bytes": 16096,
+      "vertexCount": 288,
+      "indexCount": 3432,
+      "sha256": "sha256:f0d1bd6faed0c1dc0cdc4f96be9115f95f1c0b7044f6edf51f480f9c3fce382b",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/ball-blue.obj",
+        "sourceSha256": "sha256:93b7783b238aab06d2c08dca723254cfba4423b9f5c28bb2f4fde89a41fe40c1"
+      }
+    },
+    {
+      "id": "mesh.support",
+      "mime": "model/tora-mesh",
+      "file": "assets/tora-golf/3d/support.t3d",
+      "bytes": 1376,
+      "vertexCount": 32,
+      "indexCount": 168,
+      "sha256": "sha256:3ccd5e055399ae72d50a6186248fe97090a7510f8eb2ed640f8008337a9f39c2",
+      "processing": {
+        "kind": "obj-to-tora3dm1",
+        "sourceFile": "fixtures/mini-golf/models/support.obj",
+        "sourceSha256": "sha256:8e4ea56018d1471442c9e45f81cd62b922d1b8736577281b73b0e012b5467df3"
+      }
+    },
+    {
+      "id": "golf.flag",
+      "mime": "image/png",
+      "file": "assets/tora-golf/3d/golf.flag.png",
+      "bytes": 1957,
+      "sha256": "sha256:8378731481747bac77265b98d509ce879efad8c557dbdfd11ff07e32485ba20e",
+      "processing": {
+        "kind": "png8-quantize",
+        "sourceFile": "assets/tora-golf/imported/golf.flag.png",
+        "sourceSha256": "sha256:657a729ed384bcd862474472a9e137eb3408ac573a06a8801db98cfab7000987"
+      }
+    },
+    {
+      "id": "golf.club",
+      "mime": "image/png",
+      "file": "assets/tora-golf/3d/golf.club.png",
+      "bytes": 1904,
+      "sha256": "sha256:38397a7ba9481eae067f0feb5318a9f5ff602d02b595e395b4d3741ac3c504d4",
+      "processing": {
+        "kind": "png8-quantize",
+        "sourceFile": "assets/tora-golf/imported/golf.club.png",
+        "sourceSha256": "sha256:7b2ff000a67d69a2876c72dca3033e369c6d471b697d92b2fd1c1754eb617718"
+      }
+    },
+    {
+      "id": "golf.castle",
+      "mime": "image/png",
+      "file": "assets/tora-golf/3d/golf.castle.png",
+      "bytes": 3953,
+      "sha256": "sha256:c7d4144581a5e431f9780021194a9e5e69661b1a19cf6ccf417b2bbe914af380",
+      "processing": {
+        "kind": "png8-quantize",
+        "sourceFile": "assets/tora-golf/imported/golf.castle.png",
+        "sourceSha256": "sha256:113818b2f7934d33a9d31749aa61c023aaf523816febcb3b3531eb7843cb51a3"
+      }
+    },
+    {
+      "id": "golf.windmill",
+      "mime": "image/png",
+      "file": "assets/tora-golf/3d/golf.windmill.png",
+      "bytes": 4253,
+      "sha256": "sha256:f8d337719048212383df415164a6ff7eee736fd26943d1b308a248ce8458f0c6",
+      "processing": {
+        "kind": "png8-quantize",
+        "sourceFile": "assets/tora-golf/imported/golf.windmill.png",
+        "sourceSha256": "sha256:08f1d5610a0c2d32de38b022028529c8102a4da3c08a419405df53104e7b93f1"
+      }
+    }
+  ]
+}

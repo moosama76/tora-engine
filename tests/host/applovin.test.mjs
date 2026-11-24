@@ -1,0 +1,28 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {Buffer} from "node:buffer";
+import {build} from "esbuild";
+const built=await build({entryPoints:["packages/adapters/src/applovin.ts"],bundle:true,platform:"node",format:"esm",write:false});
+const {createAppLovinBridge}=await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].text).toString("base64")}`);
+const url="https://play.google.com/store/apps/details?id=com.playablelab.merge";
+function host(state="loading",visible=false){const listeners=new Map(),calls=[];let closed=false;const mraid={getState(){calls.push("getState");return state;},isViewable(){assert.notEqual(state,"loading");calls.push("isViewable");return visible;},addEventListener(name,fn){calls.push(`add:${name}`);if(!listeners.has(name))listeners.set(name,new Set());listeners.get(name).add(fn);},removeEventListener(name,fn){calls.push(`remove:${name}`);listeners.get(name)?.delete(fn);},open(value){assert.notEqual(state,"loading");assert.equal(visible,true);assert.equal(closed,false);calls.push(["open",value]);}};
+return{mraid,calls,count:()=>[...listeners.values()].reduce((n,s)=>n+s.size,0),emit(name,...args){if(name==="ready")state="default";if(name==="viewableChange")visible=args[0];if(name==="stateChange"&&args[0]==="hidden")closed=true;for(const fn of [...(listeners.get(name)??[])])fn(...args);}};}
+test("MRAID waits for ready before viewability query; one init/subscription set; CTA is gated",async()=>{const h=host(),b=createAppLovinBridge({getHost:()=>h.mraid});const first=b.init();assert.equal(b.init(),first);assert.equal(b.isReady(),false);assert.ok(!h.calls.includes("isViewable"));assert.throws(()=>b.openStore(url));h.emit("ready");await first;assert.equal(b.isReady(),true);assert.equal(b.isVisible(),false);assert.equal(h.count(),4);assert.throws(()=>b.openStore(url));h.emit("viewableChange",true);b.openStore(url);assert.deepEqual(h.calls.at(-1),["open",url]);assert.throws(()=>b.openStore("javascript:alert(1)"));b.destroy();b.destroy();assert.equal(h.count(),0);});
+test("already ready host initializes without waiting for a repeated ready event",async()=>{const h=host("default",true),b=createAppLovinBridge({getHost:()=>h.mraid});await b.init();assert.equal(b.isVisible(),true);h.emit("ready");assert.equal(h.calls.filter(c=>c==="isViewable").length,1);b.destroy();});
+test("late host injection is bounded and does not initialize twice",async()=>{const h=host("default",true);let current;const b=createAppLovinBridge({getHost:()=>current,pollMs:1,timeoutMs:1000});const p=b.init();current=h.mraid;await p;assert.equal(h.count(),4);b.destroy();});
+test("host absence and method exceptions reject initialization and clean up",async()=>{for(const h of [undefined,{...host().mraid,getState(){throw Error("host fault");}}]){const b=createAppLovinBridge({getHost:()=>h,timeoutMs:5});await assert.rejects(b.init());assert.equal(b.isClosed(),true);assert.equal(b.isReady(),false);b.destroy();}});
+test("close/destroy during pending init settles once and removes every listener",async()=>{for(const close of [false,true]){const h=host(),b=createAppLovinBridge({getHost:()=>h.mraid,timeoutMs:5});const p=b.init();if(close)h.emit("stateChange","hidden");else b.destroy();await assert.rejects(p);assert.equal(b.isClosed(),true);assert.equal(h.count(),0);assert.equal(b.init(),p);b.destroy();}});
+test("synchronous host callbacks and teardown during registration are safe",async()=>{const h=host("default",true),original=h.mraid.addEventListener;let b;h.mraid.addEventListener=(name,fn)=>{original(name,fn);if(name==="ready")fn();if(name==="sizeChange")b.destroy();};b=createAppLovinBridge({getHost:()=>h.mraid});await assert.rejects(b.init());assert.equal(h.count(),0);assert.equal(b.isReady(),false);});
+test("invalid viewability is fatal and host closure is broadcast once",async()=>{const h=host("default",true),b=createAppLovinBridge({getHost:()=>h.mraid});let closed=0;b.onClosed(()=>closed++);await b.init();h.emit("viewableChange","true");h.emit("stateChange","hidden");assert.equal(b.isClosed(),true);assert.equal(closed,1);assert.equal(h.count(),0);b.destroy();});
+test("resize notifications require readiness and stop after destroy",async()=>{const h=host();let n=0;const b=createAppLovinBridge({getHost:()=>h.mraid,onResize:()=>n++});const p=b.init();h.emit("sizeChange");assert.equal(n,0);h.emit("ready");await p;h.emit("sizeChange");assert.equal(n,1);b.destroy();h.emit("sizeChange");assert.equal(n,1);});
+test("open errors propagate with no navigation fallback",async()=>{const h=host("default",true);h.mraid.open=()=>{throw Error("open failed");};const b=createAppLovinBridge({getHost:()=>h.mraid});await b.init();assert.throws(()=>b.openStore(url),/open failed/);assert.equal(b.isReady(),true);b.destroy();});
+test("synchronous destruction from lookup, state, viewability and late registration leaves no host listeners",async()=>{
+ for(const point of ["lookup","state","viewability","late-registration"]){const h=host("default",true);let b;
+  const state=h.mraid.getState,viewability=h.mraid.isViewable,add=h.mraid.addEventListener;
+  if(point==="state")h.mraid.getState=()=>{b.destroy();return state();};
+  if(point==="viewability")h.mraid.isViewable=()=>{b.destroy();return viewability();};
+  if(point==="late-registration")h.mraid.addEventListener=(name,fn)=>{b.destroy();add(name,fn);};
+  b=createAppLovinBridge({getHost:()=>{if(point==="lookup")b.destroy();return h.mraid;}});
+  await assert.rejects(b.init());assert.equal(h.count(),0,point);assert.equal(b.isReady(),false);b.destroy();
+ }
+});

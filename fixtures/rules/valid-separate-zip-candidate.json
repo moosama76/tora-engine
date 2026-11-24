@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "mintegral-appgrowth-zip-upload",
+  "networkId": "mintegral",
+  "channelId": "appgrowth-zip-upload",
+  "rulesVersion": "2026-10-17-review-1",
+  "reviewedAt": "2026-10-17",
+  "sources": [
+    {
+      "id": "assets",
+      "url": "https://helpcenter.mintegral.com/en/docs/asset-specs",
+      "title": "Mintegral AppGrowth asset specifications",
+      "checkedAt": "2026-10-17",
+      "notes": "Single HTML row and companion artwork documented."
+    },
+    {
+      "id": "upload",
+      "url": "https://helpcenter.mintegral.com/en/docs/creative-guide-step-by-step/creative-review-process-guide",
+      "title": "Mintegral creative upload guide",
+      "checkedAt": "2026-10-17",
+      "notes": "Separate guide lists URL/ZIP upload; exact selected workflow unresolved."
+    },
+    {
+      "id": "preview",
+      "url": "https://helpcenter.mintegral.com/en/docs/playable-ad-guide",
+      "title": "Mintegral playable testing guide",
+      "checkedAt": "2026-10-17",
+      "notes": "Linked Mindworks guide redirects to Playturbo; readable API instructions unavailable."
+    }
+  ],
+  "rules": {
+    "uploadSize": {
+      "status": "unverified",
+      "reason": "Nominal asset threshold known; exact selected upload workflow and comparator still require confirmation.",
+      "sources": [
+        "assets",
+        "upload"
+      ],
+      "candidate": {
+        "limitBytes": 5000000,
+        "operator": "<=",
+        "byteBasis": "conservative-decimal-mb"
+      }
+    },
+    "packaging": {
+      "status": "unverified",
+      "reason": "HTML asset listing and URL/ZIP upload instructions do not establish the selected submission path.",
+      "sources": [
+        "assets",
+        "upload"
+      ],
+      "candidate": {
+        "kind": "zip",
+        "entryFile": "index.html",
+        "flatRoot": true
+      }
+    },
+    "inline": {
+      "status": "unverified",
+      "reason": "Exact script references and SDK exceptions are not confirmed.",
+      "sources": [
+        "preview"
+      ]
+    },
+    "mraid": {
+      "status": "unverified",
+      "reason": "Do not borrow MRAID version or click API from other networks.",
+      "sources": [
+        "preview"
+      ]
+    },
+    "autoplay": {
+      "status": "unverified",
+      "reason": "Confirm selected-channel lifecycle behavior before review.",
+      "sources": [
+        "preview"
+      ],
+      "candidate": {
+        "audio": "muted-until-first-interaction",
+        "onHidden": "mute-and-pause",
+        "timerStart": "first-interaction"
+      }
+    },
+    "firstClick": {
+      "status": "unverified",
+      "reason": "Project requires deliberate CTA, but the official channel integration is unresolved.",
+      "sources": [
+        "preview"
+      ],
+      "candidate": "distinct-cta-only"
+    },
+    "viewability": {
+      "status": "unverified",
+      "reason": "Exact host readiness and visibility events are unresolved.",
+      "sources": [
+        "preview"
+      ]
+    },
+    "orientations": {
+      "status": "unverified",
+      "reason": "Asset wording does not settle selected-channel orientation requirements.",
+      "sources": [
+        "assets"
+      ],
+      "candidate": "both"
+    },
+    "preview": {
+      "status": "unverified",
+      "reason": "Public guide redirect yielded no readable API contract; obtain official tester instructions.",
+      "sources": [
+        "preview"
+      ],
+      "candidate": {
+        "url": "https://www.playturbo.com/review/doc",
+        "instructions": "Obtain selected workflow and current official API/test steps from Mintegral support; preserve Test Success evidence when later executed."
+      }
+    },
+    "companionAssets": {
+      "status": "verified",
+      "value": [
+        {
+          "id": "app-icon",
+          "scope": "campaign",
+          "dimensions": [
+            {
+              "width": 512,
+              "height": 512
+            }
+          ],
+          "formats": [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp"
+          ],
+          "size": {
+            "limitBytes": 5000000,
+            "operator": "<=",
+            "byteBasis": "conservative-decimal-mb"
+          }
+        },
+        {
+          "id": "main-image",
+          "scope": "campaign",
+          "dimensions": [
+            {
+              "width": 1200,
+              "height": 627
+            },
+            {
+              "width": 1200,
+              "height": 628
+            }
+          ],
+          "formats": [
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "bmp"
+          ],
+          "size": {
+            "limitBytes": 5000000,
+            "operator": "<=",
+            "byteBasis": "conservative-decimal-mb"
+          }
+        }
+      ],
+      "sources": [
+        "assets"
+      ],
+      "basis": "conservative-local-policy",
+      "notes": "Campaign artwork is separate from playable upload bytes; decimal limits are conservative."
+    }
+  },
+  "additionalRules": [],
+  "unresolved": [
+    "Confirm one actual AppGrowth single-HTML submission workflow; ZIP must be a distinct profile.",
+    "Obtain documented readiness, visibility and install API contract plus the selected official tester."
+  ]
+}

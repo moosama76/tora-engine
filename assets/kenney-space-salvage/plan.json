@@ -1,0 +1,407 @@
+{
+  "format": "tora-star-salvage-plan-1",
+  "seed": 9173,
+  "firstHintSeconds": 0.8,
+  "rewardRecipe": {
+    "id": "salvage-reward-1",
+    "variant": "seeded"
+  },
+  "sprites": {
+    "ship": "salvage-ship",
+    "core": "salvage-core",
+    "hazard": "salvage-hazard",
+    "backdrop": "salvage-backdrop"
+  },
+  "coreVariants": [
+    "salvage-core",
+    "salvage-core-alt"
+  ],
+  "hazardVariants": [
+    "salvage-hazard",
+    "salvage-hazard-alt"
+  ],
+  "bay": [
+    {
+      "id": "bay-station",
+      "assetId": "salvage-bay",
+      "unlockAt": 0
+    },
+    {
+      "id": "bay-thrusters",
+      "assetId": "salvage-engine",
+      "unlockAt": 1
+    },
+    {
+      "id": "bay-shield",
+      "assetId": "salvage-shield-2",
+      "unlockAt": 2
+    },
+    {
+      "id": "bay-core",
+      "assetId": "salvage-shield-3",
+      "unlockAt": 3
+    }
+  ],
+  "audio": {
+    "ambient": "salvage-audio-ambient",
+    "catch": "salvage-audio-catch",
+    "repair": "salvage-audio-repair",
+    "complete": "salvage-audio-complete",
+    "loss": "salvage-audio-loss",
+    "reject": "salvage-audio-reject"
+  },
+  "assets": [
+    {
+      "id": "salvage-backdrop",
+      "file": "imported/Backgrounds/darkPurple.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "Backgrounds/darkPurple.png",
+        "sourceHash": "sha256:8245e3d8c5341981135b1699de877fdc994e52cc180ad63ebc18948f63241e61",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-ship",
+      "file": "imported/PNG/playerShip1_blue.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/playerShip1_blue.png",
+        "sourceHash": "sha256:648ec1635979fb867d08bfd0c56f011d6559dd953a13c73109c6186a3069f7ee",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-thruster",
+      "file": "imported/PNG/Effects/fire03.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Effects/fire03.png",
+        "sourceHash": "sha256:13e53881d96cadc44e4c7f6f9004900233b66629d14c2faf6b811f6b210b0269",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-shield-1",
+      "file": "imported/PNG/Effects/shield1.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Effects/shield1.png",
+        "sourceHash": "sha256:b85d7d980a28359484023812275a580cf627bd242d0f8cb4194e0b9b95b0365b",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-shield-2",
+      "file": "imported/PNG/Effects/shield2.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Effects/shield2.png",
+        "sourceHash": "sha256:ffba2c725dcbcf3f9269995cbe4c2057c5760487c1b633cf11a31f71099efb97",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-shield-3",
+      "file": "imported/PNG/Effects/shield3.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Effects/shield3.png",
+        "sourceHash": "sha256:163e95197fc734e1f99c54661691022eecdd9534123cbb2a28b287065ea4d5cc",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-core",
+      "file": "imported/PNG/Power-ups/powerupYellow_star.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Power-ups/powerupYellow_star.png",
+        "sourceHash": "sha256:9d14ae684ec7905f786372a86f74b14c96495224454133fca23feedd4d6a1edd",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-core-alt",
+      "file": "imported/PNG/Power-ups/star_gold.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Power-ups/star_gold.png",
+        "sourceHash": "sha256:3f5a0475047029cd6253b32a968b02f1ec1285acd8ce631d03dabddfcefba3c0",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-hazard",
+      "file": "imported/PNG/Meteors/meteorBrown_med1.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Meteors/meteorBrown_med1.png",
+        "sourceHash": "sha256:1ed498b78b7ad51655f3b345fbe002e2e6499137af369259a955b7664232b9ae",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-hazard-alt",
+      "file": "imported/PNG/Meteors/meteorGrey_big1.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Meteors/meteorGrey_big1.png",
+        "sourceHash": "sha256:a5d3d87a976d2cc309fb40b95a53b6279ec4e21d785948619e738b7b826cf861",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-bay",
+      "file": "imported/PNG/ufoBlue.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/ufoBlue.png",
+        "sourceHash": "sha256:460c90365b97ecb1c7fcd6cbbf56546f8397544761cc348f3baf97f5097dc89c",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-engine",
+      "file": "imported/PNG/Parts/engine2.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Parts/engine2.png",
+        "sourceHash": "sha256:2d5deb6c423bd5c615bdef96e72e0a1b921c51b3ad400706d7a30b6e6adf5573",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-cockpit",
+      "file": "imported/PNG/Parts/cockpitBlue_2.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Parts/cockpitBlue_2.png",
+        "sourceHash": "sha256:2506c53ce25ee3a4289db701666db9c015150b55d65572826a1c9716c600e83e",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-wing",
+      "file": "imported/PNG/Parts/wingBlue_0.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Parts/wingBlue_0.png",
+        "sourceHash": "sha256:49702e48e7aa826b0efc4c8d174c64fce3529664add073c342a2b00153a7fc62",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-spark",
+      "file": "imported/PNG/Effects/star2.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/Effects/star2.png",
+        "sourceHash": "sha256:644ee97be876a4e487c3b4fc45b44fd482102398ca5806ea2d5defcedfb4f5fd",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-numeral-3",
+      "file": "imported/PNG/UI/numeral3.png",
+      "mime": "image/png",
+      "rights": "Kenney Space Shooter Redux, CC0-1.0. https://opengameart.org/content/space-shooter-redux",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-space-shooter-redux",
+        "sourceFile": "PNG/UI/numeral3.png",
+        "sourceHash": "sha256:0e282d46ef6ab5f9cd00c5a8bf4011a5edc5047087f197098785c1bd1ec17d46",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/space-shooter-redux",
+        "styleFamily": "kenney-space-shooter-redux"
+      }
+    },
+    {
+      "id": "salvage-audio-ambient",
+      "file": "audio/ambient.wav",
+      "mime": "audio/wav",
+      "rights": "3xBlast, CC0-1.0. https://opengameart.org/content/7-pop-punk-chiptune-tracks",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "3xblast-pop-punk-chiptune",
+        "sourceFile": "arcade-pop/ambient.wav",
+        "sourceHash": "sha256:3f8c8227cafd64f0a8ee80d0665f37ad855c30a172856546449c587ed2eee8cb",
+        "author": "3xBlast",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://opengameart.org/content/7-pop-punk-chiptune-tracks",
+        "styleFamily": "arcade-pop"
+      }
+    },
+    {
+      "id": "salvage-audio-catch",
+      "file": "audio/catch.wav",
+      "mime": "audio/wav",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/interface-sounds",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-interface-sounds",
+        "sourceFile": "arcade-pop/match.wav",
+        "sourceHash": "sha256:5d4e4f5f4ac96480e95a04dce68c159aa361fbd1407af1087d8dfaab5306c205",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+        "styleFamily": "kenney-interface-sounds"
+      }
+    },
+    {
+      "id": "salvage-audio-repair",
+      "file": "audio/repair.wav",
+      "mime": "audio/wav",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/music-jingles",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-music-jingles",
+        "sourceFile": "arcade-pop/reward.wav",
+        "sourceHash": "sha256:e67f9a65805199fb2ff7643c00a56d8501ff61277cafa0c60de59758b91e74f1",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/music-jingles",
+        "styleFamily": "kenney-music-jingles"
+      }
+    },
+    {
+      "id": "salvage-audio-complete",
+      "file": "audio/complete.wav",
+      "mime": "audio/wav",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/music-jingles",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-music-jingles",
+        "sourceFile": "arcade-pop/win.wav",
+        "sourceHash": "sha256:d9393421a71c6b2ebef3d4ba57aa911bbe6fdf169c53da9646037e1ae0e4673f",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/music-jingles",
+        "styleFamily": "kenney-music-jingles"
+      }
+    },
+    {
+      "id": "salvage-audio-loss",
+      "file": "audio/loss.wav",
+      "mime": "audio/wav",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/music-jingles",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-music-jingles",
+        "sourceFile": "arcade-pop/loss.wav",
+        "sourceHash": "sha256:58a52f896d1dd704ae5197dfa11685da84fbf55bd7061fbb4cb6af415a14db7e",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/music-jingles",
+        "styleFamily": "kenney-music-jingles"
+      }
+    },
+    {
+      "id": "salvage-audio-reject",
+      "file": "audio/reject.wav",
+      "mime": "audio/wav",
+      "rights": "Kenney, CC0-1.0. https://kenney.nl/assets/interface-sounds",
+      "provenance": {
+        "origin": "third-party-free",
+        "sourceId": "kenney-interface-sounds",
+        "sourceFile": "arcade-pop/reject.wav",
+        "sourceHash": "sha256:777674c27660faa2022934c6a6bd1abc5096afded2ccdc75547cbab5821932c7",
+        "author": "Kenney",
+        "license": "CC0-1.0",
+        "sourceUrl": "https://kenney.nl/assets/interface-sounds",
+        "styleFamily": "kenney-interface-sounds"
+      }
+    }
+  ]
+}
