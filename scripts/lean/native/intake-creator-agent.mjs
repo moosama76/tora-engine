@@ -57,7 +57,7 @@ export class IntakeCreatorAgent{
     await this.onProgress({phase:turn===1?'brief':tools.lastQa&&!tools.lastQa.report.ok?'repair':'authoring',stepLabel:turn===1?'Planning the playable':tools.lastQa&&!tools.lastQa.report.ok?'Polishing visuals & repairing QA':'Authoring scene & controls',turn,maxTurns,...(usage.totalTokens?{usage:{...usage}}:{})});
     const request={model:this.config.model,messages,tools:toolSchema(),max_tokens:4096,stream:false};
     if(containsSecret(request,this.config.apiKey))throw Error('E_MODEL_SECRET_IN_PROMPT');
-    const envelope=await requestReviewCompletion({config:{...this.config,vision:true,timeoutMs:45_000,maximumResponseBytes:192_000},request,fetchImpl,call:{}}),choice=envelope.choices?.[0],message=choice?.message;
+    const envelope=await requestReviewCompletion({config:{...this.config,vision:this.config.vision!==false,timeoutMs:45_000,maximumResponseBytes:192_000},request,fetchImpl,call:{}}),choice=envelope.choices?.[0],message=choice?.message;
     const promptTokens=Number(envelope.usage?.prompt_tokens)||0,completionTokens=Number(envelope.usage?.completion_tokens)||0,turnTotal=Number(envelope.usage?.total_tokens)||(promptTokens+completionTokens);
     if(promptTokens||completionTokens||turnTotal){
      usage.promptTokens+=promptTokens;usage.completionTokens+=completionTokens;usage.totalTokens+=turnTotal;
@@ -85,7 +85,7 @@ export class IntakeCreatorAgent{
     }
     if(tools.finished)return {...tools.finished,...(usage.totalTokens?{usage:{...usage}}:{})};
     if(visionFollowUp.length){
-     messages.push(reviewUserMessage({kind:'creator-qa-visual-review',instruction:'Inspect these actual packaged screenshots. Identify concrete visual or usability defects and repair them before finishing.',labels:visionFollowUp.map(item=>item.label),screenshots:visionFollowUp},this.config));
+     messages.push(reviewUserMessage({kind:'creator-qa-visual-review',instruction:this.config.vision===false?'Creative QA screenshots were captured, but this connected model is configured without vision. Repair any reported QA blockers using the structured QA report before finishing.':'Inspect these actual packaged screenshots. Identify concrete visual or usability defects and repair them before finishing.',labels:visionFollowUp.map(item=>item.label),screenshots:visionFollowUp},this.config));
     }else if(!calls.length){
      messages.push({role:'user',content:'Continue with the required authoring tools. Do not describe a playable as complete until finish_build succeeds.'});
     }

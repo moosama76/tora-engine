@@ -10,7 +10,7 @@
 - **Editable Native Scene Graph (2D + 3D):** Playables compile from a strict, validated `tora-native` project document (`v2.1.0`) with scenes, transforms, sprites, UI, 2D/3D physics, path networks, audio, events, and bindings — every edit is atomic, revision-checked, and undoable.
 - **Deterministic Creative QA:** Built-in Playwright runner checks 4 phone viewports (portrait + landscape), audio unlock/level/clipping metrics, text/UI overflow, primary gameplay interaction, and bundle size before export.
 - **Real Assets Only (Zero AI Slop):** Uses your studio's uploaded PNG/JPEG/WAV/MP3/mesh files or verified commercial-use CC0 packs with full license & SHA-256 provenance receipts.
-- **Optional Local Studio UI & BYOK Beta:** Launch the visual browser editor anytime to play demos, leave pinned visual review notes, run `$0` MCP handoffs, or optionally connect a verified Google Gemini / OpenAI / Anthropic API key.
+- **Optional Local Studio UI & BYOK Beta:** Launch the visual browser editor anytime to play demos, leave pinned visual review notes, run `$0` MCP handoffs, or optionally connect a verified Google Gemini, OpenAI, Anthropic Claude, or **OpenAI-compatible API** (OpenRouter, DeepSeek, Kimi, Qwen, GLM, or local Ollama/vLLM).
 
 ---
 

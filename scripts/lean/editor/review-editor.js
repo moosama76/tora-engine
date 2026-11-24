@@ -384,12 +384,35 @@ const FALLBACK_VERIFIED_PROVIDERS = [
       {id: 'claude-fable-5-2', label: 'Claude Fable 5.2', badge: 'Deep reasoning', contextTokens: 1_000_000},
     ],
   },
+  {
+    id: 'openai-compatible',
+    label: 'Custom / OpenRouter',
+    keyUrl: 'https://openrouter.ai/keys',
+    keyPlaceholder: 'sk-or-v1-...',
+    defaultModel: 'qwen/qwen3.8-max',
+    audioSummary: 'Tora acoustic QA + WAV catalog',
+    videoSummary: 'Extracted video keyframes (when vision enabled)',
+    summary: 'Connect OpenRouter, DeepSeek, Kimi, Qwen, GLM, or any custom/local OpenAI-compatible API.',
+    customEndpoint: true,
+    presets: [
+      {id: 'openrouter', label: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys', keyPlaceholder: 'sk-or-v1-...', defaultModel: 'qwen/qwen3.8-max', vision: true, models: [{id: 'qwen/qwen3.8-max', label: 'Qwen 3.8 Max (OpenRouter)', badge: 'Recommended', contextTokens: 1_000_000, vision: true}, {id: 'moonshotai/kimi-k3.1-pro', label: 'Kimi K3.1 Pro (OpenRouter)', badge: 'Flagship', contextTokens: 1_000_000, vision: true}, {id: 'z-ai/glm-5.3-flash', label: 'GLM-5.3 Flash (OpenRouter)', badge: 'Fast', contextTokens: 1_000_000, vision: true}, {id: 'deepseek/deepseek-v4-pro', label: 'DeepSeek V4 Pro (OpenRouter)', badge: 'Coding', contextTokens: 128_000, vision: false}]},
+      {id: 'deepseek', label: 'DeepSeek', endpoint: 'https://api.deepseek.com/v1', keyUrl: 'https://platform.deepseek.com/api_keys', keyPlaceholder: 'sk-...', defaultModel: 'deepseek-chat', vision: false, models: [{id: 'deepseek-chat', label: 'DeepSeek Chat', badge: 'Recommended', contextTokens: 128_000, vision: false}, {id: 'deepseek-reasoner', label: 'DeepSeek Reasoner', badge: 'Reasoning', contextTokens: 128_000, vision: false}]},
+      {id: 'kimi', label: 'Kimi (Moonshot)', endpoint: 'https://api.moonshot.ai/v1', keyUrl: 'https://platform.moonshot.ai/console/api-keys', keyPlaceholder: 'sk-...', defaultModel: 'kimi-k3.1-pro', vision: true, models: [{id: 'kimi-k3.1-pro', label: 'Kimi K3.1 Pro', badge: 'Recommended', contextTokens: 1_000_000, vision: true}, {id: 'kimi-k3', label: 'Kimi K3', badge: 'Balanced', contextTokens: 1_000_000, vision: true}, {id: 'kimi-k2.7-code', label: 'Kimi K2.7 Code', badge: 'Coding', contextTokens: 256_000, vision: true}]},
+      {id: 'qwen', label: 'Qwen (Alibaba)', endpoint: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1', keyUrl: 'https://modelstudio.console.alibabacloud.com/', keyPlaceholder: 'sk-...', defaultModel: 'qwen3.8-max', vision: true, models: [{id: 'qwen3.8-max', label: 'Qwen 3.8 Max', badge: 'Recommended', contextTokens: 1_000_000, vision: true}, {id: 'qwen3.7-plus', label: 'Qwen 3.7 Plus', badge: 'Balanced', contextTokens: 1_000_000, vision: true}, {id: 'qwen3.8-flash', label: 'Qwen 3.8 Flash', badge: 'Fast', contextTokens: 1_000_000, vision: true}]},
+      {id: 'glm', label: 'GLM (Z.ai)', endpoint: 'https://api.z.ai/api/paas/v4', keyUrl: 'https://z.ai/manage-apikey/apikey-list', keyPlaceholder: 'Paste Z.ai / BigModel key', defaultModel: 'glm-5.3-flash', vision: true, models: [{id: 'glm-5.3-flash', label: 'GLM-5.3 Flash', badge: 'Recommended', contextTokens: 1_000_000, vision: true}, {id: 'glm-5.3', label: 'GLM-5.3', badge: 'Flagship', contextTokens: 1_000_000, vision: false}, {id: 'glm-5v-turbo', label: 'GLM-5V Turbo', badge: 'Vision', contextTokens: 256_000, vision: true}]},
+      {id: 'custom', label: 'Custom / Local', endpoint: '', keyUrl: '', keyPlaceholder: 'API key (or "local" for Ollama/vLLM)', defaultModel: '', vision: true, models: []},
+    ],
+    models: [{id: 'qwen/qwen3.8-max', label: 'Qwen 3.8 Max (OpenRouter)', badge: 'Recommended', contextTokens: 1_000_000, vision: true}],
+  },
 ];
 
 export function createApiConnectionController({pillButton, onStatusChange} = {}) {
   let status = {configured: false, supportedProviders: FALLBACK_VERIFIED_PROVIDERS};
   let selectedProviderId = 'gemini';
   let selectedModelId = 'gemini-4-hydrogen';
+  let selectedPresetId = 'openrouter';
+  let customEndpoint = 'https://openrouter.ai/api/v1';
+  let customVision = true;
   let discoveredModels = {};
   let busy = false;
 
@@ -401,19 +424,32 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
       <div class="tora-modal-head">
         <div>
           <h2 id="tora-api-modal-title">Connect a playable-ready AI API</h2>
-          <p class="tora-modal-sub">Only APIs verified to handle a full playable ad (scene tools, vision, and sound checks) are allowed.</p>
+          <p class="tora-modal-sub">Connect Gemini, OpenAI, Claude, or any OpenAI-compatible API (OpenRouter, DeepSeek, Kimi, Qwen, GLM, or local).</p>
         </div>
         <button type="button" class="tora-modal-close" id="tora-api-close" aria-label="Close">×</button>
       </div>
       <div class="tora-api-current" id="tora-api-current" hidden></div>
       <div class="tora-provider-grid" id="tora-provider-grid" role="radiogroup" aria-label="Verified AI providers"></div>
       <form class="tora-api-form" id="tora-api-form">
+        <div class="tora-compat-fields" id="tora-compat-fields" hidden>
+          <div class="tora-preset-row" id="tora-preset-row" role="group" aria-label="OpenAI-compatible presets"></div>
+          <label>API Base URL
+            <input id="tora-api-endpoint" type="text" inputmode="url" maxlength="512" autocomplete="off" spellcheck="false" placeholder="https://openrouter.ai/api/v1 or http://127.0.0.1:11434/v1">
+          </label>
+        </div>
         <div class="tora-api-row">
-          <label>Verified model
-            <select id="tora-api-model" required></select>
+          <label id="tora-api-model-wrap">Model
+            <select id="tora-api-model"></select>
           </label>
           <a id="tora-api-get-key" class="tora-key-link" target="_blank" rel="noopener noreferrer">Get API key ↗</a>
         </div>
+        <label id="tora-api-custom-model-wrap" hidden>Model ID (or pick above)
+          <input id="tora-api-custom-model" type="text" maxlength="128" autocomplete="off" spellcheck="false" placeholder="e.g. qwen/qwen3.8-max, deepseek-chat, kimi-k3.1-pro">
+        </label>
+        <label class="tora-vision-check" id="tora-api-vision-wrap" hidden>
+          <input id="tora-api-vision" type="checkbox" checked>
+          <span>Model supports vision (inspects Creative QA screenshots)</span>
+        </label>
         <div class="tora-cap-row" id="tora-cap-row" aria-label="Verified capabilities"></div>
         <p class="tora-api-note" id="tora-api-media-note"></p>
         <label>Your API key
@@ -425,7 +461,7 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
           <button type="button" id="tora-api-disconnect" hidden>Disconnect</button>
         </div>
         <p class="review-error" id="tora-api-error" role="alert"></p>
-        <p class="tora-api-footnote">Keys are verified directly with the provider before saving, stored locally (<code>0600</code>), and never exported in playables. Prefer $0 API keys? Connect Claude or Codex via Tora MCP instead.</p>
+        <p class="tora-api-footnote">Keys are verified directly with the provider before saving, stored locally (<code>0600</code>), and never exported in playables. Prefer $0 API keys? Connect Claude Code, Cursor, Codex, or Gemini CLI via Tora MCP instead.</p>
       </form>
     </div>
   `;
@@ -433,15 +469,28 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
 
   const $ = id => dialog.querySelector('#' + id);
   const providersList = () => status.supportedProviders?.length ? status.supportedProviders : FALLBACK_VERIFIED_PROVIDERS;
+  const activePresetFor = provider => {
+    const presets = provider?.presets ?? [];
+    return presets.find(item => item.id === selectedPresetId) ?? presets[0] ?? null;
+  };
+  const cacheKeyFor = provider => provider.id === 'openai-compatible'
+    ? `openai-compatible:${selectedPresetId}:${customEndpoint}`
+    : provider.id;
   const modelsForProvider = provider => {
-    const list = discoveredModels[provider.id]?.length ? [...discoveredModels[provider.id]] : [...provider.models];
+    const preset = provider.id === 'openai-compatible' ? activePresetFor(provider) : null;
+    const baseModels = preset ? [...(preset.models ?? [])] : [...(provider.models ?? [])];
+    const cached = discoveredModels[cacheKeyFor(provider)];
+    const list = cached?.length ? [...cached] : baseModels;
     if (status.verified && status.provider === provider.id && status.model && !list.some(item => item.id === status.model)) {
-      list.unshift({
-        id: status.model,
-        label: status.modelLabel || status.model,
-        badge: 'Connected',
-        contextTokens: null,
-      });
+      if (provider.id !== 'openai-compatible' || status.endpoint === customEndpoint) {
+        list.unshift({
+          id: status.model,
+          label: status.modelLabel || status.model,
+          badge: 'Connected',
+          contextTokens: null,
+          vision: status.capabilities?.vision,
+        });
+      }
     }
     return list;
   };
@@ -462,47 +511,98 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
     } else {
       pillButton.dataset.connected = 'false';
       pillButton.textContent = 'Connect API';
-      pillButton.title = 'Connect a verified Gemini, OpenAI, or Claude API key';
+      pillButton.title = 'Connect Gemini, OpenAI, Claude, OpenRouter, DeepSeek, Kimi, Qwen, GLM, or a custom API key';
     }
   }
 
   function renderCapabilities() {
     const provider = providersList().find(item => item.id === selectedProviderId) ?? providersList()[0];
     if (!provider) return;
+    const isCompat = provider.id === 'openai-compatible';
+    const preset = isCompat ? activePresetFor(provider) : null;
     const list = modelsForProvider(provider);
-    const model = list.find(item => item.id === selectedModelId) ?? list[0];
-    if (!model) return;
+    const model = list.find(item => item.id === selectedModelId) ?? list[0] ?? null;
     selectedProviderId = provider.id;
-    selectedModelId = model.id;
 
-    $('tora-api-get-key').href = provider.keyUrl;
-    $('tora-api-key').placeholder = provider.keyPlaceholder || 'Paste your API key';
+    const keyUrl = isCompat ? (preset?.keyUrl || '') : provider.keyUrl;
+    const keyLink = $('tora-api-get-key');
+    keyLink.hidden = !keyUrl;
+    if (keyUrl) keyLink.href = keyUrl;
+    $('tora-api-key').placeholder = (isCompat && preset?.keyPlaceholder) || provider.keyPlaceholder || 'Paste your API key';
     $('tora-api-media-note').textContent = provider.summary;
 
+    const visionEnabled = isCompat ? customVision : true;
     const caps = [
-      '✓ Scene tools & JSON',
-      '✓ Vision',
-      '✓ Audio: ' + provider.audioSummary,
-      '✓ Video: ' + provider.videoSummary,
-      ...(model.contextTokens ? ['✓ ' + formatContext(model.contextTokens)] : []),
+      {text: '✓ Scene tools & JSON'},
+      visionEnabled ? {text: '✓ Vision'} : {text: '⚠ Text-only (no screenshot review)', warn: true},
+      {text: '✓ Audio: ' + provider.audioSummary},
+      {text: '✓ Video: ' + (visionEnabled ? 'Extracted video keyframes' : 'Disabled (text-only)')},
+      ...(model?.contextTokens ? [{text: '✓ ' + formatContext(model.contextTokens)}] : []),
     ];
-    $('tora-cap-row').replaceChildren(...caps.map(text => reviewElement('span', text, 'tora-cap-pill')));
+    $('tora-cap-row').replaceChildren(...caps.map(item => reviewElement('span', item.text, item.warn ? 'tora-cap-pill tora-cap-pill-warn' : 'tora-cap-pill')));
+  }
+
+  function renderPresets(provider) {
+    const isCompat = provider.id === 'openai-compatible';
+    $('tora-compat-fields').hidden = !isCompat;
+    $('tora-api-custom-model-wrap').hidden = !isCompat;
+    $('tora-api-vision-wrap').hidden = !isCompat;
+    $('tora-api-endpoint').required = isCompat;
+    $('tora-api-custom-model').required = isCompat;
+    if (!isCompat) return;
+
+    const presets = provider.presets ?? [];
+    if (!presets.some(item => item.id === selectedPresetId)) selectedPresetId = presets[0]?.id ?? 'openrouter';
+    $('tora-preset-row').replaceChildren(...presets.map(preset => {
+      const btn = reviewElement('button', preset.label, 'tora-preset-btn');
+      btn.type = 'button';
+      const active = preset.id === selectedPresetId;
+      btn.dataset.active = String(active);
+      btn.setAttribute('aria-pressed', String(active));
+      btn.onclick = () => {
+        selectedPresetId = preset.id;
+        customEndpoint = preset.endpoint;
+        selectedModelId = preset.defaultModel;
+        customVision = preset.vision !== false;
+        $('tora-api-endpoint').value = customEndpoint;
+        $('tora-api-custom-model').value = selectedModelId;
+        $('tora-api-vision').checked = customVision;
+        renderPresets(provider);
+        renderModels();
+      };
+      return btn;
+    }));
+    $('tora-api-endpoint').value = customEndpoint;
+    $('tora-api-vision').checked = customVision;
   }
 
   function renderModels() {
     const provider = providersList().find(item => item.id === selectedProviderId) ?? providersList()[0];
     if (!provider) return;
+    const isCompat = provider.id === 'openai-compatible';
     const list = modelsForProvider(provider);
     const select = $('tora-api-model');
-    if (!list.some(item => item.id === selectedModelId)) {
-      selectedModelId = list.some(item => item.id === provider.defaultModel) ? provider.defaultModel : (list[0]?.id || '');
+    const selectWrap = $('tora-api-model-wrap');
+    if (list.length) {
+      selectWrap.hidden = false;
+      select.required = !isCompat;
+      if (!isCompat && !list.some(item => item.id === selectedModelId)) {
+        selectedModelId = list.some(item => item.id === provider.defaultModel) ? provider.defaultModel : (list[0]?.id || '');
+      }
+      select.replaceChildren(...list.map(model => {
+        const option = reviewElement('option', model.label + (model.badge ? ' · ' + model.badge : ''));
+        option.value = model.id;
+        return option;
+      }));
+      if (list.some(item => item.id === selectedModelId)) select.value = selectedModelId;
+    } else {
+      selectWrap.hidden = true;
+      select.required = false;
+      select.replaceChildren();
     }
-    select.replaceChildren(...list.map(model => {
-      const option = reviewElement('option', model.label + (model.badge ? ' · ' + model.badge : ''));
-      option.value = model.id;
-      return option;
-    }));
-    select.value = selectedModelId;
+    if (isCompat) {
+      $('tora-api-custom-model').value = selectedModelId || '';
+    }
     renderCapabilities();
   }
 
@@ -532,17 +632,31 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
       const active = provider.id === selectedProviderId;
       card.setAttribute('aria-checked', String(active));
       card.dataset.active = String(active);
+      const tag = provider.id === 'gemini'
+        ? 'Native audio & video'
+        : provider.id === 'openai-compatible'
+          ? 'OpenRouter, DeepSeek, Kimi, Qwen, GLM'
+          : 'Vision + Tora audio QA';
       card.append(
         reviewElement('strong', provider.label),
-        reviewElement('span', provider.id === 'gemini' ? 'Native audio & video' : 'Vision + Tora audio QA', 'tora-provider-tag'),
+        reviewElement('span', tag, 'tora-provider-tag'),
       );
       card.onclick = () => {
         selectedProviderId = provider.id;
-        selectedModelId = provider.defaultModel;
+        if (provider.id === 'openai-compatible') {
+          const preset = activePresetFor(provider);
+          if (preset && !customEndpoint) customEndpoint = preset.endpoint;
+          selectedModelId = preset?.defaultModel ?? provider.defaultModel;
+          customVision = preset?.vision !== false;
+        } else {
+          selectedModelId = provider.defaultModel;
+        }
         renderModal();
       };
       return card;
     }));
+    const activeProvider = providers.find(item => item.id === selectedProviderId) ?? providers[0];
+    renderPresets(activeProvider);
     renderModels();
   }
 
@@ -552,6 +666,11 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
       if (status.verified && status.provider) {
         selectedProviderId = status.provider;
         selectedModelId = status.model;
+        if (status.provider === 'openai-compatible') {
+          if (status.preset) selectedPresetId = status.preset;
+          if (status.endpoint) customEndpoint = status.endpoint;
+          customVision = status.capabilities?.vision !== false;
+        }
       }
       updatePill();
       onStatusChange?.(status);
@@ -578,6 +697,25 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
   });
   $('tora-api-model').onchange = event => {
     selectedModelId = event.target.value;
+    if (selectedProviderId === 'openai-compatible') {
+      $('tora-api-custom-model').value = selectedModelId;
+      const provider = providersList().find(item => item.id === 'openai-compatible');
+      const match = modelsForProvider(provider).find(item => item.id === selectedModelId);
+      if (typeof match?.vision === 'boolean') {
+        customVision = match.vision;
+        $('tora-api-vision').checked = customVision;
+      }
+    }
+    renderCapabilities();
+  };
+  $('tora-api-endpoint').oninput = event => {
+    customEndpoint = event.target.value.trim();
+  };
+  $('tora-api-custom-model').oninput = event => {
+    selectedModelId = event.target.value.trim();
+  };
+  $('tora-api-vision').onchange = event => {
+    customVision = event.target.checked;
     renderCapabilities();
   };
 
@@ -586,6 +724,13 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
     if (busy) return;
     const key = $('tora-api-key').value.trim();
     if (!key) return;
+    const isCompat = selectedProviderId === 'openai-compatible';
+    const modelToSave = isCompat ? ($('tora-api-custom-model').value.trim() || selectedModelId) : selectedModelId;
+    const endpointToSave = isCompat ? $('tora-api-endpoint').value.trim() : undefined;
+    if (isCompat && (!endpointToSave || !modelToSave)) {
+      $('tora-api-error').textContent = 'Enter both an API Base URL and Model ID.';
+      return;
+    }
     busy = true;
     $('tora-api-error').textContent = '';
     const saveBtn = $('tora-api-save');
@@ -594,8 +739,9 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
     try {
       await reviewRequest('/api/review/connection', {
         provider: selectedProviderId,
-        model: selectedModelId,
+        model: modelToSave,
         apiKey: key,
+        ...(isCompat ? {endpoint: endpointToSave, preset: selectedPresetId, vision: customVision} : {}),
       });
       $('tora-api-key').value = '';
       await refresh();
@@ -617,6 +763,13 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
       $('tora-api-key').focus();
       return;
     }
+    const isCompat = selectedProviderId === 'openai-compatible';
+    const endpointToQuery = isCompat ? $('tora-api-endpoint').value.trim() : undefined;
+    if (isCompat && !endpointToQuery) {
+      $('tora-api-error').textContent = 'Enter an API Base URL first.';
+      $('tora-api-endpoint').focus();
+      return;
+    }
     busy = true;
     $('tora-api-error').textContent = '';
     const fetchBtn = $('tora-api-fetch-models');
@@ -627,11 +780,13 @@ export function createApiConnectionController({pillButton, onStatusChange} = {})
         action: 'models',
         provider: selectedProviderId,
         apiKey: key,
+        ...(isCompat ? {endpoint: endpointToQuery, preset: selectedPresetId} : {}),
       });
       if (!result.models?.length) {
         $('tora-api-error').textContent = 'No playable-ready models were returned for this API key.';
       } else {
-        discoveredModels[selectedProviderId] = result.models;
+        const provider = providersList().find(item => item.id === selectedProviderId);
+        discoveredModels[cacheKeyFor(provider)] = result.models;
         selectedModelId = result.models[0].id;
         renderModels();
       }

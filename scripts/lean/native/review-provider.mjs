@@ -8,10 +8,122 @@ const imageTypes=new Set(['image/png','image/jpeg','image/webp']);
 const clean=value=>typeof value==='string'?value.trim():'';
 
 const MODEL_ID_RE=/^[a-zA-Z0-9][a-zA-Z0-9._:-]{1,95}$/;
+const COMPAT_MODEL_ID_RE=/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{1,127}$/;
 const DISALLOWED_MODEL_FRAGMENT=/(?:embed|embedding|whisper|tts|transcribe|realtime|audio-preview|native-audio|moderation|dall-e|imagen|veo|sora|lyria|aqa|bison|gecko|instruct|davinci|babbage|curie|ada|-image(?:$|-)|-search(?:$|-)|-live(?:$|-)|robotics|computer-use)/i;
 
 const GEMINI_CAPABILITIES=Object.freeze({tools:true,json:true,vision:true,audio:'native',video:'native-and-keyframes'});
 const MULTIMODAL_QA_CAPABILITIES=Object.freeze({tools:true,json:true,vision:true,audio:'tora-analyzed',video:'keyframes'});
+const TEXT_ONLY_QA_CAPABILITIES=Object.freeze({tools:true,json:true,vision:false,audio:'tora-analyzed',video:'none'});
+
+export const OPENAI_COMPATIBLE_PRESETS=Object.freeze([
+ Object.freeze({
+  id:'openrouter',
+  label:'OpenRouter',
+  endpoint:'https://openrouter.ai/api/v1',
+  keyUrl:'https://openrouter.ai/keys',
+  keyPlaceholder:'sk-or-v1-...',
+  defaultModel:'qwen/qwen3.8-max',
+  vision:true,
+  models:Object.freeze([
+   Object.freeze({id:'qwen/qwen3.8-max',label:'Qwen 3.8 Max (OpenRouter)',badge:'Recommended',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'moonshotai/kimi-k3.1-pro',label:'Kimi K3.1 Pro (OpenRouter)',badge:'Flagship',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'z-ai/glm-5.3-flash',label:'GLM-5.3 Flash (OpenRouter)',badge:'Fast',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'deepseek/deepseek-v4-pro',label:'DeepSeek V4 Pro (OpenRouter)',badge:'Coding',contextTokens:128_000,vision:false}),
+  ]),
+ }),
+ Object.freeze({
+  id:'deepseek',
+  label:'DeepSeek',
+  endpoint:'https://api.deepseek.com/v1',
+  keyUrl:'https://platform.deepseek.com/api_keys',
+  keyPlaceholder:'sk-...',
+  defaultModel:'deepseek-chat',
+  vision:false,
+  models:Object.freeze([
+   Object.freeze({id:'deepseek-chat',label:'DeepSeek Chat',badge:'Recommended',contextTokens:128_000,vision:false}),
+   Object.freeze({id:'deepseek-reasoner',label:'DeepSeek Reasoner',badge:'Reasoning',contextTokens:128_000,vision:false}),
+  ]),
+ }),
+ Object.freeze({
+  id:'kimi',
+  label:'Kimi (Moonshot)',
+  endpoint:'https://api.moonshot.ai/v1',
+  keyUrl:'https://platform.moonshot.ai/console/api-keys',
+  keyPlaceholder:'sk-...',
+  defaultModel:'kimi-k3.1-pro',
+  vision:true,
+  models:Object.freeze([
+   Object.freeze({id:'kimi-k3.1-pro',label:'Kimi K3.1 Pro',badge:'Recommended',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'kimi-k3',label:'Kimi K3',badge:'Balanced',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'kimi-k2.7-code',label:'Kimi K2.7 Code',badge:'Coding',contextTokens:256_000,vision:true}),
+   Object.freeze({id:'kimi-k2-turbo-preview',label:'Kimi K2 Turbo',badge:'Fast',contextTokens:256_000,vision:true}),
+  ]),
+ }),
+ Object.freeze({
+  id:'qwen',
+  label:'Qwen (Alibaba)',
+  endpoint:'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+  keyUrl:'https://modelstudio.console.alibabacloud.com/',
+  keyPlaceholder:'sk-...',
+  defaultModel:'qwen3.8-max',
+  vision:true,
+  models:Object.freeze([
+   Object.freeze({id:'qwen3.8-max',label:'Qwen 3.8 Max',badge:'Recommended',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'qwen3.7-plus',label:'Qwen 3.7 Plus',badge:'Balanced',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'qwen3.8-flash',label:'Qwen 3.8 Flash',badge:'Fast',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'qwen-vl-max-latest',label:'Qwen VL Max',badge:'Vision',contextTokens:128_000,vision:true}),
+  ]),
+ }),
+ Object.freeze({
+  id:'glm',
+  label:'GLM (Z.ai)',
+  endpoint:'https://api.z.ai/api/paas/v4',
+  keyUrl:'https://z.ai/manage-apikey/apikey-list',
+  keyPlaceholder:'Paste Z.ai / BigModel key',
+  defaultModel:'glm-5.3-flash',
+  vision:true,
+  models:Object.freeze([
+   Object.freeze({id:'glm-5.3-flash',label:'GLM-5.3 Flash',badge:'Recommended',contextTokens:1_000_000,vision:true}),
+   Object.freeze({id:'glm-5.3',label:'GLM-5.3',badge:'Flagship',contextTokens:1_000_000,vision:false}),
+   Object.freeze({id:'glm-5v-turbo',label:'GLM-5V Turbo',badge:'Vision',contextTokens:256_000,vision:true}),
+   Object.freeze({id:'glm-5.4',label:'GLM-5.4',badge:'Coding',contextTokens:1_000_000,vision:false}),
+  ]),
+ }),
+ Object.freeze({
+  id:'custom',
+  label:'Custom / Local',
+  endpoint:'',
+  keyUrl:'',
+  keyPlaceholder:'API key (or "local" for Ollama/vLLM)',
+  defaultModel:'',
+  vision:true,
+  models:Object.freeze([]),
+ }),
+]);
+
+export function normalizeOpenAiCompatibleEndpoint(raw){
+ const value=clean(raw);
+ if(!value||value.length>512)return null;
+ let parsed;
+ try{parsed=new URL(value);}catch{return null;}
+ if(parsed.username||parsed.password||parsed.search||parsed.hash)return null;
+ const host=parsed.hostname.toLowerCase();
+ const isLocal=host==='localhost'||host==='127.0.0.1'||host==='[::1]';
+ if(parsed.protocol!=='https:'&&!(parsed.protocol==='http:'&&isLocal))return null;
+ const path=parsed.pathname.replace(/\/+$/,'').replace(/\/chat\/completions$/i,'');
+ return parsed.origin+path;
+}
+
+export function openAiCompatiblePreset(presetId,endpoint){
+ const byId=OPENAI_COMPATIBLE_PRESETS.find(item=>item.id===clean(presetId));
+ if(byId&&byId.id!=='custom')return byId;
+ const normalized=normalizeOpenAiCompatibleEndpoint(endpoint);
+ if(normalized){
+  const byEndpoint=OPENAI_COMPATIBLE_PRESETS.find(item=>item.endpoint&&normalized.startsWith(item.endpoint));
+  if(byEndpoint)return byEndpoint;
+ }
+ return OPENAI_COMPATIBLE_PRESETS.find(item=>item.id==='custom');
+}
 
 export const VERIFIED_PLAYABLE_PROVIDERS=Object.freeze([
  Object.freeze({
@@ -123,6 +235,20 @@ export const VERIFIED_PLAYABLE_PROVIDERS=Object.freeze([
    }),
   ]),
  }),
+ Object.freeze({
+  id:'openai-compatible',
+  label:'Custom / OpenRouter',
+  keyUrl:'https://openrouter.ai/keys',
+  keyPlaceholder:'sk-or-v1-...',
+  defaultModel:'qwen/qwen3.8-max',
+  audioSummary:'Tora acoustic QA + WAV catalog',
+  videoSummary:'Extracted video keyframes (when vision enabled)',
+  summary:'Connect OpenRouter, DeepSeek, Kimi, Qwen, GLM, or any custom/local OpenAI-compatible API.',
+  defaultCapabilities:MULTIMODAL_QA_CAPABILITIES,
+  customEndpoint:true,
+  presets:OPENAI_COMPATIBLE_PRESETS,
+  models:OPENAI_COMPATIBLE_PRESETS[0].models,
+ }),
 ]);
 
 function humanizeModelId(providerId,modelId){
@@ -137,6 +263,9 @@ function humanizeModelId(providerId,modelId){
 
 export function isPlayableCapableModel(providerId,modelId){
  const id=clean(modelId);
+ if(providerId==='openai-compatible'){
+  return Boolean(COMPAT_MODEL_ID_RE.test(id)&&!id.includes('..')&&!DISALLOWED_MODEL_FRAGMENT.test(id));
+ }
  if(!MODEL_ID_RE.test(id)||DISALLOWED_MODEL_FRAGMENT.test(id))return false;
  if(providerId==='gemini'){
   const match=/^gemini-(\d+(?:\.\d+)?)-/.exec(id);
@@ -153,9 +282,38 @@ export function isPlayableCapableModel(providerId,modelId){
  return false;
 }
 
-export function verifiedPlayableModel(providerId,modelId,displayName){
+export function verifiedPlayableModel(providerId,modelId,displayNameOrOptions){
+ const options=typeof displayNameOrOptions==='string'?{displayName:displayNameOrOptions}:(displayNameOrOptions??{});
  const provider=VERIFIED_PLAYABLE_PROVIDERS.find(item=>item.id===clean(providerId));
  if(!provider)return null;
+ if(provider.id==='openai-compatible'){
+  const endpoint=normalizeOpenAiCompatibleEndpoint(options.endpoint);
+  if(!endpoint)return null;
+  const preset=openAiCompatiblePreset(options.preset,endpoint);
+  const selected=clean(modelId)||preset?.defaultModel||'';
+  if(!isPlayableCapableModel('openai-compatible',selected))return null;
+  const curated=preset?.models?.find(item=>item.id===selected);
+  const vision=typeof options.vision==='boolean'?options.vision:(curated?.vision??preset?.vision??true);
+  const caps=vision?MULTIMODAL_QA_CAPABILITIES:TEXT_ONLY_QA_CAPABILITIES;
+  const providerLabel=preset&&preset.id!=='custom'?preset.label:'OpenAI-Compatible';
+  return {
+   provider:{
+    ...provider,
+    label:providerLabel,
+    preset:preset?.id??'custom',
+    endpoint,
+    videoSummary:vision?'Extracted video keyframes':'Text-only (no screenshot review)',
+   },
+   model:{
+    id:selected,
+    label:clean(options.displayName)||curated?.label||selected,
+    badge:curated?.badge??'Custom',
+    contextTokens:curated?.contextTokens??null,
+    vision,
+    capabilities:caps,
+   },
+  };
+ }
  const selected=clean(modelId)||provider.defaultModel;
  const curated=provider.models.find(item=>item.id===selected);
  if(curated)return {provider,model:curated};
@@ -164,7 +322,7 @@ export function verifiedPlayableModel(providerId,modelId,displayName){
   provider,
   model:{
    id:selected,
-   label:clean(displayName)||humanizeModelId(provider.id,selected),
+   label:clean(options.displayName)||humanizeModelId(provider.id,selected),
    badge:'Verified',
    contextTokens:null,
    capabilities:provider.defaultCapabilities,
@@ -182,19 +340,41 @@ export function publicPlayableProviders(){
   audioSummary:provider.audioSummary,
   videoSummary:provider.videoSummary,
   summary:provider.summary,
+  ...(provider.customEndpoint?{
+   customEndpoint:true,
+   presets:provider.presets.map(preset=>({
+    id:preset.id,
+    label:preset.label,
+    endpoint:preset.endpoint,
+    keyUrl:preset.keyUrl,
+    keyPlaceholder:preset.keyPlaceholder,
+    defaultModel:preset.defaultModel,
+    vision:preset.vision,
+    models:preset.models.map(model=>({...model})),
+   })),
+  }:{}),
   models:provider.models.map(model=>({
    id:model.id,
    label:model.label,
    badge:model.badge,
    contextTokens:model.contextTokens,
-   capabilities:{...model.capabilities},
+   ...(typeof model.vision==='boolean'?{vision:model.vision}:{}),
+   capabilities:{...(model.capabilities??provider.defaultCapabilities)},
   })),
  }));
 }
 
-export function modelListRequest(providerId,apiKey){
+export function modelListRequest(providerId,apiKey,options={}){
  const provider=VERIFIED_PLAYABLE_PROVIDERS.find(item=>item.id===clean(providerId));
  if(!provider)throw new PlanError('E_MODEL_UNSUPPORTED_CAPABILITY');
+ if(provider.id==='openai-compatible'){
+  const base=normalizeOpenAiCompatibleEndpoint(options.endpoint);
+  if(!base)throw new PlanError('E_MODEL_UNSUPPORTED_CAPABILITY');
+  return {
+   url:`${base}/models`,
+   headers:{Authorization:'Bearer '+apiKey},
+  };
+ }
  if(provider.id==='gemini'){
   return {
    url:'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
@@ -213,11 +393,18 @@ export function modelListRequest(providerId,apiKey){
  };
 }
 
-export function modelVerificationRequest(providerId,modelId,apiKey){
- const verified=verifiedPlayableModel(providerId,modelId);
+export function modelVerificationRequest(providerId,modelId,apiKey,options={}){
+ const verified=verifiedPlayableModel(providerId,modelId,options);
  if(!verified)throw new PlanError('E_MODEL_UNSUPPORTED_CAPABILITY');
  const {provider,model}=verified;
  const encoded=encodeURIComponent(model.id);
+ if(provider.id==='openai-compatible'){
+  return {
+   url:`${provider.endpoint}/models/${encoded}`,
+   listUrl:`${provider.endpoint}/models`,
+   headers:{Authorization:'Bearer '+apiKey},
+  };
+ }
  if(provider.id==='gemini'){
   return {
    url:`https://generativelanguage.googleapis.com/v1beta/models/${encoded}`,
@@ -252,12 +439,20 @@ export function reviewProviderConfig(options={}){
  const names={openai:'OPENAI_API_KEY',anthropic:'ANTHROPIC_API_KEY',gemini:'GEMINI_API_KEY','openai-compatible':'TORA_REVIEW_API_KEY'};
  const apiKey=clean(options.apiKey??process.env[names[provider]]);if(!apiKey)return undefined;
  const model=clean(options.model??process.env.TORA_REVIEW_MODEL);
- const endpoint=clean(options.endpoint??process.env.TORA_REVIEW_ENDPOINT??({
+ const rawEndpoint=clean(options.endpoint??process.env.TORA_REVIEW_ENDPOINT??({
   openai:'https://api.openai.com/v1/chat/completions',anthropic:'https://api.anthropic.com/v1/messages',gemini:'https://generativelanguage.googleapis.com/v1beta/models',
  })[provider]);
- if(!model||!endpoint||!/^https:\/\//.test(endpoint))throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
- let parsed;try{parsed=new URL(endpoint);}catch{throw new PlanError('E_REVIEW_PROVIDER_CONFIG');}
- if(parsed.username||parsed.password||parsed.search||parsed.hash)throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
+ if(!model||!rawEndpoint)throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
+ let endpoint=rawEndpoint;
+ if(provider==='openai-compatible'){
+  const base=normalizeOpenAiCompatibleEndpoint(rawEndpoint);
+  if(!base)throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
+  endpoint=`${base}/chat/completions`;
+ }else{
+  if(!/^https:\/\//.test(rawEndpoint))throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
+  let parsed;try{parsed=new URL(rawEndpoint);}catch{throw new PlanError('E_REVIEW_PROVIDER_CONFIG');}
+  if(parsed.username||parsed.password||parsed.search||parsed.hash)throw new PlanError('E_REVIEW_PROVIDER_CONFIG');
+ }
  return {provider,endpoint,apiKey,model,paidModel:clean(options.paidModel??process.env.TORA_REVIEW_PAID_MODEL)||model,
   vision:options.vision===true||process.env.TORA_REVIEW_VISION==='1',orcaFreeTier:false};
 }
@@ -265,7 +460,7 @@ export function reviewProviderConfig(options={}){
 function orcaRequest(config,request){return {endpoint:config.endpoint,headers:{'Content-Type':'application/json',Authorization:'Bearer '+config.apiKey},body:request};}
 function openAiRequest(config,request){
  const body={...request};delete body.thinking;delete body.include_reasoning;
- if(/^(?:gpt-[5-9]|o[1-9])(?:$|[.-])/.test(String(body.model??''))&&body.max_tokens!==undefined){
+ if(config.provider==='openai'&&/^(?:gpt-[5-9]|o[1-9])(?:$|[.-])/.test(String(body.model??''))&&body.max_tokens!==undefined){
   body.max_completion_tokens=body.max_tokens;
   delete body.max_tokens;
  }

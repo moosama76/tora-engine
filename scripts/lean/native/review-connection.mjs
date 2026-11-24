@@ -74,18 +74,25 @@ export class ReviewConnection{
   try{
    const parsed=JSON.parse(raw);
    if(parsed?.format!=='tora-connection-1'||!validKey(parsed.apiKey))return null;
-   const verified=verifiedPlayableModel(parsed.provider,parsed.model);
+   const verified=verifiedPlayableModel(parsed.provider,parsed.model,{
+    endpoint:parsed.endpoint,
+    preset:parsed.preset,
+    vision:typeof parsed.vision==='boolean'?parsed.vision:undefined,
+   });
    if(!verified)return null;
+   const vision=verified.model.capabilities?.vision!==false;
    return {
     provider:verified.provider.id,
     providerLabel:verified.provider.label,
+    ...(verified.provider.endpoint?{endpoint:verified.provider.endpoint}:{}),
+    ...(verified.provider.preset?{preset:verified.provider.preset}:{}),
     model:verified.model.id,
     modelLabel:verified.model.label,
     capabilities:verified.model.capabilities,
     audioSummary:verified.provider.audioSummary,
     videoSummary:verified.provider.videoSummary,
     apiKey:parsed.apiKey,
-    vision:true,
+    vision,
     verified:true,
    };
   }catch{
@@ -130,6 +137,8 @@ export class ReviewConnection{
    configured:true,
    provider:active.provider,
    providerLabel:active.providerLabel,
+   ...(active.endpoint?{endpoint:active.endpoint}:{}),
+   ...(active.preset?{preset:active.preset}:{}),
    model:active.model,
    modelLabel:active.modelLabel,
    capabilities:active.capabilities,
@@ -164,18 +173,19 @@ export class ReviewConnection{
   }
  }
 
- async listModels({provider,apiKey}){
+ async listModels({provider,apiKey,endpoint,preset}){
   const providerId=typeof provider==='string'?provider.trim():'';
   const key=typeof apiKey==='string'?apiKey.trim():'';
   check(validKey(key),'E_REVIEW_KEY_FORMAT');
-  const req=modelListRequest(providerId,key);
+  const req=modelListRequest(providerId,key,{endpoint,preset});
   const payload=await this.fetchJson(req.url,req.headers);
   const rawItems=providerId==='gemini'
    ?(Array.isArray(payload?.models)?payload.models:[])
-   :(Array.isArray(payload?.data)?payload.data:[]);
-  const curatedOrder=new Map(
-   (publicPlayableProviders().find(item=>item.id===providerId)?.models??[]).map((item,idx)=>[item.id,idx]),
-  );
+   :(Array.isArray(payload?.data)?payload.data:Array.isArray(payload?.models)?payload.models:[]);
+  const providerEntry=publicPlayableProviders().find(item=>item.id===providerId);
+  const presetEntry=providerId==='openai-compatible'?providerEntry?.presets?.find(p=>p.id===preset||(p.endpoint&&String(endpoint??'').startsWith(p.endpoint))):null;
+  const curatedList=presetEntry?.models??providerEntry?.models??[];
+  const curatedOrder=new Map(curatedList.map((item,idx)=>[item.id,idx]));
   const seen=new Set();
   const discovered=[];
   for(const item of rawItems){
@@ -185,13 +195,17 @@ export class ReviewConnection{
    }
    const rawId=providerId==='gemini'
     ?String(item?.name??'').replace(/^models\//,'')
-    :String(item?.id??'');
+    :String(item?.id??item?.name??'');
    if(!rawId||seen.has(rawId))continue;
-   const verified=verifiedPlayableModel(providerId,rawId,item?.displayName||item?.display_name);
+   const verified=verifiedPlayableModel(providerId,rawId,{
+    displayName:item?.displayName||item?.display_name||item?.name,
+    endpoint,
+    preset,
+   });
    if(!verified)continue;
    seen.add(rawId);
    const contextTokens=verified.model.contextTokens
-    ??(typeof item?.inputTokenLimit==='number'?item.inputTokenLimit:null);
+    ??(typeof item?.inputTokenLimit==='number'?item.inputTokenLimit:typeof item?.context_length==='number'?item.context_length:null);
    discovered.push({
     id:verified.model.id,
     label:verified.model.label,
@@ -237,14 +251,28 @@ export class ReviewConnection{
   const provider=typeof input.provider==='string'?input.provider.trim():'';
   const model=typeof input.model==='string'?input.model.trim():'';
   const key=typeof input.apiKey==='string'?input.apiKey.trim():'';
+  const endpoint=typeof input.endpoint==='string'?input.endpoint.trim():undefined;
+  const preset=typeof input.preset==='string'?input.preset.trim():undefined;
+  const vision=typeof input.vision==='boolean'?input.vision:undefined;
   check(validKey(key),'E_REVIEW_KEY_FORMAT');
-  const verified=verifiedPlayableModel(provider,model);
+  const verified=verifiedPlayableModel(provider,model,{endpoint,preset,vision});
   if(!verified)throw Error('E_MODEL_UNSUPPORTED_CAPABILITY');
-  const probe=modelVerificationRequest(verified.provider.id,verified.model.id,key);
-  await this.verifyFetch(probe.url,probe.headers);
+  const probe=modelVerificationRequest(verified.provider.id,verified.model.id,key,{endpoint:verified.provider.endpoint,preset:verified.provider.preset,vision:verified.model.capabilities?.vision});
+  if(verified.provider.id==='openai-compatible'){
+   const listPayload=await this.fetchJson(probe.listUrl,probe.headers);
+   const items=Array.isArray(listPayload?.data)?listPayload.data:Array.isArray(listPayload?.models)?listPayload.models:[];
+   if(items.length>0&&!items.some(item=>(item?.id??item?.name)===verified.model.id)){
+    await this.verifyFetch(probe.url,probe.headers);
+   }
+  }else{
+   await this.verifyFetch(probe.url,probe.headers);
+  }
   await this.writeSecureFile(verifiedFile,JSON.stringify({
    format:'tora-connection-1',
    provider:verified.provider.id,
+   ...(verified.provider.endpoint?{endpoint:verified.provider.endpoint}:{}),
+   ...(verified.provider.preset?{preset:verified.provider.preset}:{}),
+   ...(verified.provider.id==='openai-compatible'?{vision:Boolean(verified.model.capabilities?.vision)}:{}),
    model:verified.model.id,
    apiKey:key,
   }));
@@ -252,6 +280,8 @@ export class ReviewConnection{
    configured:true,
    provider:verified.provider.id,
    providerLabel:verified.provider.label,
+   ...(verified.provider.endpoint?{endpoint:verified.provider.endpoint}:{}),
+   ...(verified.provider.preset?{preset:verified.provider.preset}:{}),
    model:verified.model.id,
    modelLabel:verified.model.label,
    capabilities:verified.model.capabilities,

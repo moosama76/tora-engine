@@ -44,6 +44,20 @@ test('verified BYOK capability gate allows only playable-ready APIs, verifies mo
       assert.equal(options.headers['anthropic-version'], '2023-06-01');
       return new globalThis.Response('{}', {status: options.headers['x-api-key'] === 'claude-good-key-123' ? 200 : 401});
     }
+    if (url === 'https://openrouter.ai/api/v1/models') {
+      if (options.headers.Authorization !== 'Bearer openrouter-good-key-123') return new globalThis.Response('{}', {status: 401});
+      return globalThis.Response.json({
+        data: [
+          {id: 'qwen/qwen3.8-max', name: 'Qwen 3.8 Max', context_length: 1_000_000},
+          {id: 'moonshotai/kimi-k3.1-pro', name: 'Kimi K3.1 Pro', context_length: 1_000_000},
+          {id: 'openai/text-embedding-3-small', name: 'Embedding'},
+        ],
+      });
+    }
+    if (url === 'https://api.deepseek.com/v1/models') {
+      if (options.headers.Authorization !== 'Bearer deepseek-good-key-123') return new globalThis.Response('{}', {status: 401});
+      return globalThis.Response.json({data: [{id: 'deepseek-chat'}, {id: 'deepseek-reasoner'}]});
+    }
     return new globalThis.Response('{}', {status: 404});
   };
 
@@ -65,15 +79,18 @@ test('verified BYOK capability gate allows only playable-ready APIs, verifies mo
 
   const initial = await get('/api/review/connection');
   assert.equal(initial.configured, false);
-  assert.deepEqual(initial.supportedProviders.map(p => p.id), ['gemini', 'openai', 'anthropic']);
+  assert.deepEqual(initial.supportedProviders.map(p => p.id), ['gemini', 'openai', 'anthropic', 'openai-compatible']);
   assert.equal(initial.supportedProviders[0].defaultModel, 'gemini-4-hydrogen');
   assert.equal(initial.supportedProviders[1].defaultModel, 'gpt-6.2-sol');
   assert.equal(initial.supportedProviders[2].defaultModel, 'claude-opus-5-5');
+  assert.deepEqual(initial.supportedProviders[3].presets.map(p => p.id), ['openrouter', 'deepseek', 'kimi', 'qwen', 'glm', 'custom']);
 
-  // Weak / text-only / embedding / legacy APIs must be blocked before calling upstream.
+  // Weak / text-only / embedding / legacy APIs and missing/insecure custom endpoints must be blocked before calling upstream.
   for (const rejected of [
     {provider: 'orca', model: 'deepseek/deepseek-v4-flash-free', apiKey: 'test-key-12345'},
     {provider: 'openai-compatible', model: 'llama-3-8b', apiKey: 'test-key-12345'},
+    {provider: 'openai-compatible', model: 'deepseek-chat', endpoint: 'http://remote.example/v1', apiKey: 'test-key-12345'},
+    {provider: 'openai-compatible', model: 'text-embedding-3-small', endpoint: 'https://openrouter.ai/api/v1', apiKey: 'test-key-12345'},
     {provider: 'openai', model: 'gpt-3.5-turbo', apiKey: 'test-key-12345'},
     {provider: 'openai', model: 'text-embedding-3-large', apiKey: 'test-key-12345'},
     {provider: 'anthropic', model: 'claude-3-haiku', apiKey: 'test-key-12345'},
@@ -123,6 +140,34 @@ test('verified BYOK capability gate allows only playable-ready APIs, verifies mo
   });
   assert.equal(okClaude.status, 200);
   assert.equal((await get('/api/review/connection')).model, 'claude-opus-5-5');
+
+  // OpenAI-compatible live model discovery (OpenRouter) filters embeddings and saves verified DeepSeek / OpenRouter presets.
+  const orModelsRes = await post('/api/review/connection', {
+    action: 'models', provider: 'openai-compatible', preset: 'openrouter', endpoint: 'https://openrouter.ai/api/v1', apiKey: 'openrouter-good-key-123',
+  });
+  assert.equal(orModelsRes.status, 200);
+  const orModels = await orModelsRes.json();
+  assert.deepEqual(orModels.models.map(m => m.id), ['qwen/qwen3.8-max', 'moonshotai/kimi-k3.1-pro']);
+
+  const okOpenRouter = await post('/api/review/connection', {
+    provider: 'openai-compatible', preset: 'openrouter', endpoint: 'https://openrouter.ai/api/v1', model: 'qwen/qwen3.8-max', vision: true, apiKey: 'openrouter-good-key-123',
+  });
+  assert.equal(okOpenRouter.status, 200);
+  const orBody = await okOpenRouter.json();
+  assert.equal(orBody.provider, 'openai-compatible');
+  assert.equal(orBody.providerLabel, 'OpenRouter');
+  assert.equal(orBody.endpoint, 'https://openrouter.ai/api/v1');
+  assert.equal(orBody.capabilities.vision, true);
+  assert.ok(!JSON.stringify(orBody).includes('openrouter-good-key-123'));
+
+  const okDeepSeek = await post('/api/review/connection', {
+    provider: 'openai-compatible', preset: 'deepseek', endpoint: 'https://api.deepseek.com/v1', model: 'deepseek-chat', vision: false, apiKey: 'deepseek-good-key-123',
+  });
+  assert.equal(okDeepSeek.status, 200);
+  const dsBody = await okDeepSeek.json();
+  assert.equal(dsBody.providerLabel, 'DeepSeek');
+  assert.equal(dsBody.capabilities.vision, false);
+  assert.equal((await get('/api/review/connection')).model, 'deepseek-chat');
 
   // Disconnect clears saved key cleanly.
   const disc = await post('/api/review/connection', {action: 'disconnect'});
@@ -200,11 +245,19 @@ test('chat-first New Playable and Chat Feedback Editor work end-to-end with free
   assert.equal(await page.locator('#intake-rights-wrap').isVisible(), false);
   await page.screenshot({path: resolve(shotDir, 'new-free-packs.png')});
 
-  // Open Verified BYOK API modal and inspect providers + capabilities
+  // Open Verified BYOK API modal and inspect providers + OpenAI-Compatible presets (OpenRouter, DeepSeek, Kimi, Qwen, GLM)
   await page.click('#intake-api-pill');
   await page.waitForSelector('dialog.tora-modal[open]');
   const providerTexts = await page.locator('.tora-provider-card strong').allTextContents();
-  assert.deepEqual(providerTexts, ['Google Gemini', 'OpenAI', 'Anthropic Claude']);
+  assert.deepEqual(providerTexts, ['Google Gemini', 'OpenAI', 'Anthropic Claude', 'Custom / OpenRouter']);
+  await page.locator('.tora-provider-card', {hasText: 'Custom / OpenRouter'}).click();
+  await page.waitForSelector('#tora-compat-fields:not([hidden])');
+  const presetTexts = await page.locator('.tora-preset-btn').allTextContents();
+  assert.deepEqual(presetTexts, ['OpenRouter', 'DeepSeek', 'Kimi (Moonshot)', 'Qwen (Alibaba)', 'GLM (Z.ai)', 'Custom / Local']);
+  await page.locator('.tora-preset-btn', {hasText: 'DeepSeek'}).click();
+  assert.equal(await page.locator('#tora-api-endpoint').inputValue(), 'https://api.deepseek.com/v1');
+  assert.equal(await page.locator('#tora-api-custom-model').inputValue(), 'deepseek-chat');
+  assert.equal(await page.locator('#tora-api-vision').isChecked(), false);
   await page.screenshot({path: resolve(shotDir, 'api-modal.png')});
   await page.click('#tora-api-close');
 

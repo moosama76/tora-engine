@@ -231,9 +231,9 @@ export class ReviewIntake {
 
   async verifiedProvider() {
     const active = await this.connection?.read();
-    if (!active?.verified || !['gemini','openai','anthropic'].includes(active.provider)) return null;
+    if (!active?.verified || !['gemini','openai','anthropic','openai-compatible'].includes(active.provider)) return null;
     return {
-      config:reviewProviderConfig({provider:active.provider,model:active.model,apiKey:active.apiKey,vision:true}),
+      config:reviewProviderConfig({provider:active.provider,model:active.model,endpoint:active.endpoint,apiKey:active.apiKey,vision:active.vision!==false}),
       info:{provider:active.provider,providerLabel:active.providerLabel,model:active.model,modelLabel:active.modelLabel},
       apiKey:active.apiKey,
     };

@@ -40,6 +40,7 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
   const config=reviewProviderConfig({
    provider:active.provider,
    model:active.model,
+   endpoint:active.endpoint,
    apiKey:active.apiKey,
    vision:active.vision,
   });
@@ -127,13 +128,13 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
    return true;
   }
   if(body.action==='models'){
-   check(exact(body,['action','provider','apiKey']),'E_NATIVE_ARGUMENT');
-   json(200,await connection.listModels({provider:body.provider,apiKey:body.apiKey}));
+   check(exact(body,['action','provider','apiKey','endpoint','preset']),'E_NATIVE_ARGUMENT');
+   json(200,await connection.listModels({provider:body.provider,apiKey:body.apiKey,endpoint:body.endpoint,preset:body.preset}));
    return true;
   }
   if(Object.hasOwn(body,'provider')||Object.hasOwn(body,'model')){
-   check(exact(body,['provider','model','apiKey']),'E_NATIVE_ARGUMENT');
-   json(200,await connection.save({provider:body.provider,model:body.model,apiKey:body.apiKey}));
+   check(exact(body,['provider','model','apiKey','endpoint','preset','vision']),'E_NATIVE_ARGUMENT');
+   json(200,await connection.save({provider:body.provider,model:body.model,apiKey:body.apiKey,endpoint:body.endpoint,preset:body.preset,vision:body.vision}));
    return true;
   }
   check(exact(body,['apiKey']),'E_NATIVE_ARGUMENT');

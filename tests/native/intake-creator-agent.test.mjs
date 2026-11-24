@@ -138,4 +138,24 @@ test('OpenAI tool call IDs stay within 40 chars, malformed prior args do not cra
  assert.equal(toolFeedback.error,'E_NATIVE_PROPERTY');
  assert.equal(toolFeedback.detail.componentId,'bad.box');
  assert.equal(toolFeedback.detail.key,'width');
+
+ // 5. OpenAI-compatible text-only provider (e.g. DeepSeek) omits image_url payloads cleanly and uses max_tokens
+ const dsRequests=[];let dsTurn=0;
+ const dsDraft=await source(service,'deepseek-compat-test');
+ const dsFetch=async(url,init)=>{
+  dsRequests.push({url,body:JSON.parse(init.body)});dsTurn++;
+  if(dsTurn===1)return completion([toolCall('run_qa',{},'call_ds_1')]);
+  return completion([toolCall('finish_build',{title:'DeepSeek Build',summary:'Built with OpenAI-compatible endpoint.'},'call_ds_2')]);
+ };
+ const dsIntakes=new ReviewIntake(service,{
+  connection:{read:async()=>({provider:'openai-compatible',providerLabel:'DeepSeek',endpoint:'https://api.deepseek.com/v1',model:'deepseek-chat',modelLabel:'DeepSeek Chat',apiKey:key,vision:false,verified:true}),fetch:dsFetch},
+  agentFactory:options=>new IntakeCreatorAgent(service,dsIntakes,options.intake,{...options,toolsFactory:toolOptions=>new RepairTools(toolOptions,png)}),
+ });
+ await dsIntakes.submit(dsDraft.id,{mode:'auto'});
+ const dsReady=await waitStatus(dsIntakes,dsDraft.id,'ready');
+ assert.equal(dsReady.title,'DeepSeek Build');
+ assert.equal(dsRequests[0].url,'https://api.deepseek.com/v1/chat/completions');
+ assert.equal(dsRequests[0].body.max_tokens,4096);
+ assert.equal(dsRequests[0].body.max_completion_tokens,undefined);
+ assert.ok(dsRequests.every(req=>!JSON.stringify(req.body.messages).includes('image_url')));
 });
