@@ -90,17 +90,13 @@ npm run test:mcp           # MCP server + editor end-to-end integration tests
 
 ---
 
-## Licensing & Commercial Services
+## License
 
-Tora is distributed under the **Tora Source-Available License (v2.0)** ([LICENSE](LICENSE)).
+Tora is free and open-source software licensed under the [Apache License 2.0](LICENSE).
 
-### Free Commercial Use
+Free for everyone, forever. Unlimited personal and commercial use, including third-party production, without royalties, subscription fees, or organization-size restrictions.
 
-- **Everyone:** Individuals, freelancers, game studios, production agencies, and enterprises.
-- **Unlimited Production:** No limits on organization size, revenue, users, clients, exports, or advertising impressions.
-- **Client Production:** Create, sell, and deliver playable ads for any third-party client without additional licensing fees.
-- **Royalty-Free Exports:** Lawfully exported playables can be commercially distributed indefinitely, subject to applicable third-party licenses.
-- **Source Access:** Inspect, customize, and run Tora locally or on private infrastructure.
+Contributions, modifications, and commercial integrations are welcome.
 
 ### Restrictions
 
