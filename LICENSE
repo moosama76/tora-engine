@@ -1,45 +1,73 @@
-Tora Source-Available Studio License (v1.0)
+# Tora Source-Available License (v2.0)
 
 Copyright (c) 2026 Tora Playables. All rights reserved.
 
-This license governs use of the Tora source code and accompanying tools in this
-repository ("the Software"). By cloning, installing, modifying, or running the
-Software, you agree to these terms.
+This license governs the use of the Tora source code, engine, runtime, MCP server, and accompanying tools and documentation distributed under this license ("the Software").
 
-1. Permitted Internal Studio Use (Free)
-You may use, copy, modify, and run the Software locally or on private internal
-infrastructure at no charge to design, author, test, and export playable ads
-strictly for games or applications owned and published by you or your
-organization ("Internal Use").
+## 1. Permitted Use
 
-Playable ad artifacts (standalone HTML, Unity Ads, AppLovin, and project
-bundles) exported by you for your own games under Internal Use belong to you,
-subject to any separate third-party media licenses referenced in those assets.
+Permission is granted, free of charge, to any individual or organization to use, copy, modify, and run the Software locally or on private infrastructure for personal, educational, research, and commercial purposes.
 
-2. Commercial Restrictions (Paid License Required)
-Without a separate written commercial license from Tora Playables, you may NOT:
-  a) Hosted / Competing Service: Offer all or any substantial portion of the
-     Software (original or modified) to third parties as a hosted service,
-     managed platform, cloud API, or competing playable-ad authoring product.
-  b) Client / Agency Delivery: Use the Software as an agency, contractor, or
-     service provider to produce, deliver, or monetize playable ads on behalf
-     of third-party clients.
-  c) Circumvention: Remove or bypass license, attribution, or provenance
-     notices included in the Software.
+This includes designing, authoring, testing, exporting, selling, and delivering playable advertisements for any product, including products owned by third-party clients.
 
-3. Commercial & Agency Licensing
-Agencies delivering client playables, enterprise studios requiring SLA support,
-and teams needing commercial ad-network Pro packs may obtain a commercial
-license by contacting the Tora Playables maintainers via this repository.
+No limitations apply to organization size, revenue, number of employees, number of users, number of clients, production volume, advertising expenditure, or advertising impressions.
 
-4. Third-Party Media & Dependencies
-Bundled sample assets in `assets/` and open-source software dependencies retain
-their respective original licenses (such as CC0-1.0, MIT, or Apache-2.0) as
-documented in their accompanying provenance and lockfiles.
+## 2. Ownership and Exported Artifacts
 
-5. Disclaimer & Limitation of Liability
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE, AD-NETWORK ACCEPTANCE, OR NON-INFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
-LIABILITY ARISING FROM USE OF THE SOFTWARE.
+Users retain ownership of their original content, assets, and creative work produced using the Software.
+
+Lawfully exported playable advertisements and production artifacts may be used, modified, reproduced, distributed, sold, and delivered to third parties worldwide, perpetually and without royalties.
+
+This permission includes Tora runtime components incorporated into exported artifacts as necessary for their execution.
+
+These rights survive subsequent licensing changes or termination of this license, subject to applicable third-party licenses.
+
+## 3. Restrictions
+
+Without separate written authorization from Tora Playables, you may not:
+
+a. Redistribute, resell, or sublicense the Software itself, whether original or modified, except for authorized distribution of exported artifacts.
+
+b. Offer the Software itself to third parties as a hosted authoring service, managed authoring platform, cloud API, or redistributable authoring toolkit.
+
+c. Remove or falsify required copyright, licensing, attribution, or provenance notices.
+
+Producing, selling, and delivering playable advertisements on behalf of third-party clients is expressly permitted and does not constitute prohibited redistribution.
+
+## 4. Intellectual Property
+
+The Software remains the intellectual property of its respective copyright holders.
+
+This license does not transfer ownership of the Software or grant rights to use Tora trademarks beyond reasonable identification of the Software.
+
+All rights not expressly granted are reserved.
+
+## 5. Future Licensing
+
+Tora Playables reserves the right to introduce, modify, or replace licensing terms, including the introduction of paid commercial licenses.
+
+The permissions granted under Section 1 remain effective until withdrawn or replaced by Tora Playables upon at least 30 days' advance notice through the official project repository.
+
+Where such notice expressly withdraws permissions granted under this license, continued use of the Software, including previously obtained versions, after the stated effective date requires an applicable license.
+
+Changes apply prospectively. No retroactive fees or royalties shall apply to use lawfully conducted under this license.
+
+Previously granted rights to exported artifacts under Section 2 remain unaffected.
+
+## 6. Third-Party Media and Dependencies
+
+Bundled assets, media, and third-party software dependencies remain subject to their respective licenses.
+
+Nothing in this license restricts rights independently granted under those licenses.
+
+## 7. Termination
+
+Permissions to use the Software terminate if a material violation of this license remains uncured for 30 days following written notice.
+
+Termination does not affect ownership of user-created content or rights to artifacts lawfully exported before the violation.
+
+## 8. Disclaimer and Limitation of Liability
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AD-NETWORK ACCEPTANCE, OR NON-INFRINGEMENT.
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
