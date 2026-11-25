@@ -92,7 +92,32 @@ npm run test:mcp           # MCP server + editor end-to-end integration tests
 
 ## Licensing & Commercial Services
 
-- **Internal Game Studios (Free):** Free to clone, customize, and ship playable ads for your **own** games under the Tora Source-Available Studio License ([`LICENSE`](LICENSE)). Hosted/SaaS clones are prohibited.
-- **Agencies & Client Production (Commercial License):** Agencies or contractors building playable ads for third-party clients require a commercial license — email [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Tora%20Commercial%20%2F%20Agency%20License).
-- **Done-For-You Playable Production & Custom Networks:** Need production-ready playable ads shipped fast for Unity Ads & AppLovin, custom ad-network adapters (Google Ads, Meta, ironSource, Mintegral, TikTok), or team setup? Email [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Custom%20Playable%20Sprint%20with%20Tora).
-- **Contributing:** See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Tora is distributed under the **Tora Source-Available License (v2.0)** ([LICENSE](LICENSE)).
+
+### Free Commercial Use
+
+- **Everyone:** Individuals, freelancers, game studios, production agencies, and enterprises.
+- **Unlimited Production:** No limits on organization size, revenue, users, clients, exports, or advertising impressions.
+- **Client Production:** Create, sell, and deliver playable ads for any third-party client without additional licensing fees.
+- **Royalty-Free Exports:** Lawfully exported playables can be commercially distributed indefinitely, subject to applicable third-party licenses.
+- **Source Access:** Inspect, customize, and run Tora locally or on private infrastructure.
+
+### Restrictions
+
+Redistributing, reselling, sublicensing, or offering the Tora authoring software itself as a hosted service requires separate written authorization.
+
+These restrictions do not prohibit selling or delivering exported playable advertisements to clients.
+
+### Future Licensing
+
+Tora is currently free for all organizations. Future licensing changes are governed by Section 5 of the [LICENSE](LICENSE). Rights to lawfully exported playables remain unaffected.
+
+### Commercial Services
+
+Need custom ad-network adapters, production-ready playable advertisements, technical assistance, or team integration?
+
+Contact [mohamed@tora.work.gd](mailto:mohamed@tora.work.gd).
+
+### Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
