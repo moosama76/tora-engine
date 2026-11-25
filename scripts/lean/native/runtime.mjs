@@ -1,6 +1,10 @@
 /* global Image,atob,navigator,window,document,devicePixelRatio,requestAnimationFrame,cancelAnimationFrame,Path2D */
 import {multiplyMatrix,inverseMatrix,identityMatrix} from '../scene-document.mjs';
 import {createMatchBoard} from './match-board.mjs';
+import {createDropOccupancy,resolveDropZone,classifySwipe,createHoldCharge,createGestureTweens} from './interaction-gestures.mjs';
+import {createInstanceSteering,seedFromText,findNearestByTeam,turnToward} from './instance-steering.mjs';
+import {createEraseMask} from './erase-mask.mjs';
+import {createStrokeStore,strokeWalls,segmentHitsPolygon,segmentsIntersect} from './draw-stroke.mjs';
 import {stepPhysics,predictTrajectory} from './physics-2d.mjs';
 /* 3d:start */
 import {stepPhysics3d,predictTrajectory3d,ground3d} from './physics-3d.mjs';
@@ -85,26 +89,26 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   if(paintedLandscape!==viewport().landscape){cancelInput();render();}
  }
  for(const a of project.assets)if(a.mime.startsWith('image/')){const img=new Image();img.src='data:'+a.mime+';base64,'+a.data;images.set(a.id,img);}
- let scene=sceneId,variables={},instances=[],particles=[],animations=[],queue=[],contacts=new Set(),time=0,ambientTime=0,serial=0,acc=0,last=0,paused=false,frameEvents=0,frameActions=0,halted=false,diagnostics=[],audio,audioUnlock,drag,hover,pressed,pressPointerId,raf,transition,selected,paint=[],pendingStore,floatingTexts=[],screenFlashes=[],shake,tutorialInputAt=0,tutorialHadInput=false,activeTutorialHands=0,started=network==='standalone',networkReady=network==='standalone',networkVisible=network==='standalone',closed=false,destroyed=false;
+ let scene=sceneId,variables={},instances=[],particles=[],animations=[],queue=[],contacts=new Set(),contactPairs=new Map(),time=0,ambientTime=0,serial=0,acc=0,last=0,paused=false,frameEvents=0,frameActions=0,halted=false,diagnostics=[],audio,audioUnlock,drag,hover,pressed,pressPointerId,raf,transition,selected,paint=[],pendingStore,floatingTexts=[],screenFlashes=[],shake,tutorialInputAt=0,tutorialHadInput=false,activeTutorialHands=0,started=network==='standalone',networkReady=network==='standalone',networkVisible=network==='standalone',closed=false,destroyed=false;
  const overrides=new Map(),timers=new Map(),runtimeNodes=new Map(),spriteMotion=new Map(),audioSources=new Set(),decodedAudio=new Map(),loopingAudio=new Set(),pendingLoopAudio=new Map(),audioVoices=new Map(),audioCooldowns=new Map(),audioPitchCounts=new Map(),pressStates=new Map(),matchCells=new Map();let audioEpoch=0,blockedAudio=0,matchSelected,matchGesture;
- const matchBoards=new Map(),matchArtwork=new Map(),physicsBodies=new Map(),pathNetworks=new Map(),oscillations=new Map(),meterStates=new Map(),cameraStates=new Map();let aiming,currentRenderScale=1,currentRenderDpr=1;
+ const matchBoards=new Map(),matchArtwork=new Map(),physicsBodies=new Map(),pathNetworks=new Map(),oscillations=new Map(),meterStates=new Map(),cameraStates=new Map(),dropOccupancy=createDropOccupancy(),gestureTweens=createGestureTweens(),dragOrigins=new Map(),swipeCooldowns=new Map(),instanceEngine=createInstanceSteering(seedFromText(project.projectId)),maskStates=new Map(),strokeStates=new Map(),pathFollowers=new Map(),brokenJoints=new Set();let aiming,currentRenderScale=1,currentRenderDpr=1,gestureInput,hoverDrop,lastPointer={x:0,y:0},continuousInput,strokeWallBodies=[],activeJoints=[];
  /* 3d:start */
  const bodies3d=new Map(),oscillations3d=new Map(),projected3d=new Map();let aiming3d,stage3dMgr;
  if(project.components.some(c=>c.contract==='native.stage3d.v1'))stage3dMgr=createStage3dManager(project,assets,()=>{if(!destroyed)Promise.resolve().then(()=>{if(!destroyed)render();});});
  /* 3d:end */
- const object=id=>runtimeNodes.get(id)??byId.get(id);
+ const object=id=>runtimeNodes.get(id)??byId.get(id),behaviorOn=(kind,id)=>project.gameplay.find(b=>b.kind===kind&&b.componentId===id);
  const stopAudio=()=>{audioEpoch++;loopingAudio.clear();pendingLoopAudio.clear();audioCooldowns.clear();audioPitchCounts.clear();for(const source of audioSources)try{source.stop();}catch{/* A completed voice may already be stopped. */}audioSources.clear();audioVoices.clear();};
  const cancelAim=pointerId=>{if(!aiming||(pointerId!==undefined&&aiming.pointerId!==pointerId))return false;const id=aiming.pointerId;if(aiming.behavior.parameters.powerVariableId)variables[aiming.behavior.parameters.powerVariableId]=0;aiming=undefined;try{if(canvas.hasPointerCapture?.(id))canvas.releasePointerCapture?.(id);}catch{/* Capture may already have been released by the host. */}return true;};
  /* 3d:start */
  const cancelAim3d=pointerId=>{if(!aiming3d||(pointerId!==undefined&&aiming3d.pointerId!==pointerId))return false;const id=aiming3d.pointerId;if(aiming3d.behavior.parameters.powerVariableId)variables[aiming3d.behavior.parameters.powerVariableId]=0;stage3dMgr?.getStage(byId.get(aiming3d.stageId))?.setGuide([]);aiming3d=undefined;try{if(canvas.hasPointerCapture?.(id))canvas.releasePointerCapture?.(id);}catch{/* Capture may already have been released by the host. */}return true;};
  /* 3d:end */
- const cancelDrag=pointerId=>{if(!drag||(pointerId!==undefined&&drag.pointerId!==pointerId))return false;const id=drag.pointerId;drag=undefined;try{if(canvas.hasPointerCapture?.(id))canvas.releasePointerCapture?.(id);}catch{/* Capture may already have been released by the host. */}return true;};
+ const cancelDrag=(pointerId,restore=true)=>{if(!drag||(pointerId!==undefined&&drag.pointerId!==pointerId))return false;const current=drag,id=current.pointerId;drag=undefined;hoverDrop=undefined;if(restore){const c=object(current.targetId);if(c&&current.b.parameters.snapBack){setWorldCenter(c,current.origin.x,current.origin.y);if(current.originZone)dropOccupancy.place(c.id,current.originZone);}}try{if(canvas.hasPointerCapture?.(id))canvas.releasePointerCapture?.(id);}catch{/* Capture may already have been released by the host. */}return true;};
  const finishPointer=e=>{if(pendingStore?.pointerId===e.pointerId)pendingStore=undefined;for(const press of pressStates.values())if(press.pointerId===e.pointerId&&press.held){press.held=false;press.releasedAt=time;}const owned=cancelDrag(e.pointerId);if(pressPointerId===e.pointerId){pressed=undefined;pressPointerId=undefined;return true;}return owned;};
- const despawn=id=>{if(drag&&runtimeNodes.get(drag.targetId)?.instanceId===id)cancelDrag();if(aiming&&runtimeNodes.get(aiming.targetId)?.instanceId===id)cancelAim();const removed=[];instances=instances.filter(i=>i.id!==id);for(const [key,c]of runtimeNodes)if(c.instanceId===id){removed.push(key);runtimeNodes.delete(key);overrides.delete(key);spriteMotion.delete(key);physicsBodies.delete(key);oscillations.delete(key);meterStates.delete(key);for(const network of pathNetworks.values())network.removeAgent(key);for(const timerKey of timers.keys())if(timerKey.endsWith(':'+key))timers.delete(timerKey);}animations=animations.filter(a=>!removed.includes(a.targetId));};
+ const despawn=id=>{if(!id)return;if(drag&&runtimeNodes.get(drag.targetId)?.instanceId===id)cancelDrag(undefined,false);if(aiming&&runtimeNodes.get(aiming.targetId)?.instanceId===id)cancelAim();const removed=[];dropOccupancy.release(id);gestureTweens.cancel(id);maskStates.delete(id);pathFollowers.delete(id);instanceEngine.remove(id);instances=instances.filter(i=>i.id!==id);for(const [key,c]of runtimeNodes)if(c.instanceId===id){removed.push(key);dropOccupancy.release(key);gestureTweens.cancel(key);runtimeNodes.delete(key);overrides.delete(key);spriteMotion.delete(key);physicsBodies.delete(key);oscillations.delete(key);meterStates.delete(key);for(const network of pathNetworks.values())network.removeAgent(key);for(const timerKey of timers.keys())if(timerKey.endsWith(':'+key))timers.delete(timerKey);}animations=animations.filter(a=>!removed.includes(a.targetId));};
  const prototypeOwner=c=>{while(c){if(c.prototype)return c.id;c=object(c.parentId);}return undefined;};
- const state=()=>({viewport:viewport(),components:Object.fromEntries([...overrides].map(([id,value])=>[id,{...value,parameters:{...value.parameters}}])),mode:edit?'edit':'play',scene,variables:{...variables},time,instances:instances.map(i=>({id:i.id,prototypeId:i.prototypeId,x:i.transform[4],y:i.transform[5]})),particles:particles.length,animations:animations.length,contacts:contacts.size,spriteFrames:Object.fromEntries([...spriteMotion].map(([key,value])=>[key,value.frame??0])),input:{dragging:Boolean(drag),pointerId:drag?.pointerId??null,pressed:pressed??null},feedback:{presses:pressStates.size,floatingTexts:floatingTexts.length,flashes:screenFlashes.length,shaking:Boolean(shake),tutorialHands:activeTutorialHands},match:{boards:Object.fromEntries([...matchBoards].map(([id,board])=>[id,board.snapshot()])),selected:matchSelected??null,cells:[...matchCells].map(([id,cell])=>({id,...cell}))},physics:physicsSnapshot(),/* 3d:start */physics3d:physics3dSnapshot(),/* 3d:end */paths:Object.fromEntries([...pathNetworks].map(([id,network])=>[id,network.snapshot()])),audio:{state:audio?.state??'locked',voices:audioSources.size,blocked:blockedAudio},network:{target:network,ready:networkReady,visible:networkVisible,started,closed},diagnostics:[...diagnostics]});
+ const state=()=>({viewport:viewport(),components:Object.fromEntries([...overrides].map(([id,value])=>[id,{...value,parameters:{...value.parameters}}])),mode:edit?'edit':'play',scene,variables:{...variables},time,instances:instances.map(i=>({id:i.id,prototypeId:i.prototypeId,x:i.transform[4],y:i.transform[5],...instanceEngine.snapshot(i.id)})),particles:particles.length,animations:animations.length,contacts:contacts.size,spriteFrames:Object.fromEntries([...spriteMotion].map(([key,value])=>[key,value.frame??0])),input:{dragging:Boolean(drag),pointerId:drag?.pointerId??gestureInput?.pointerId??null,pressed:pressed??null,holding:Boolean(gestureInput?.holds.length),occupancy:dropOccupancy.snapshot()},feedback:{presses:pressStates.size,floatingTexts:floatingTexts.length,flashes:screenFlashes.length,shaking:Boolean(shake),tutorialHands:activeTutorialHands},match:{boards:Object.fromEntries([...matchBoards].map(([id,board])=>[id,board.snapshot()])),selected:matchSelected??null,cells:[...matchCells].map(([id,cell])=>({id,...cell}))},physics:physicsSnapshot(),/* 3d:start */physics3d:physics3dSnapshot(),/* 3d:end */paths:Object.fromEntries([...pathNetworks].map(([id,network])=>[id,network.snapshot()])),canvas:{masks:Object.fromEntries([...maskStates].map(([id,mask])=>[id,{progress:mask.progress}])),strokes:Object.fromEntries([...strokeStates].map(([id,store])=>[id,store.strokes.length])),walls:strokeWallBodies.length,joints:activeJoints.filter(joint=>!joint.broken).length},audio:{state:audio?.state??'locked',voices:audioSources.size,blocked:blockedAudio},network:{target:network,ready:networkReady,visible:networkVisible,started,closed},diagnostics:[...diagnostics]});
  const running=()=>!edit&&!paused&&!document.hidden&&networkReady&&networkVisible&&started&&!closed;
- const cancelInput=()=>{pendingStore=undefined;cancelAim();/* 3d:start */cancelAim3d();/* 3d:end */cancelDrag();matchGesture=undefined;for(const board of matchBoards.values())board.cancelSelection();if(matchBoards.size)matchSelected=undefined;pressed=undefined;pressPointerId=undefined;pressStates.clear();};
+ const cancelInput=()=>{pendingStore=undefined;cancelAim();/* 3d:start */cancelAim3d();/* 3d:end */cancelDrag();gestureInput=undefined;hoverDrop=undefined;continuousInput=undefined;for(const store of strokeStates.values())store.cancel();gestureTweens.clear();matchGesture=undefined;for(const board of matchBoards.values())board.cancelSelection();if(matchBoards.size)matchSelected=undefined;pressed=undefined;pressPointerId=undefined;pressStates.clear();};
  const diagnose=message=>{halted=true;diagnostics.push(message);diagnostics=diagnostics.slice(-16);queue=[];};
  const props=c=>({...c.parameters,...(c.prototypeId?overrides.get(c.prototypeId)?.parameters:{}),...overrides.get(c.runtimeId??c.id)?.parameters});
  function pressTransform(c,matrix){
@@ -145,7 +149,15 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  const children=id=>(runtimeNodes.has(id)?[...runtimeNodes.values()]:[...project.components,...instances]).filter(c=>c.parentId===id&&!c.prototype).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:a.id>b.id?1:0));
  const roots=()=>project.components.filter(c=>c.sceneId===scene&&!c.parentId&&!c.prototype).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:a.id>b.id?1:0));
  const emit=e=>{if(queue.length>=256){diagnose('Event queue budget exhausted');return;}queue.push(e);};
- function condition(c){if(!c)return true;if(c.all)return c.all.every(condition);if(c.any)return c.any.some(condition);const a=variables[c.variableId],b=c.compareVariableId?variables[c.compareVariableId]:c.value;return {eq:()=>a===b,ne:()=>a!==b,lt:()=>a<b,lte:()=>a<=b,gt:()=>a>b,gte:()=>a>=b}[c.op]();}
+ const instanceEvent=(kind,c,other,extra={})=>({kind,componentId:c.prototypeId??c.id,selfInstanceId:c.instanceId??c.id,instanceId:c.instanceId,...(other?{otherId:other.prototypeId??other.id,otherInstanceId:other.instanceId??other.id}:{}),...extra});
+ function instanceState(c){for(let current=c;current;current=object(current.parentId)){const state=instanceEngine.states.get(current.instanceId??current.id);if(state)return state;}return undefined;}
+ function initializeInstanceState(c){const behavior=behaviorOn('instance-state',c.prototypeId??c.id);return behavior?instanceEngine.initialize(c.instanceId??c.id,behavior.parameters):undefined;}
+ function initializeInstanceStates(){for(const behavior of project.gameplay.filter(b=>b.kind==='instance-state'))for(const c of targetsFor(byId.get(behavior.componentId)))initializeInstanceState(c);}
+ function modifyInstance(c,field,op,value){
+  const state=instanceState(c);if(!state)return;const previous=state.hp;if(field==='tag')state.tag=op==='set'?String(value):state.tag;else{const numeric=Number(value);state[field]=op==='add'?state[field]+numeric:op==='sub'?state[field]-numeric:numeric;if(!Number.isFinite(state[field])){diagnose('Instance state range exceeded');return;}if(field==='hp')state.hp=Math.max(0,Math.min(state.maxHp,state.hp));}
+  if(previous>0&&state.hp<=0){emit(instanceEvent('instanceDepleted',c));}
+ }
+ function condition(c,event){if(!c)return true;if(c.all)return c.all.every(item=>condition(item,event));if(c.any)return c.any.some(item=>condition(item,event));const instanceId=c.instanceTarget==='other'?event?.otherInstanceId:event?.selfInstanceId??event?.instanceId,target=c.instanceField?object(instanceId)??[...runtimeNodes.values()].find(node=>node.instanceId===instanceId):undefined,a=c.instanceField?instanceState(target)?.[c.instanceField]:variables[c.variableId],b=c.compareVariableId?variables[c.compareVariableId]:c.value;return {eq:()=>a===b,ne:()=>a!==b,lt:()=>a<b,lte:()=>a<=b,gt:()=>a>b,gte:()=>a>=b}[c.op]();}
  function resetMatch(componentId){matchSelected=undefined;matchGesture=undefined;if(!componentId)matchCells.clear();for(const b of project.gameplay)if(b.kind==='match-tile'){const c=byId.get(b.componentId);if(componentId&&c.id!==componentId&&!isDescendant(c,componentId))continue;overrides.delete(c.id);matchCells.set(c.id,{row:b.parameters.row,column:b.parameters.column,group:b.parameters.group,sceneId:c.sceneId,boardId:c.parentId??c.sceneId});}}
  function initializeMatchBoards(){
   for(const behavior of project.gameplay.filter(item=>item.kind==='match-board')){
@@ -187,6 +199,16 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   for(const [boardId,board]of matchBoards)if(!componentId||componentId===boardId||isDescendant(byId.get(boardId),componentId))board.reset();
  }
  function targetsFor(source){return prototypeOwner(source)?[...runtimeNodes.values()].filter(i=>i.prototypeId===source.id):[source];}
+ function centerOf(c){const p=props(c);return point(world(c),p.width/2,p.height/2);}
+ function eventTarget(componentId,event,which='self'){
+  const source=byId.get(componentId),id=which==='other'?event.otherInstanceId:event.selfInstanceId??event.instanceId,isProto=Boolean(source&&prototypeOwner(source));
+  if(id!==undefined){
+   if(componentId){const target=[...runtimeNodes.values()].find(node=>node.prototypeId===componentId&&(node.instanceId===id||node.id===id));if(target)return target;}
+   if(which==='other'||!componentId)return object(id);
+   if(isProto&&typeof id==='string'&&id.startsWith('instance.'))return undefined;
+  }
+  return source?(isProto?targetsFor(source)[0]:object(componentId)):undefined;
+ }
  function setWorldCenter(c,x,y){
   const p=props(c),current=overrides.get(c.id)??{transform:[...c.transform],parameters:{}},matrix=[...current.transform],parent=c.parentId?world(object(c.parentId)):identityMatrix(),local=point(inverseMatrix(parent),x,y);
   matrix[4]=local.x-(matrix[0]*p.width+matrix[2]*p.height)/2;matrix[5]=local.y-(matrix[1]*p.width+matrix[3]*p.height)/2;
@@ -204,6 +226,11 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   body={id:c.id,sourceId:behavior.componentId,instanceId:c.instanceId,x:center.x,y:center.y,vx:0,vy:0,width:Math.hypot(matrix[0],matrix[1])*p.width,height:Math.hypot(matrix[2],matrix[3])*p.height,angle:Math.atan2(matrix[1],matrix[0]),restElapsed:0,atRest:true,...behavior.parameters};
   physicsBodies.set(c.id,body);return body;
  }
+ function maskState(c,behavior){
+  let mask=maskStates.get(c.id);if(mask)return mask;const p=props(c),config=behavior.parameters;
+  mask=createEraseMask(config,{width:p.width,height:p.height,source:c.contract==='native.image.v1'?images.get(c.assetSlots[0]?.assetId):undefined,onProgress:percent=>{if(config.progressVariableId)variables[config.progressVariableId]=percent;emit(instanceEvent('maskProgress',c));},onComplete:()=>emit(instanceEvent('maskComplete',c))});maskStates.set(c.id,mask);return mask;
+ }
+ function strokeState(behavior){let store=strokeStates.get(behavior.componentId);if(!store){store=createStrokeStore(behavior.parameters);strokeStates.set(behavior.componentId,store);}return store;}
  function collectPhysics(){
   const active=new Set(),bodies=[];
   for(const behavior of project.gameplay.filter(item=>item.kind==='physics-body')){
@@ -229,12 +256,17 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    const source=byId.get(behavior.componentId);if(source.sceneId!==scene)continue;
    for(const c of targetsFor(source))if(visible(c)){const matrix=world(c),p=props(c),center=point(matrix,p.width/2,p.height/2),scale=Math.max(.1,Math.min(Math.hypot(matrix[0],matrix[1]),Math.hypot(matrix[2],matrix[3])));zones.push({id:c.id,sourceId:source.id,instanceId:c.instanceId,x:center.x,y:center.y,...behavior.parameters,radius:behavior.parameters.radius*scale});}
   }
-  return {bodies,zones};
+  return {bodies:[...bodies,...strokeWallBodies],zones};
  }
  function tickPhysics(dt){
-  const {bodies,zones}=collectPhysics(),stage=viewport();
-  stepPhysics({bodies,zones,bounds:{left:0,top:0,right:stage.width,bottom:stage.height},dt,onEvent:(kind,body,other)=>{
-   const payload={kind,componentId:body.sourceId,instanceId:body.instanceId};if(other)payload.otherId=other.sourceId;emit(payload);
+  const {bodies,zones}=collectPhysics(),stage=viewport();activeJoints=[];
+  for(const behavior of project.gameplay.filter(item=>item.kind==='physics-joint')){
+   const source=byId.get(behavior.componentId);if(source.sceneId!==scene)continue;const anchor=object(behavior.parameters.anchorComponentId),bodyBehavior=behaviorOn('physics-body',source.id);if(!anchor||!bodyBehavior)continue;
+   for(const c of targetsFor(source)){physicsState(c,bodyBehavior);const center=centerOf(anchor),key=behavior.id+':'+c.id;activeJoints.push({...behavior.parameters,id:behavior.id,key,componentId:source.id,bodyId:c.id,anchorId:anchor.id,x:center.x,y:center.y,broken:brokenJoints.has(key)});}
+  }
+  stepPhysics({bodies,zones,joints:activeJoints,bounds:{left:0,top:0,right:stage.width,bottom:stage.height},dt,onEvent:(kind,body,other)=>{
+   if(kind==='bodyBounce'&&other&&body.sourceId===other.sourceId&&body.id>other.id)return;
+   const selfInstanceId=body.instanceId??body.id,otherInstanceId=other?(other.instanceId??other.id):undefined,payload={kind,componentId:body.sourceId,selfInstanceId,...(otherInstanceId?{otherInstanceId}:{}),instanceId:body.instanceId??other?.instanceId};if(other)payload.otherId=other.sourceId;emit(payload);
    if(kind==='zoneCapture'){
     const target=object(body.id),zone=byId.get(other.sourceId);
     if(other.hideCaptured&&target){const current=overrides.get(target.id)??{transform:[...target.transform],parameters:{}};current.parameters.visible=false;overrides.set(target.id,current);}
@@ -297,7 +329,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   for(const behavior of project.gameplay.filter(item=>item.kind==='value-meter')){
    const source=byId.get(behavior.componentId);if(source.sceneId!==scene)continue;
    for(const c of targetsFor(source)){
-    const p=behavior.parameters,initialRaw=Number(variables[p.variableId]);
+    const p=behavior.parameters,instance=p.instanceField?instanceState(c):undefined,initialRaw=p.instanceField==='hp'&&instance?instance.hp/instance.maxHp*(p.max-p.min)+p.min:p.instanceField==='value'&&instance?instance.value:Number(variables[p.variableId]);
     let state=meterStates.get(c.id);if(!state){state={base:[...transform(c)],value:Number.isFinite(initialRaw)?Math.max(p.min,Math.min(p.max,initialRaw)):p.min};meterStates.set(c.id,state);}activeMeters.add(c.id);
     const target=Math.max(p.min,Math.min(p.max,initialRaw)),blend=p.smoothingSeconds?1-Math.exp(-dt/p.smoothingSeconds):1;
     state.value+=((Number.isFinite(target)?target:p.min)-state.value)*blend;
@@ -349,7 +381,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    const source=byId.get(behavior.componentId);if(!source||source.sceneId!==scene)continue;
    let st=oscillations3d.get(source.id);if(!st){const p=props(source);st={x:p.x??0,y:p.y??0,z:p.z??0};oscillations3d.set(source.id,st);}
    const bp=behavior.parameters,arg=time*bp.angularSpeed+bp.phase,offset=Math.sin(arg)*bp.amplitude,vel=Math.cos(arg)*bp.amplitude*bp.angularSpeed;
-   const body=bodies3d.get(source.id)??(project.gameplay.find(b=>b.kind==='physics-3d'&&b.componentId===source.id)?body3dState(source,project.gameplay.find(b=>b.kind==='physics-3d'&&b.componentId===source.id)):undefined);
+   const body=bodies3d.get(source.id)??(behaviorOn('physics-3d',source.id)?body3dState(source,behaviorOn('physics-3d',source.id)):undefined);
    const nx=st.x+(bp.axis==='x'?offset:0),ny=st.y+(bp.axis==='y'?offset:0),nz=st.z+(bp.axis==='z'?offset:0);
    if(body){body.x=nx;body.y=ny;body.z=nz;body.vx=bp.axis==='x'?vel:0;body.vy=bp.axis==='y'?vel:0;body.vz=bp.axis==='z'?vel:0;}
    else{const o=overrides.get(source.id)??{transform:[...source.transform],parameters:{}};o.parameters.x=nx;o.parameters.y=ny;o.parameters.z=nz;overrides.set(source.id,o);}
@@ -404,7 +436,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   };
  }
  /* 3d:end */
- function reset(){cancelInput();ctaAppearances.clear();floatingTexts=[];screenFlashes=[];shake=undefined;tutorialInputAt=0;tutorialHadInput=false;activeTutorialHands=0;variables=Object.fromEntries(project.variables.map(v=>[v.id,v.initial]));stopAudio();blockedAudio=0;runtimeNodes.clear();spriteMotion.clear();physicsBodies.clear();oscillations.clear();/* 3d:start */bodies3d.clear();oscillations3d.clear();projected3d.clear();stage3dMgr?.reset();/* 3d:end */meterStates.clear();cameraStates.clear();aiming=undefined;instances=[];particles=[];animations=[];overrides.clear();resetMatch();timers.clear();contacts.clear();queue=[];time=0;ambientTime=0;serial=0;halted=false;acc=0;scene=project.base.startScene;pressed=undefined;pressPointerId=undefined;hover=undefined;transition=undefined;if(!edit){resetBoards();initializePathNetworks();/* 3d:start */collect3d();/* 3d:end */syncPaths(0,false);tickMetersAndCamera(0);emit({kind:'sceneEnter',sceneId:scene});}}
+ function reset(){cancelInput();dropOccupancy.clear();dragOrigins.clear();swipeCooldowns.clear();instanceEngine.reset();maskStates.clear();strokeStates.clear();strokeWallBodies=[];activeJoints=[];pathFollowers.clear();brokenJoints.clear();ctaAppearances.clear();floatingTexts=[];screenFlashes=[];shake=undefined;tutorialInputAt=0;tutorialHadInput=false;activeTutorialHands=0;variables=Object.fromEntries(project.variables.map(v=>[v.id,v.initial]));stopAudio();blockedAudio=0;runtimeNodes.clear();spriteMotion.clear();physicsBodies.clear();oscillations.clear();/* 3d:start */bodies3d.clear();oscillations3d.clear();projected3d.clear();stage3dMgr?.reset();/* 3d:end */meterStates.clear();cameraStates.clear();aiming=undefined;instances=[];particles=[];animations=[];overrides.clear();resetMatch();timers.clear();contacts.clear();contactPairs.clear();queue=[];time=0;ambientTime=0;serial=0;halted=false;acc=0;scene=project.base.startScene;pressed=undefined;pressPointerId=undefined;hover=undefined;transition=undefined;if(!edit){initializeInstanceStates();resetBoards();initializePathNetworks();/* 3d:start */collect3d();/* 3d:end */syncPaths(0,false);initializeDropOccupancy();tickMetersAndCamera(0);emit({kind:'sceneEnter',sceneId:scene});}}
  function flushPendingMusic(){
   if(!audio||audio.state!=='running'||!pendingLoopAudio.size)return;
   const queued=[...pendingLoopAudio.values()];
@@ -445,17 +477,98 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  function hasMatch(boardId,changed){const cells=[...matchCells.values()].filter(cell=>cell.boardId===boardId),at=(row,column)=>cells.find(cell=>cell.row===row&&cell.column===column)?.group;for(let row=0;row<16;row++)for(let column=0;column<14;column++){const group=at(row,column);if(group&&group===at(row,column+1)&&group===at(row,column+2)&&changed.some(c=>c.row===row&&c.column>=column&&c.column<=column+2))return true;}for(let column=0;column<16;column++)for(let row=0;row<14;row++){const group=at(row,column);if(group&&group===at(row+1,column)&&group===at(row+2,column)&&changed.some(c=>c.column===column&&c.row>=row&&c.row<=row+2))return true;}return false;}
  function selectMatchTile(c){const cell=matchCells.get(c.id);if(!cell||cell.sceneId!==scene||!props(c).enabled||!visible(c))return;const board=matchBoards.get(c.parentId);if(board){matchSelected=board.select(c.id);return;}if(matchSelected===c.id){matchSelected=undefined;return;}const prior=matchCells.get(matchSelected);if(!prior||prior.sceneId!==scene||prior.boardId!==cell.boardId){matchSelected=c.id;return;}const first=byId.get(matchSelected);if(Math.abs(prior.row-cell.row)+Math.abs(prior.column-cell.column)!==1){matchSelected=c.id;return;}if(prior.group===cell.group){matchSelected=undefined;emit({kind:'invalidMatch',componentId:c.parentId??c.id});return;}const row=prior.row,column=prior.column,otherRow=cell.row,otherColumn=cell.column,firstTransform=[...transform(first)],secondTransform=[...transform(c)];prior.row=otherRow;prior.column=otherColumn;cell.row=row;cell.column=column;if(hasMatch(cell.boardId,[prior,cell])){const move=(target,position)=>{const current=overrides.get(target.id)??{transform:[...transform(target)],parameters:{}};current.transform=[...current.transform];current.transform[4]=position[4];current.transform[5]=position[5];overrides.set(target.id,current);};move(first,secondTransform);move(c,firstTransform);matchSelected=undefined;emit({kind:'validMatch',componentId:c.parentId??c.id});}else{prior.row=row;prior.column=column;cell.row=otherRow;cell.column=otherColumn;matchSelected=undefined;emit({kind:'invalidMatch',componentId:c.parentId??c.id});}}
 
+ function dropZonesFor(item){
+  const zones=[],itemBounds=geometry(item,world(item)),itemCenter=centerOf(item),dragBehavior=behaviorOn('drag',item.prototypeId??item.id);
+  for(const behavior of project.gameplay.filter(b=>b.kind==='drop-zone')){
+   const source=byId.get(behavior.componentId),config=behavior.parameters;if(source.sceneId!==scene)continue;
+   for(const candidate of targetsFor(source)){
+    if(candidate.id===item.id||isDescendant(candidate,item.id)||!visible(candidate))continue;
+    const bounds=geometry(candidate,world(candidate)),center=centerOf(candidate),distance=Math.hypot(center.x-itemCenter.x,center.y-itemCenter.y),overlap=config.radiusPx>0?distance<=config.radiusPx:itemBounds.left<bounds.right&&itemBounds.right>bounds.left&&itemBounds.top<bounds.bottom&&itemBounds.bottom>bounds.top;
+    if(!overlap)continue;
+    zones.push({id:candidate.id,c:candidate,sourceId:source.id,paintOrder:paint.findIndex(row=>row.c.id===candidate.id),distance,itemTarget:project.gameplay.some(b=>b.kind==='drag'&&b.componentId===source.id),...config});
+   }
+  }
+  return {zones,tag:dragBehavior?.parameters.tag??''};
+ }
+ function initializeDropOccupancy(item){
+  const sources=item?[item]:project.gameplay.filter(b=>b.kind==='drag').flatMap(b=>targetsFor(byId.get(b.componentId)));
+  for(const c of sources){
+   if(!c||!visible(c)||dropOccupancy.zoneOf(c.id))continue;
+   const {zones,tag}=dropZonesFor(c),result=resolveDropZone({itemId:c.id,tag,zones:zones.filter(zone=>!zone.itemTarget),occupancy:dropOccupancy});if(result?.kind==='accept')dropOccupancy.place(c.id,result.zone.id);
+  }
+ }
+ function tweenCenter(c,target,seconds=.18){if(!c)return;gestureTweens.to(c.id,centerOf(c),target,seconds);}
+ function dropEvent(kind,c,zone,occupant){
+  const other=occupant??zone?.c;emit({...instanceEvent(kind,c,other,{...(zone?{otherId:zone.sourceId}:{})}),instanceId:c.instanceId??zone?.c?.instanceId});
+ }
+ function finishDrag(p){
+  if(!drag||drag.pointerId!==p.pointerId)return false;
+  const current=drag,c=object(current.targetId),config=current.b.parameters;drag=undefined;hoverDrop=undefined;
+  try{if(canvas.hasPointerCapture?.(p.pointerId))canvas.releasePointerCapture?.(p.pointerId);}catch{/* Capture may already have been released by the host. */}
+  if(!c)return true;
+  const {zones,tag}=dropZonesFor(c),result=resolveDropZone({itemId:c.id,tag,zones,occupancy:dropOccupancy}),origin=current.origin,originZone=current.originZone;
+  if(!result){
+   dropEvent('dragReject',c,undefined,undefined);
+   if(config.snapBack){if(originZone)dropOccupancy.place(c.id,originZone);tweenCenter(c,origin,config.snapBackSeconds??.18);}
+   return true;
+  }
+  const {zone}=result,occupant=result.occupantId?object(result.occupantId):undefined;
+  if(result.kind==='reject'){
+   dropEvent('dragReject',c,zone,occupant);
+   if(config.snapBack){if(originZone)dropOccupancy.place(c.id,originZone);tweenCenter(c,origin,config.snapBackSeconds??.18);}
+   return true;
+  }
+  if(result.kind==='accept'){
+   dropOccupancy.place(c.id,zone.id);if(zone.snapMode==='center')tweenCenter(c,centerOf(zone.c),config.snapBackSeconds??.18);
+  }else if(result.kind==='swap'&&occupant){
+   dropOccupancy.place(c.id,zone.id);if(originZone)dropOccupancy.place(occupant.id,originZone);else dropOccupancy.release(occupant.id);
+   tweenCenter(c,centerOf(zone.c),config.snapBackSeconds??.18);tweenCenter(occupant,origin,config.snapBackSeconds??.18);
+  }
+  dropEvent('dragDrop',c,zone,result.kind==='accept'?zone.c:occupant);return true;
+ }
+ function tickGestureInput(dt){
+  gestureTweens.tick(dt,(id,position)=>{const c=object(id);if(c)setWorldCenter(c,position.x,position.y);});
+  for(const id of [...dropOccupancy.itemZone.keys()]){const c=object(id);if(!c||!visible(c))dropOccupancy.release(id);}
+  if(!gestureInput)return;
+  for(const hold of gestureInput.holds){
+   const value=hold.charge.tick(dt);if(value===variables[hold.behavior.parameters.variableId])continue;
+   variables[hold.behavior.parameters.variableId]=value;emit({kind:'variableChange',variableId:hold.behavior.parameters.variableId,instanceId:hold.c.instanceId,selfInstanceId:hold.c.instanceId??hold.c.id});
+  }
+ }
+ function targetForMode(c,parameters){
+  const mode=parameters.targetMode;if(mode==='pointer')return {...lastPointer};
+  if(mode==='component'){const target=object(parameters.targetComponentId);return target?centerOf(target):undefined;}
+  if(mode==='nearest-team'){
+   const origin=centerOf(c),nodes=[],team=parameters.team,range=parameters.maxRangePx??0;for(const [id,state]of instanceEngine.states){const target=object(id);if(target&&visible(target))nodes.push({id,...centerOf(target),team:state.team});}
+   return findNearestByTeam(origin,nodes,team,range,c.instanceId??c.id);
+  }
+  return undefined;
+ }
+ function tickSteering(dt){
+  for(const behavior of project.gameplay.filter(b=>b.kind==='steer')){
+   const source=byId.get(behavior.componentId),p=behavior.parameters;if(source.sceneId!==scene)continue;
+   for(const c of targetsFor(source)){
+    if(!visible(c))continue;const target=targetForMode(c,p);if(!target)continue;
+    const center=centerOf(c),dx=target.x-center.x,dy=target.y-center.y;if(p.maxRangePx>0&&Math.hypot(dx,dy)>p.maxRangePx)continue;
+    let desired=Math.atan2(dy,dx);if(p.mode==='flee')desired+=Math.PI;else if(p.mode==='orbit')desired+=Math.PI/2;
+    const previous=instanceEngine.headings.get(c.id)??desired,heading=turnToward(previous,desired,p.turnRateDegPerSec*Math.PI/180*dt);instanceEngine.headings.set(c.id,heading);
+    setWorldCenter(c,center.x+Math.cos(heading)*p.speed*dt,center.y+Math.sin(heading)*p.speed*dt);if(p.orientToVelocity!==false)setComponentHeading(c,heading);
+   }
+  }
+ }
  function spawnPrototype(prototypeId,x,y,path){
   if(instances.length>=128){diagnose('Instance budget exhausted');return;}
   const proto=byId.get(prototypeId),size=id=>1+project.components.filter(c=>c.parentId===id).reduce((sum,c)=>sum+size(c.id),0);
   if(runtimeNodes.size+size(proto.id)>4096){diagnose('Runtime node budget exhausted');return;}
   const rootId='instance.'+(++serial);
   function cloneNode(source,parentId){const id=source.id===proto.id?rootId:rootId+':'+source.id,node={...source,id,runtimeId:id,instanceId:rootId,prototypeId:source.id,prototype:false,parentId,transform:[...source.transform],spawnTime:time};runtimeNodes.set(id,node);for(const child of project.components.filter(c=>c.parentId===source.id))cloneNode(child,id);return node;}
-  const root=cloneNode(proto,undefined);root.transform[4]=x;root.transform[5]=y;if(path){root.pathStartNode=path.startNode;root.pathTargetNode=path.targetNode;root.parentId=project.gameplay.find(b=>b.id===path.networkBehaviorId)?.componentId;}instances.push(root);if(path)syncPaths(0,false);return root;
+  const root=cloneNode(proto,undefined);root.transform[4]=x;root.transform[5]=y;if(path){root.pathStartNode=path.startNode;root.pathTargetNode=path.targetNode;root.parentId=project.gameplay.find(b=>b.id===path.networkBehaviorId)?.componentId;}instances.push(root);initializeInstanceState(root);initializeDropOccupancy(root);if(path)syncPaths(0,false);return root;
  }
  function action(a,event,bindingCondition){if(++frameActions>1024){diagnose('Action budget exhausted');return;}if(a.kind==='add'||a.kind==='set'){const old=variables[a.variableId],value=a.kind==='add'?old+a.value:a.value;if(typeof value==='number'&&(!Number.isFinite(value)||Math.abs(value)>1e12)){diagnose('Variable range exceeded');return;}variables[a.variableId]=value;if(old!==value)emit({kind:'variableChange',variableId:a.variableId,instanceId:event.instanceId});}
- else if(a.kind==='setComponent'||a.kind==='setAsset'){const c=object(a.componentId),o=overrides.get(c.id)??{transform:[...c.transform],parameters:{}};if(a.kind==='setComponent')o.parameters[a.key]=a.value;else o.assetId=a.assetId;overrides.set(c.id,o);}
+ else if(a.kind==='setComponent'||a.kind==='setAsset'){const c=object(a.componentId);if(!c)return;const o=overrides.get(c.id)??{transform:[...c.transform],parameters:{}};if(a.kind==='setComponent')o.parameters[a.key]=a.valueVariableId?variables[a.valueVariableId]:a.value;else o.assetId=a.assetId;overrides.set(c.id,o);if(a.kind==='setComponent'&&a.key==='visible'&&a.value===false){dropOccupancy.release(c.id);gestureTweens.cancel(c.id);}}
  else if(a.kind==='resetMatch'){resetMatch(a.componentId);resetBoards(a.componentId);}
+ else if(a.kind==='clearStrokes'){strokeStates.get(a.componentId)?.clear();strokeWallBodies=strokeWallBodies.filter(wall=>wall.owner!==a.componentId);}
+ else if(a.kind==='resetMask'){const c=object(a.componentId),behavior=behaviorOn('erase-mask',a.componentId);if(c&&behavior)maskState(c,behavior).reset();}
  else if(a.kind==='copyMatchAsset'){
   const last=matchBoards.get(a.boardId)?.snapshot().lastMatch,target=byId.get(a.componentId),sample=last&&matchArtwork.get(a.boardId)?.get(last.group)?.children.find(child=>child.contract==='native.image.v1');
   if(last&&sample){
@@ -467,27 +580,52 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  }
  else if(a.kind==='hintMatch'){matchSelected=undefined;matchBoards.get(a.componentId)?.showHint();}
  else if(a.kind==='spawn')spawnPrototype(a.prototypeId,a.x,a.y);
- else if(a.kind==='spawnAt'){const target=(event.instanceId?[...runtimeNodes.values()].find(node=>node.instanceId===event.instanceId&&node.prototypeId===a.targetComponentId):undefined)??object(a.targetComponentId);if(target){const p=props(target),center=point(world(target),p.width/2,p.height/2),proto=byId.get(a.prototypeId);spawnPrototype(a.prototypeId,center.x+a.offsetX-proto.parameters.width/2,center.y+a.offsetY-proto.parameters.height/2);}}
+ else if(a.kind==='spawnAt'){
+  const self=a.at==='self'||a.at==='midpoint'?(event.selfInstanceId!==undefined||event.instanceId!==undefined?object(event.selfInstanceId??event.instanceId):eventTarget(a.targetComponentId,event,'self')):eventTarget(a.targetComponentId,event,'self');
+  const other=a.at==='other'||a.at==='midpoint'?(event.otherInstanceId!==undefined?object(event.otherInstanceId):undefined):undefined,target=a.at==='other'?other:self;
+  if(a.at==='pointer'||(a.at==='midpoint'?self&&other:target)){
+   const first=self?centerOf(self):undefined,second=other?centerOf(other):undefined,center=a.at==='pointer'?lastPointer:a.at==='midpoint'?{x:(first.x+second.x)/2,y:(first.y+second.y)/2}:centerOf(target),proto=byId.get(a.prototypeId);
+   const count=Math.max(0,Math.min(16,Math.floor(a.countVariableId?Number(variables[a.countVariableId]):a.count??1)));
+   for(let index=0;index<count;index++){const jitterX=a.jitterX?(instanceEngine.rng.next()*2-1)*a.jitterX:0,jitterY=a.jitterY?(instanceEngine.rng.next()*2-1)*a.jitterY:0;spawnPrototype(a.prototypeId,center.x+a.offsetX+jitterX-proto.parameters.width/2,center.y+a.offsetY+jitterY-proto.parameters.height/2);}
+  }
+ }
+ else if(a.kind==='random'){
+  const old=variables[a.variableId],value=instanceEngine.rng.between(a.min,a.max,a.integer===true);variables[a.variableId]=value;if(old!==value)emit({kind:'variableChange',variableId:a.variableId,instanceId:event.instanceId});
+ }
+ else if(a.kind==='modifyInstanceState'){
+  const c=a.target==='component'?object(a.componentId):eventTarget(a.componentId,event,a.target);if(c)modifyInstance(c,a.field,a.op,a.variableId?variables[a.variableId]:a.value);
+ }
+ else if(a.kind==='launchToward'){
+  const source=byId.get(a.componentId),list=targetsFor(source),eid=event.selfInstanceId??event.instanceId,c=source.prototype?(list.find(node=>node.instanceId===eid||node.id===eid)??list[list.length-1]):eventTarget(a.componentId,event,'self')??object(a.componentId),behavior=behaviorOn('physics-body',a.componentId),body=c&&physicsState(c,behavior);if(!body)return;
+  let angle;if(a.targetMode==='angle-variable')angle=Number(variables[a.angleVariableId])*Math.PI/180;else{const target=targetForMode(c,a);if(!target)return;const center=centerOf(c);angle=Math.atan2(target.y-center.y,target.x-center.x);}
+  const speed=Number(a.speedVariableId?variables[a.speedVariableId]:a.speed);if(!Number.isFinite(speed)){diagnose('Launch speed invalid');return;}body.vx=Math.cos(angle)*speed;body.vy=Math.sin(angle)*speed;body.atRest=false;body.restElapsed=0;body.captured=false;body.exited=false;if(a.orientToVelocity!==false)setComponentHeading(c,angle);emit(instanceEvent('launch',c));
+ }
+ else if(a.kind==='moveToComponent'){
+  const destSource=byId.get(a.targetComponentId),c=eventTarget(a.componentId,event,a.target??'self'),target=destSource&&prototypeOwner(destSource)?eventTarget(a.targetComponentId,event,a.target==='other'?'self':'other')??targetsFor(destSource)[0]:object(a.targetComponentId);if(c&&target)tweenCenter(c,centerOf(target),a.seconds);
+ }
+ else if(a.kind==='returnToOrigin'){
+  const c=eventTarget(a.componentId,event,'self'),origin=c&&dragOrigins.get(c.id);if(c&&origin)tweenCenter(c,origin,a.seconds);
+ }
  else if(a.kind==='spawnOnPath')spawnPrototype(a.prototypeId,0,0,{startNode:a.startNode,targetNode:a.targetNode,networkBehaviorId:a.networkBehaviorId});
  else if(['setVelocity','applyImpulse','stopBody'].includes(a.kind)){
-  const source=byId.get(a.componentId),targets=event.instanceId?[...runtimeNodes.values()].filter(c=>c.instanceId===event.instanceId&&c.prototypeId===source.id):targetsFor(source),behavior=project.gameplay.find(b=>b.kind==='physics-body'&&b.componentId===source.id);
-  for(const c of targets){const body=physicsState(c,behavior);if(a.kind==='setVelocity'){body.vx=a.vx;body.vy=a.vy;}else if(a.kind==='applyImpulse'){body.vx+=a.ix;body.vy+=a.iy;}else{body.vx=0;body.vy=0;body.atRest=true;}body.captured=false;body.exited=false;body.restElapsed=0;if(a.kind!=='stopBody')body.atRest=false;}
+  const source=byId.get(a.componentId),targets=event.instanceId?[...runtimeNodes.values()].filter(c=>c.instanceId===event.instanceId&&c.prototypeId===source.id):targetsFor(source),behavior=behaviorOn('physics-body',source.id);
+  for(const c of targets){const body=physicsState(c,behavior);if(a.kind==='setVelocity'){body.vx=a.vxVariableId?variables[a.vxVariableId]:a.vx;body.vy=a.vyVariableId?variables[a.vyVariableId]:a.vy;}else if(a.kind==='applyImpulse'){body.vx+=a.vxVariableId?variables[a.vxVariableId]:a.ix;body.vy+=a.vyVariableId?variables[a.vyVariableId]:a.iy;}else{body.vx=0;body.vy=0;body.atRest=true;}body.captured=false;body.exited=false;body.restElapsed=0;if(a.kind!=='stopBody')body.atRest=false;}
  }
  else if(a.kind==='setPosition'){
-  const source=byId.get(a.componentId),targets=event.instanceId?[...runtimeNodes.values()].filter(c=>c.instanceId===event.instanceId&&c.prototypeId===source.id):targetsFor(source),behavior=project.gameplay.find(b=>b.kind==='physics-body'&&b.componentId===source.id);
-  for(const c of targets){const body=physicsState(c,behavior);body.x=a.x;body.y=a.y;body.vx=0;body.vy=0;body.captured=false;body.exited=false;body.atRest=true;setWorldCenter(c,a.x,a.y);}
+  const source=byId.get(a.componentId),targets=event.instanceId?[...runtimeNodes.values()].filter(c=>c.instanceId===event.instanceId&&c.prototypeId===source.id):targetsFor(source),behavior=behaviorOn('physics-body',source.id);
+  for(const c of targets){const body=physicsState(c,behavior);body.x=a.xVariableId?variables[a.xVariableId]:a.x;body.y=a.yVariableId?variables[a.yVariableId]:a.y;body.vx=0;body.vy=0;body.captured=false;body.exited=false;body.atRest=true;setWorldCenter(c,body.x,body.y);}
  }
  else if(a.kind==='setPathEdge')pathNetworks.get(a.behaviorId)?.setEdge(a.edgeId,a.enabled,a.cost);
  else if(a.kind==='setPathGate')pathNetworks.get(project.gameplay.find(b=>b.id===a.behaviorId)?.parameters.networkBehaviorId)?.setGate(a.behaviorId,a.mode,a.holdSeconds);
  else if(a.kind==='setPathTarget'){
-  const source=byId.get(a.componentId),behavior=project.gameplay.find(b=>b.kind==='path-agent'&&b.componentId===source.id),network=pathNetworks.get(behavior.parameters.networkBehaviorId);
+  const source=byId.get(a.componentId),behavior=behaviorOn('path-agent',source.id),network=pathNetworks.get(behavior.parameters.networkBehaviorId);
   for(const c of event.instanceId?[...runtimeNodes.values()].filter(c=>c.instanceId===event.instanceId&&c.prototypeId===source.id):targetsFor(source)){c.pathTargetNode=a.targetNode;network?.setTarget(c.id,a.targetNode);}
  }
  else if(a.kind==='compute'){
-  const left=Number(variables[a.variableId]),right=a.operandVariableId!==undefined?Number(variables[a.operandVariableId]):a.value;if(a.op==='div'&&right===0){diagnose('Division by zero');return;}let value=({add:()=>left+right,sub:()=>left-right,mul:()=>left*right,div:()=>right===0?left:left/right,min:()=>Math.min(left,right),max:()=>Math.max(left,right),set:()=>right})[a.op]();
+  const left=Number(variables[a.variableId]),right=a.operandVariableId!==undefined?Number(variables[a.operandVariableId]):a.value;if(['div','mod'].includes(a.op)&&right===0){diagnose('Division by zero');return;}let value=({add:()=>left+right,sub:()=>left-right,mul:()=>left*right,div:()=>right===0?left:left/right,mod:()=>right===0?left:left%right,min:()=>Math.min(left,right),max:()=>Math.max(left,right),set:()=>right,floor:()=>Math.floor(left),ceil:()=>Math.ceil(left),abs:()=>Math.abs(left),clamp:()=>Math.max(a.min,Math.min(a.max,left))})[a.op]();
   if(a.round)value=Math.round(value);if(!Number.isFinite(value)||Math.abs(value)>1e12){diagnose('Variable range exceeded');return;}const old=variables[a.variableId];variables[a.variableId]=value;if(old!==value)emit({kind:'variableChange',variableId:a.variableId,instanceId:event.instanceId});
  }
- else if(a.kind==='despawn'){despawn(event.instanceId);}
+ else if(a.kind==='despawn'){const self=event.selfInstanceId??event.instanceId;if(a.target==='other')despawn(event.otherInstanceId);else if(a.target==='both'){despawn(self);despawn(event.otherInstanceId);}else despawn(self);}
  else if(a.kind==='changeScene')transition=a.sceneId;
  else if(a.kind==='restart')transition='__restart';
  else if(a.kind==='cameraShake'){if(!reducedMotion?.matches)shake={intensity:a.intensity,seconds:a.seconds,elapsed:0};}
@@ -536,14 +674,14 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    particles.push({...position,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:p.lifetime??.7,gravity:p.gravity??250,color:p.color,shape:p.shape??'circle'});
   }
  }
- function process(){while(queue.length&&!halted&&frameEvents<256&&frameActions<1024){const e=queue.shift();frameEvents++;if(['contactBegin','boundaryExit'].includes(e.kind)&&e.instanceId&&!runtimeNodes.has(e.instanceId))continue;for(const b of project.eventBindings){if(Object.entries(eventDefinitions.get(b.eventId)).every(([k,v])=>k==='id'||e[k]===v)&&condition(b.condition)){for(const a of b.actions){if(frameActions>=1024||halted)break;action(a,e,b.condition);}if(transition)break;}}if(transition){const next=transition;transition=undefined;if(next==='__restart')reset();else if(next!==scene){const previous=scene;stopAudio();scene=next;matchSelected=undefined;instances=[];particles=[];floatingTexts=[];screenFlashes=[];shake=undefined;tutorialHadInput=false;activeTutorialHands=0;runtimeNodes.clear();physicsBodies.clear();oscillations.clear();/* 3d:start */bodies3d.clear();oscillations3d.clear();projected3d.clear();stage3dMgr?.reset();/* 3d:end */meterStates.clear();cameraStates.clear();aiming=undefined;initializePathNetworks();queue=queue.filter(e=>e.kind==='variableChange');overrides.clear();matchGesture=undefined;for(const board of matchBoards.values())board.reset();contacts.clear();timers.clear();animations=[];cancelInput();ctaAppearances.clear();pressed=undefined;pressPointerId=undefined;/* 3d:start */collect3d();/* 3d:end */syncPaths(0,false);tickMetersAndCamera(0);emit({kind:'sceneExit',sceneId:previous});emit({kind:'sceneEnter',sceneId:scene});}}}if(queue.length)diagnose('Event/action budget exhausted');}
+ function process(){while(queue.length&&!halted&&frameEvents<256&&frameActions<1024){const e=queue.shift();frameEvents++;const alive=id=>id===undefined||Boolean(object(id))||[...runtimeNodes.values()].some(node=>node.instanceId===id);if(!alive(e.selfInstanceId)||!alive(e.otherInstanceId))continue;if(['contactBegin','boundaryExit'].includes(e.kind)&&e.instanceId&&!runtimeNodes.has(e.instanceId))continue;for(const b of project.eventBindings){if(Object.entries(eventDefinitions.get(b.eventId)).every(([k,v])=>k==='id'||e[k]===v)&&condition(b.condition,e)){for(const a of b.actions){if(frameActions>=1024||halted)break;action(a,e,b.condition);}if(transition)break;}}if(transition){const next=transition;transition=undefined;if(next==='__restart')reset();else if(next!==scene){const previous=scene;stopAudio();scene=next;dropOccupancy.clear();dragOrigins.clear();swipeCooldowns.clear();maskStates.clear();strokeStates.clear();strokeWallBodies=[];activeJoints=[];pathFollowers.clear();brokenJoints.clear();matchSelected=undefined;instances=[];particles=[];floatingTexts=[];screenFlashes=[];shake=undefined;tutorialHadInput=false;activeTutorialHands=0;runtimeNodes.clear();physicsBodies.clear();oscillations.clear();/* 3d:start */bodies3d.clear();oscillations3d.clear();projected3d.clear();stage3dMgr?.reset();/* 3d:end */meterStates.clear();cameraStates.clear();aiming=undefined;initializePathNetworks();queue=queue.filter(e=>e.kind==='variableChange');overrides.clear();matchGesture=undefined;for(const board of matchBoards.values())board.reset();contacts.clear();contactPairs.clear();timers.clear();animations=[];cancelInput();ctaAppearances.clear();pressed=undefined;pressPointerId=undefined;/* 3d:start */collect3d();/* 3d:end */syncPaths(0,false);initializeDropOccupancy();tickMetersAndCamera(0);emit({kind:'sceneExit',sceneId:previous});emit({kind:'sceneEnter',sceneId:scene});}}}if(queue.length)diagnose('Event/action budget exhausted');}
  function world(c){return multiplyMatrix(c.parentId?world(object(c.parentId)):identityMatrix(),transform(c));}
  const point=(m,x,y)=>({x:m[0]*x+m[2]*y+m[4],y:m[1]*x+m[3]*y+m[5]});
  function geometry(c,m){const p=props(c),corners=[[0,0],[p.width,0],[p.width,p.height],[0,p.height]].map(([x,y])=>point(m,x,y));return {left:Math.min(...corners.map(p=>p.x)),right:Math.max(...corners.map(p=>p.x)),top:Math.min(...corners.map(p=>p.y)),bottom:Math.max(...corners.map(p=>p.y))};}
  function visible(c){return props(c).visible&&props(c).opacity>0&&(!c.parentId||visible(object(c.parentId)));}
  function collisionPolygon(c,shape){const p=props(c),m=world(c),radius=Math.min(p.width,p.height)/2;let polygon=shape==='circle'?Array.from({length:32},(_,i)=>point(m,p.width/2+Math.cos(i*Math.PI/16)*radius,p.height/2+Math.sin(i*Math.PI/16)*radius)):[[0,0],[p.width,0],[p.width,p.height],[0,p.height]].map(([x,y])=>point(m,x,y));let ancestor=c.parentId?object(c.parentId):undefined;while(ancestor){const v=props(ancestor);if(ancestor.contract==='native.group.v1'&&v.clip){const cm=world(ancestor),clip=[[0,0],[v.width,0],[v.width,v.height],[0,v.height]].map(([x,y])=>point(cm,x,y));let area=0;for(let i=0;i<4;i++)area+=clip[i].x*clip[(i+1)%4].y-clip[(i+1)%4].x*clip[i].y;const sign=area>=0?1:-1;for(let i=0;i<4&&polygon.length;i++){const a=clip[i],b=clip[(i+1)%4],side=p=>sign*((b.x-a.x)*(p.y-a.y)-(b.y-a.y)*(p.x-a.x)),input=polygon;polygon=[];let previous=input[input.length-1],pd=side(previous);for(const current of input){const d=side(current);if((d>=0)!==(pd>=0)){const t=pd/(pd-d);polygon.push({x:previous.x+(current.x-previous.x)*t,y:previous.y+(current.y-previous.y)*t});}if(d>=0)polygon.push(current);previous=current;pd=d;}}}ancestor=ancestor.parentId?object(ancestor.parentId):undefined;}return polygon;}
  function polygonsOverlap(a,b){if(a.length<3||b.length<3)return false;for(const polygon of [a,b])for(let i=0;i<polygon.length;i++){const p=polygon[i],q=polygon[(i+1)%polygon.length],nx=p.y-q.y,ny=q.x-p.x;let amin=Infinity,amax=-Infinity,bmin=Infinity,bmax=-Infinity;for(const v of a){const n=v.x*nx+v.y*ny;amin=Math.min(amin,n);amax=Math.max(amax,n);}for(const v of b){const n=v.x*nx+v.y*ny;bmin=Math.min(bmin,n);bmax=Math.max(bmax,n);}if(amax<bmin||bmax<amin)return false;}return true;}
- function tick(dt){const stage=viewport();time+=dt;tickOscillations();
+ function tick(dt){const stage=viewport();time+=dt;tickCanvas(dt);tickGestureInput(dt);tickSteering(dt);tickOscillations();
  for(const [id,press]of pressStates)if(!press.held&&time-(press.releasedAt??time)>=press.behavior.springBackSeconds)pressStates.delete(id);
  if(shake){shake.elapsed+=dt;if(shake.elapsed>=shake.seconds)shake=undefined;}
  for(const flash of screenFlashes)flash.elapsed+=dt;screenFlashes=screenFlashes.filter(flash=>flash.elapsed<flash.seconds);
@@ -551,7 +689,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  for(const [id,board]of matchBoards)if(byId.get(id).sceneId===scene&&visible(byId.get(id)))board.tick(dt);for(const b of project.gameplay){const source=byId.get(b.componentId);if(source.sceneId!==scene)continue;const targets=prototypeOwner(source)?[...runtimeNodes.values()].filter(i=>i.prototypeId===source.id):[source];for(const c of targets){const key=b.id+':'+c.id;if(b.kind==='motion'){const old=overrides.get(c.id)??{transform:[...c.transform],parameters:{}},v=old.velocity??{x:b.parameters.vx,y:b.parameters.vy};v.y+=b.parameters.gravity*dt;old.transform[4]+=v.x*dt;old.transform[5]+=v.y*dt;old.velocity=v;overrides.set(c.id,old);if(c.prototypeId)c.transform=old.transform;const location=world(c);if(location[5]>stage.height||location[4]<-300||location[4]>stage.width+300){if(!old.exited){old.exited=true;emit({kind:'boundaryExit',componentId:source.id,instanceId:c.instanceId});}}}else if(b.kind==='timer'){const t=(timers.get(key)??0)+dt;timers.set(key,t);if(t>=b.parameters.seconds&&t-dt<b.parameters.seconds){emit({kind:'timer',behaviorId:b.id,componentId:source.id});if(b.parameters.repeat)timers.set(key,t-b.parameters.seconds);}}}}
  tickPhysics(dt);/* 3d:start */tick3d(dt);/* 3d:end */syncPaths(dt);tickMetersAndCamera(dt);
  const colliders=[];for(const b of project.gameplay.filter(b=>b.kind==='collider')){const c=byId.get(b.componentId);if(c.sceneId!==scene)continue;for(const target of prototypeOwner(c)?[...runtimeNodes.values()].filter(i=>i.prototypeId===c.id):[c])if(visible(target)){if(colliders.length>=256){diagnose('Collider budget exhausted');break;}colliders.push({b,c:target,box:geometry(target,world(target)),polygon:collisionPolygon(target,b.parameters.shape)});}}
- const next=new Set();let pairCount=0;collisionLoop:for(let a=0;a<colliders.length;a++)for(let b=a+1;b<colliders.length;b++){const x=colliders[a],y=colliders[b];if(x.c.instanceId&&x.c.instanceId===y.c.instanceId)continue;const A=x.box,B=y.box;let overlap=A.left<B.right&&A.right>B.left&&A.top<B.bottom&&A.bottom>B.top;if(overlap){if(++pairCount>4096){diagnose('Collision budget exhausted');break collisionLoop;}overlap=polygonsOverlap(x.polygon,y.polygon);}if(!overlap)continue;const key=[x.c.id,y.c.id].sort().join('|');next.add(key);if(!contacts.has(key))for(const [first,other]of [[x,y],[y,x]])emit({kind:'contactBegin',componentId:first.c.prototypeId??first.c.id,otherId:other.c.prototypeId??other.c.id,instanceId:first.c.instanceId??other.c.instanceId});}contacts=next;
+ const next=new Set(),nextPairs=new Map(),contactEvent=(kind,x,y)=>{if((x.c.prototypeId??x.c.id)===(y.c.prototypeId??y.c.id)&&x.c.id>y.c.id)return;emit({...instanceEvent(kind,x.c,y.c),instanceId:x.c.instanceId??y.c.instanceId});};let pairCount=0;collisionLoop:for(let a=0;a<colliders.length;a++)for(let b=a+1;b<colliders.length;b++){const x=colliders[a],y=colliders[b];if(x.c.instanceId&&x.c.instanceId===y.c.instanceId)continue;const A=x.box,B=y.box;let overlap=A.left<B.right&&A.right>B.left&&A.top<B.bottom&&A.bottom>B.top;if(overlap){if(++pairCount>4096){diagnose('Collision budget exhausted');break collisionLoop;}overlap=polygonsOverlap(x.polygon,y.polygon);}if(!overlap)continue;const key=[x.c.id,y.c.id].sort().join('|');next.add(key);nextPairs.set(key,[x,y]);if(!contacts.has(key))for(const [first,other]of [[x,y],[y,x]])contactEvent('contactBegin',first,other);}for(const [key,[x,y]]of contactPairs)if(!next.has(key))for(const [first,other]of [[x,y],[y,x]])contactEvent('contactEnd',first,other);contacts=next;contactPairs=nextPairs;
  for(const a of animations){
   a.elapsed+=dt;
   const p=a.parameters,delay=p.delay??0,elapsed=a.elapsed-delay;
@@ -598,7 +736,8 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   }
  }}
  function spriteFrame(c,p,m){const pathFrame=overrides.get(c.id)?.pathFrame;if(pathFrame!==undefined)return Math.min(p.frameCount-1,pathFrame);if(edit||!p.frameRate)return 0;if(c.contract!=='native.walk-sprite.v1')return Math.floor(Math.max(0,time-(c.spawnTime??0))*p.frameRate)%p.frameCount;const key=c.runtimeId??c.id,prior=spriteMotion.get(key);if(!prior){spriteMotion.set(key,{x:m[4],y:m[5],phase:0,lastMove:-Infinity,frame:0});return 0;}const moved=Math.hypot(m[4]-prior.x,m[5]-prior.y)>.3;if(moved){const gap=time-prior.lastMove;prior.phase=Number.isFinite(gap)&&gap<.25?prior.phase+Math.min(gap,.12)*p.frameRate:0;prior.lastMove=time;}prior.x=m[4];prior.y=m[5];if(time-prior.lastMove>.11)prior.phase=0;prior.frame=Math.floor(prior.phase)%p.frameCount;return prior.frame;}
- function drawObject(c,parent=identityMatrix(),clips=[],instance){if(c.contract==='native.mesh3d.v1')return;const p=props(c);if(!p.visible||p.opacity<=0)return;const m=multiplyMatrix(parent,transform(c));ctx.save();ctx.transform(...transform(c));ctx.globalAlpha*=p.opacity;const press=pressStates.get(c.id);if(press?.behavior.liftShadow){ctx.shadowColor='#00000055';ctx.shadowBlur=8;ctx.shadowOffsetY=4;}let nextClips=clips;if(c.contract==='native.group.v1'&&p.clip){ctx.beginPath();ctx.rect(0,0,p.width,p.height);ctx.clip();nextClips=[...clips,{matrix:m,width:p.width,height:p.height}];}
+ function drawObject(c,parent=identityMatrix(),clips=[],instance){if(c.contract==='native.mesh3d.v1')return;const p=props(c),maskBehavior=behaviorOn('erase-mask',c.prototypeId??c.id);if(!p.visible||p.opacity<=0)return;const m=multiplyMatrix(parent,transform(c));ctx.save();ctx.transform(...transform(c));ctx.globalAlpha*=p.opacity;const press=pressStates.get(c.id);if(press?.behavior.liftShadow){ctx.shadowColor='#00000055';ctx.shadowBlur=8;ctx.shadowOffsetY=4;}let nextClips=clips;if(c.contract==='native.group.v1'&&p.clip){ctx.beginPath();ctx.rect(0,0,p.width,p.height);ctx.clip();nextClips=[...clips,{matrix:m,width:p.width,height:p.height}];}
+ let maskRendered=false;
  if(!['native.group.v1','native.text.v1','native.image.v1','native.sprite.v1','native.walk-sprite.v1','native.stage3d.v1','native.mesh3d.v1'].includes(c.contract)){
   const button=c.contract==='native.button.v1',isPressed=pressed===c.id;
   const fill=button?(!p.enabled?p.disabledFill:isPressed?p.pressedFill:hover===c.id?p.hoverFill:p.fill):p.fill;
@@ -610,7 +749,9 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    else drawPixelCta(ctx,p,fill,isPressed,age);
   }else{
    if(p.pixelFrame){ctx.save();ctx.translate(3,4);path(c,p);ctx.fillStyle='#3c293366';ctx.fill();ctx.restore();}
-   path(c,p);ctx.fillStyle=fill;ctx.fill();
+   path(c,p);
+   if(maskBehavior){ctx.save();ctx.clip();maskState(c,maskBehavior).render(ctx);ctx.restore();maskRendered=true;path(c,p);}
+   else{ctx.fillStyle=fill;ctx.fill();}
    if(p.pixelFrame&&!(p.radius>0)){ctx.fillStyle='#ffffff22';ctx.fillRect(2,2,Math.max(0,p.width-4),2);ctx.fillRect(2,2,2,Math.max(0,p.height-4));}
    if(p.strokeWidth){ctx.strokeStyle=p.stroke;ctx.lineWidth=p.strokeWidth;ctx.stroke();}
   }
@@ -624,7 +765,8 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   if(pixelMetrics&&!pixelMetrics.unsupportedChars.length)textMetrics=drawPixelText(ctx,text,p);
   else textMetrics=drawStandardText(ctx,text,pixelMetrics?{...p,fontFamily:'sans-serif',fontWeight:'700'}:p);
  }
- if(['native.image.v1','native.sprite.v1','native.walk-sprite.v1'].includes(c.contract)){const img=images.get(overrides.get(c.id)?.assetId??c.assetSlots[0]?.assetId);if(img?.complete&&img.naturalWidth){ctx.save();ctx.beginPath();ctx.rect(0,0,p.width,p.height);ctx.clip();const sprite=c.contract!=='native.image.v1',columns=sprite?Math.min(p.frameColumns,p.frameCount):1,rows=sprite?Math.ceil(p.frameCount/columns):1,sw=img.width/columns,sh=img.height/rows,frame=sprite?spriteFrame(c,p,m):0,sx=frame%columns*sw,sy=Math.floor(frame/columns)*sh,scale=p.fit==='cover'?Math.max(p.width/sw,p.height/sh):Math.min(p.width/sw,p.height/sh),w=p.fit==='stretch'?p.width:sw*scale,h=p.fit==='stretch'?p.height:sh*scale;ctx.imageSmoothingEnabled=p.smoothing??true;ctx.drawImage(img,sx,sy,sw,sh,(p.width-w)/2,(p.height-h)/2,w,h);ctx.restore();}}
+ if(['native.image.v1','native.sprite.v1','native.walk-sprite.v1'].includes(c.contract)&&!maskBehavior){const img=images.get(overrides.get(c.id)?.assetId??c.assetSlots[0]?.assetId);if(img?.complete&&img.naturalWidth){ctx.save();ctx.beginPath();ctx.rect(0,0,p.width,p.height);ctx.clip();const sprite=c.contract!=='native.image.v1',columns=sprite?Math.min(p.frameColumns,p.frameCount):1,rows=sprite?Math.ceil(p.frameCount/columns):1,sw=img.width/columns,sh=img.height/rows,frame=sprite?spriteFrame(c,p,m):0,sx=frame%columns*sw,sy=Math.floor(frame/columns)*sh,scale=p.fit==='cover'?Math.max(p.width/sw,p.height/sh):Math.min(p.width/sw,p.height/sh),w=p.fit==='stretch'?p.width:sw*scale,h=p.fit==='stretch'?p.height:sh*scale;ctx.imageSmoothingEnabled=p.smoothing??true;ctx.drawImage(img,sx,sy,sw,sh,(p.width-w)/2,(p.height-h)/2,w,h);ctx.restore();}}
+ if(maskBehavior&&!maskRendered)maskState(c,maskBehavior).render(ctx);
  /* 3d:start */
  if(c.contract==='native.stage3d.v1'&&stage3dMgr){
   const sx=Math.hypot(m[0],m[1]),sy=Math.hypot(m[2],m[3]);
@@ -673,6 +815,8 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    }
    drawTutorialHand(x+8,y+22,behavior.parameters.mode,phase);
   }
+  for(const [componentId,store]of strokeStates){const config=behaviorOn('draw-stroke',componentId).parameters;for(const stroke of store.strokes){if(stroke.points.length<2)continue;ctx.save();ctx.globalAlpha=config.mode==='slice-blade'?Math.max(0,1-stroke.age/.18):1;ctx.strokeStyle=config.color;ctx.lineWidth=config.strokeWidth;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(stroke.points[0].x,stroke.points[0].y);for(const point of stroke.points.slice(1))ctx.lineTo(point.x,point.y);ctx.stroke();ctx.restore();}}
+  for(const joint of activeJoints){if(joint.broken||!joint.drawRope)continue;const body=physicsBodies.get(joint.bodyId),anchor=object(joint.anchorId);if(!body||!anchor)continue;const center=centerOf(anchor);ctx.save();ctx.strokeStyle=joint.ropeColor;ctx.lineWidth=joint.ropeWidth;ctx.beginPath();ctx.moveTo(center.x,center.y);ctx.lineTo(body.x,body.y);ctx.stroke();ctx.restore();}
   for(const floating of floatingTexts){
    const progress=Math.min(1,floating.elapsed/floating.seconds);ctx.save();ctx.globalAlpha=1-progress;ctx.fillStyle=floating.color;ctx.strokeStyle='#193b46';ctx.lineWidth=3;ctx.font='900 '+floating.fontSize+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const y=floating.y-(reducedMotion?.matches?0:floating.risePx*progress);ctx.strokeText(floating.text,floating.x,y);ctx.fillText(floating.text,floating.x,y);ctx.restore();
   }
@@ -701,7 +845,11 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   }
   return '#102a34';
  }
- function render(){previousCtaAppearances=ctaAppearances;ctaAppearances=new Map();const stage=viewport();if(paintedLandscape!==undefined&&paintedLandscape!==stage.landscape)cancelInput();paintedLandscape=stage.landscape;const dpr=Math.min(devicePixelRatio||1,2),w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=stageBackdropColor(stage);ctx.fillRect(0,0,w,h);const scale=Math.min(w/stage.width,h/stage.height),ox=(w-stage.width*scale)/2,oy=(h-stage.height*scale)/2;currentRenderScale=scale||1;currentRenderDpr=dpr;ctx.translate(ox,oy);ctx.scale(scale,scale);if(shake){const progress=Math.min(1,shake.elapsed/shake.seconds),strength=shake.intensity*(1-progress);ctx.translate(Math.sin(shake.elapsed*95)*strength,Math.cos(shake.elapsed*113)*strength);}ctx.save();ctx.beginPath();ctx.rect(0,0,stage.width,stage.height);ctx.clip();paint=[];for(const c of roots())drawObject(c);for(const c of instances)if(!c.parentId)drawObject(c,identityMatrix(),[],c.prototypeId);drawAim();if(edit&&selected){let prototype=byId.get(selected);while(prototype?.parentId)prototype=byId.get(prototype.parentId);if(prototype?.prototype)drawObject(prototype);}drawConfetti();ctx.save();for(const p of particles){if(p.shape==='pixel-confetti'||p.shape==='confetti')continue;const fade=Math.min(1,p.life*2),radius=1.5+2.5*fade;ctx.globalAlpha=fade;ctx.globalCompositeOperation=p.shape==='square'?'source-over':'lighter';ctx.fillStyle=p.color;if(p.shape==='square'){const size=Math.max(2,Math.round(radius*1.6));ctx.fillRect(Math.round(p.x-size/2),Math.round(p.y-size/2),size,size);continue;}ctx.globalCompositeOperation='lighter';ctx.shadowColor=p.color;ctx.shadowBlur=particles.length<=16?6:0;ctx.strokeStyle=p.color;ctx.lineWidth=1.5+fade;ctx.beginPath();ctx.moveTo(p.x-p.vx*.025,p.y-p.vy*.025);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fill();}ctx.restore();drawGameFeedback();if(edit&&selected){const rows=paint.filter(r=>r.c.contract!=='native.group.v1'&&(r.c.id===selected||isDescendant(r.c,selected)));if(rows.length){const boxes=rows.map(r=>geometry(r.c,r.m)),l=Math.min(...boxes.map(b=>b.left)),t=Math.min(...boxes.map(b=>b.top));ctx.strokeStyle='#55e6ef';ctx.lineWidth=2/scale;ctx.strokeRect(l,t,Math.max(...boxes.map(b=>b.right))-l,Math.max(...boxes.map(b=>b.bottom))-t);}}ctx.restore();if(scale>0)drawConfetti(undefined,{x:-ox/scale,y:-oy/scale,width:w/scale,height:h/scale});}
+ function drawDropFeedback(){
+  if(hoverDrop&&visible(hoverDrop.c)){const c=hoverDrop.c,p=props(c);ctx.save();ctx.transform(...world(c));ctx.strokeStyle=hoverDrop.highlightColor??'#ffffff';ctx.lineWidth=4;ctx.globalAlpha=.85;ctx.strokeRect(-4,-4,p.width+8,p.height+8);ctx.restore();}
+  if(drag?.b.parameters.bringToFront){const c=object(drag.targetId);if(c)drawObject(c,c.parentId?world(object(c.parentId)):identityMatrix(),[],c.prototypeId);}
+ }
+ function render(){previousCtaAppearances=ctaAppearances;ctaAppearances=new Map();const stage=viewport();if(paintedLandscape!==undefined&&paintedLandscape!==stage.landscape)cancelInput();paintedLandscape=stage.landscape;const dpr=Math.min(devicePixelRatio||1,2),w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=stageBackdropColor(stage);ctx.fillRect(0,0,w,h);const scale=Math.min(w/stage.width,h/stage.height),ox=(w-stage.width*scale)/2,oy=(h-stage.height*scale)/2;currentRenderScale=scale||1;currentRenderDpr=dpr;ctx.translate(ox,oy);ctx.scale(scale,scale);if(shake){const progress=Math.min(1,shake.elapsed/shake.seconds),strength=shake.intensity*(1-progress);ctx.translate(Math.sin(shake.elapsed*95)*strength,Math.cos(shake.elapsed*113)*strength);}ctx.save();ctx.beginPath();ctx.rect(0,0,stage.width,stage.height);ctx.clip();paint=[];for(const c of roots())drawObject(c);for(const c of instances)if(!c.parentId)drawObject(c,identityMatrix(),[],c.prototypeId);drawDropFeedback();drawAim();if(edit&&selected){let prototype=byId.get(selected);while(prototype?.parentId)prototype=byId.get(prototype.parentId);if(prototype?.prototype)drawObject(prototype);}drawConfetti();ctx.save();for(const p of particles){if(p.shape==='pixel-confetti'||p.shape==='confetti')continue;const fade=Math.min(1,p.life*2),radius=1.5+2.5*fade;ctx.globalAlpha=fade;ctx.globalCompositeOperation=p.shape==='square'?'source-over':'lighter';ctx.fillStyle=p.color;if(p.shape==='square'){const size=Math.max(2,Math.round(radius*1.6));ctx.fillRect(Math.round(p.x-size/2),Math.round(p.y-size/2),size,size);continue;}ctx.globalCompositeOperation='lighter';ctx.shadowColor=p.color;ctx.shadowBlur=particles.length<=16?6:0;ctx.strokeStyle=p.color;ctx.lineWidth=1.5+fade;ctx.beginPath();ctx.moveTo(p.x-p.vx*.025,p.y-p.vy*.025);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.beginPath();ctx.arc(p.x,p.y,radius,0,Math.PI*2);ctx.fill();}ctx.restore();drawGameFeedback();if(edit&&selected){const rows=paint.filter(r=>r.c.contract!=='native.group.v1'&&(r.c.id===selected||isDescendant(r.c,selected)));if(rows.length){const boxes=rows.map(r=>geometry(r.c,r.m)),l=Math.min(...boxes.map(b=>b.left)),t=Math.min(...boxes.map(b=>b.top));ctx.strokeStyle='#55e6ef';ctx.lineWidth=2/scale;ctx.strokeRect(l,t,Math.max(...boxes.map(b=>b.right))-l,Math.max(...boxes.map(b=>b.bottom))-t);}}ctx.restore();if(scale>0)drawConfetti(undefined,{x:-ox/scale,y:-oy/scale,width:w/scale,height:h/scale});}
  function auditViewport(ids){
   const required=Array.isArray(ids)?[...new Set(ids)]:undefined;
   render();
@@ -724,8 +872,8 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   const stage=viewport(),scale=Math.min(canvas.clientWidth/stage.width,canvas.clientHeight/stage.height),safe=computeSafeArea(stage,network),defects=[],found=new Set();
   const selected=row=>!required||required.includes(row.c.prototypeId??row.c.id);
   const rows=paint.filter(selected),automatic=new Set(project.events.filter(event=>event.kind==='click').map(event=>event.componentId));
-  for(const behavior of project.gameplay)if(['drag','match-tile','aim-launch','aim-launch-3d'].includes(behavior.kind))automatic.add(behavior.componentId);
-  const interactive=new Set(interactiveIds??automatic),anywhereAim=new Set(project.gameplay.filter(b=>(b.kind==='aim-launch'||b.kind==='aim-launch-3d')&&b.parameters.dragMode==='anywhere').map(b=>b.componentId)),isInteractive=row=>interactive.has(row.c.prototypeId??row.c.id);
+  for(const behavior of project.gameplay)if(['drag','match-tile','aim-launch','aim-launch-3d','swipe-input','hold-charge','draw-stroke','erase-mask'].includes(behavior.kind))automatic.add(behavior.componentId);
+  const interactive=new Set(interactiveIds??automatic),anywhereAim=new Set(project.gameplay.filter(b=>['aim-launch','aim-launch-3d','swipe-input','hold-charge','draw-stroke'].includes(b.kind)&&(b.parameters.dragMode==='anywhere'||b.kind==='draw-stroke')).map(b=>b.componentId)),isInteractive=row=>interactive.has(row.c.prototypeId??row.c.id);
   const add=(kind,severity,id,detail,metrics,otherId)=>defects.push({kind,severity,id,...(otherId?{otherId}:{}),detail,metrics});
   const clippedBounds=clip=>{const corners=[[0,0],[clip.width,0],[clip.width,clip.height],[0,clip.height]].map(([x,y])=>point(clip.matrix,x,y));return {left:Math.min(...corners.map(p=>p.x)),right:Math.max(...corners.map(p=>p.x)),top:Math.min(...corners.map(p=>p.y)),bottom:Math.max(...corners.map(p=>p.y))};};
   for(const row of rows){
@@ -765,7 +913,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
     const width=(bounds.right-bounds.left)*scale,height=(bounds.bottom-bounds.top)*scale;
     if(width<minTouchPx-.01||height<minTouchPx-.01)add('touch-target-small','blocker',id,'Interactive target is smaller than the required physical touch size.',{width,height,minTouchPx,scale});
    }
-   if(isInteractive(row)||row.c.contract==='native.text.v1')for(const zone of safe.zones){
+   if((isInteractive(row)&&!anywhereAim.has(id))||row.c.contract==='native.text.v1')for(const zone of safe.zones){
     const width=Math.min(bounds.right,zone.right)-Math.max(bounds.left,zone.left),height=Math.min(bounds.bottom,zone.bottom)-Math.max(bounds.top,zone.top);
     if(width>.01&&height>.01)add('sdk-safe-area-collision','blocker',id,'Component intersects a reserved ad-SDK overlay zone.',{bounds,zone,intersection:{width,height},network});
    }
@@ -917,11 +1065,72 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  }
  function updateAim(p){if(!aiming)return;aiming.current=p;const launch=aimVelocity();aiming.power=launch.power;if(aiming.behavior.parameters.powerVariableId)variables[aiming.behavior.parameters.powerVariableId]=launch.power;}
  function ensureAudio(fromGesture=false){try{const Audio=globalThis.AudioContext??globalThis.webkitAudioContext;if(Audio&&!audio){audio=new Audio();audio.addEventListener?.('statechange',()=>{if(audio?.state==='running')flushPendingMusic();});}void unlockAudio(fromGesture);}catch{/* Muted interaction remains playable when audio is unavailable. */}}
- const down=e=>{refreshOrientation();const p=locate(e),row=hit(p);if(!row&&edit)return;if(edit){if(row){selected=row.c.id;onSelect(row.c.prototypeId??row.c.id);}return;}if(!e.isTrusted||(e.button!==undefined&&e.button!==0)||e.isPrimary===false||paused||closed||(drag&&drag.pointerId!==e.pointerId)||(aiming&&aiming.pointerId!==e.pointerId)/* 3d:start */||(aiming3d&&aiming3d.pointerId!==e.pointerId)/* 3d:end */||(bridge&&(!networkReady||!networkVisible)))return;const firstStart=!started;tutorialInputAt=time;tutorialHadInput=true;started=true;ensureAudio(true);if(firstStart&&!halted){frameEvents=frameActions=0;process();}const chain=row?ancestors(row.c):[];
+ function beginContinuous(e,p,chain){
+  for(const behavior of project.gameplay.filter(item=>item.kind==='erase-mask'&&byId.get(item.componentId)?.sceneId===scene)){
+   const c=chain.find(target=>(target.prototypeId??target.id)===behavior.componentId);if(!c)continue;const local=point(inverseMatrix(world(c)),p.x,p.y),mask=maskState(c,behavior);mask.stampSegment(local,local);continuousInput={kind:'mask',pointerId:e.pointerId,c,behavior,last:local};canvas.setPointerCapture?.(e.pointerId);return true;
+  }
+  if(chain.some(c=>c.contract==='native.button.v1'||project.events.some(event=>event.kind==='click'&&event.componentId===(c.prototypeId??c.id))))return false;
+  for(const behavior of project.gameplay.filter(item=>item.kind==='draw-stroke'&&byId.get(item.componentId)?.sceneId===scene)){
+   const c=byId.get(behavior.componentId),inverse=inverseMatrix(world(c)),local=point(inverse,p.x,p.y),padded=props(c);if(local.x<0||local.y<0||local.x>padded.width||local.y>padded.height)continue;
+   const store=strokeState(behavior);store.begin(p);continuousInput={kind:'stroke',pointerId:e.pointerId,c,behavior,store,last:p};emit({kind:'strokeStart',componentId:c.id});canvas.setPointerCapture?.(e.pointerId);return true;
+  }
+  return false;
+ }
+ function sliceSegment(a,b,input){
+  const active=input.store.active;if(!active)return;
+  for(const collider of project.gameplay.filter(item=>item.kind==='collider'&&byId.get(item.componentId)?.sceneId===scene)){
+   const source=byId.get(collider.componentId);for(const c of targetsFor(source)){if(!visible(c)||active.hitIds.has(c.id))continue;if(segmentHitsPolygon(a,b,collisionPolygon(c,collider.parameters.shape))){active.hitIds.add(c.id);emit(instanceEvent('sliceHit',c));}}
+  }
+  for(const joint of activeJoints){if(joint.broken||!joint.breakable||active.hitIds.has(joint.key))continue;const body=physicsBodies.get(joint.bodyId),anchor=object(joint.anchorId);if(!body||!anchor)continue;const center=centerOf(anchor);if(segmentsIntersect(a,b,{x:center.x,y:center.y},{x:body.x,y:body.y})){active.hitIds.add(joint.key);joint.broken=true;brokenJoints.add(joint.key);emit({kind:'jointBreak',behaviorId:joint.id,componentId:joint.componentId,selfInstanceId:joint.bodyId,instanceId:object(joint.bodyId)?.instanceId});}}
+ }
+ function addStrokePoint(point,input){
+  const previous=input.last,config=input.behavior.parameters;if(config.inkVariableId){const id=config.inkVariableId,cost=Math.hypot(point.x-previous.x,point.y-previous.y);if((variables[id]??0)<cost)return;variables[id]-=cost;}
+  if(!input.store.add(point))return;if(config.mode==='slice-blade')sliceSegment(previous,point,input);input.last=point;
+ }
+ function endContinuous(e){
+  if(!continuousInput||continuousInput.pointerId!==e.pointerId)return;const input=continuousInput;continuousInput=undefined;
+  try{if(canvas.hasPointerCapture?.(e.pointerId))canvas.releasePointerCapture?.(e.pointerId);}catch{/* Capture may already have been released by the host. */}
+  if(input.kind==='stroke'){
+   const stroke=input.store.end(),config=input.behavior.parameters;if(stroke){if(config.mode==='physics-wall'){const live=new Set(input.store.strokes.map(s=>s.id));strokeWallBodies=strokeWallBodies.filter(wall=>wall.owner!==input.c.id||live.has(wall.strokeId));strokeWallBodies.push(...strokeWalls(stroke,config.strokeWidth).map(wall=>({...wall,owner:input.c.id})));}else if(config.mode==='path-trace'){const follow=object(config.followComponentId);if(follow&&stroke.points.length>1)pathFollowers.set(follow.id,{points:stroke.points,index:1,speed:config.followSpeed});}}
+   emit({kind:'strokeEnd',componentId:input.c.id});
+  }
+ }
+ function tickCanvas(dt){
+  for(const store of strokeStates.values())store.tick(dt);
+  for(const [id,follower]of pathFollowers){const c=object(id);if(!c){pathFollowers.delete(id);continue;}const target=follower.points[follower.index];if(!target){pathFollowers.delete(id);emit(instanceEvent('pathArrive',c));continue;}const center=centerOf(c),dx=target.x-center.x,dy=target.y-center.y,distance=Math.hypot(dx,dy),step=follower.speed*dt;if(distance<=step){setWorldCenter(c,target.x,target.y);follower.index++;}else if(distance>.001)setWorldCenter(c,center.x+dx/distance*step,center.y+dy/distance*step);}
+ }
+ function beginGestureInput(e,p,chain){
+  const holds=[],swipes=[];
+  for(const behavior of project.gameplay.filter(b=>['swipe-input','hold-charge'].includes(b.kind)&&byId.get(b.componentId)?.sceneId===scene)){
+   const source=byId.get(behavior.componentId),c=behavior.parameters.dragMode==='anywhere'?targetsFor(source).find(target=>visible(target)):chain.find(target=>(target.prototypeId??target.id)===source.id);
+   if(!c)continue;
+   if(behavior.kind==='swipe-input')swipes.push({behavior,c});
+   else{
+    const parameters=behavior.parameters,value=Math.max(parameters.min,Math.min(parameters.max,Number(variables[parameters.variableId])));variables[parameters.variableId]=value;
+    holds.push({behavior,c,charge:createHoldCharge(parameters,value)});emit(instanceEvent('holdStart',c));
+   }
+  }
+  if(holds.length||swipes.length)gestureInput={pointerId:e.pointerId,start:p,current:p,holds,swipes};
+ }
+ function endGestureInput(e,p){
+  if(!gestureInput||gestureInput.pointerId!==e.pointerId)return;
+  const input=gestureInput,pointerSources=new Set();gestureInput=undefined;
+  for(const {behavior,c} of [...input.holds,...input.swipes])if(!pointerSources.has(behavior.componentId)){pointerSources.add(behavior.componentId);emit(instanceEvent('pointerUp',c,undefined,{targetId:c.id,pointerId:e.pointerId}));}
+  for(const hold of input.holds){
+   const parameters=hold.behavior.parameters;emit(instanceEvent('holdRelease',hold.c));
+   if(parameters.resetOnRelease!==false){const old=variables[parameters.variableId];variables[parameters.variableId]=parameters.min;if(old!==parameters.min)emit({kind:'variableChange',variableId:parameters.variableId,selfInstanceId:hold.c.instanceId??hold.c.id,instanceId:hold.c.instanceId});}
+  }
+  for(const swipe of input.swipes){
+   const direction=classifySwipe(input.start,p,swipe.behavior.parameters.minDistancePx,swipeCooldowns.get(swipe.behavior.id)??-Infinity,time*1000,swipe.behavior.parameters.cooldownMs);if(!direction)continue;
+   swipeCooldowns.set(swipe.behavior.id,time*1000);emit(instanceEvent('swipe',swipe.c,undefined,{direction}));
+  }
+  return pointerSources;
+ }
+ const down=e=>{refreshOrientation();const p=locate(e),row=hit(p);lastPointer=p;if(!row&&edit)return;if(edit){if(row){selected=row.c.id;onSelect(row.c.prototypeId??row.c.id);}return;}if(!e.isTrusted||(e.button!==undefined&&e.button!==0)||e.isPrimary===false||paused||closed||(drag&&drag.pointerId!==e.pointerId)||(gestureInput&&gestureInput.pointerId!==e.pointerId)||(aiming&&aiming.pointerId!==e.pointerId)/* 3d:start */||(aiming3d&&aiming3d.pointerId!==e.pointerId)/* 3d:end */||(bridge&&(!networkReady||!networkVisible)))return;const firstStart=!started;tutorialInputAt=time;tutorialHadInput=true;started=true;ensureAudio(true);if(firstStart&&!halted){frameEvents=frameActions=0;process();}const chain=row?ancestors(row.c):[];if(beginContinuous(e,p,chain)){process();render();return;}beginGestureInput(e,p,chain);
  /* 3d:start */
  const aim3d=stage3dMgr&&!chain.some(c=>c.contract==='native.button.v1')?project.gameplay.find(b=>b.kind==='aim-launch-3d'&&byId.get(b.componentId)?.sceneId===scene):undefined;
  if(aim3d){
-  const source=byId.get(aim3d.componentId),phys=project.gameplay.find(b=>b.kind==='physics-3d'&&b.componentId===source.id);
+  const source=byId.get(aim3d.componentId),phys=behaviorOn('physics-3d',source.id);
   const body=phys?body3dState(source,phys):undefined;
   const proj=project3dToStage(source.id);
   const nearBall=aim3d.parameters.dragMode==='anywhere'||(proj&&Math.hypot(p.x-proj.x,p.y-proj.y)<=aim3d.parameters.hitRadiusPx);
@@ -933,10 +1142,10 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  /* 3d:end */
  const aimBehavior=project.gameplay.find(b=>b.kind==='aim-launch'&&byId.get(b.componentId).sceneId===scene&&(b.parameters.dragMode==='anywhere'&&!chain.some(c=>c.contract==='native.button.v1')||chain.some(c=>(c.prototypeId??c.id)===b.componentId)));
  if(aimBehavior){
-  const source=byId.get(aimBehavior.componentId),target=chain.find(c=>(c.prototypeId??c.id)===source.id)??targetsFor(source).find(c=>visible(c)),body=target&&physicsState(target,project.gameplay.find(b=>b.kind==='physics-body'&&b.componentId===source.id));
+  const source=byId.get(aimBehavior.componentId),target=chain.find(c=>(c.prototypeId??c.id)===source.id)??targetsFor(source).find(c=>visible(c)),body=target&&physicsState(target,behaviorOn('physics-body',source.id));
   if(body&&(!aimBehavior.parameters.onlyWhenAtRest||body.atRest)){aiming={behavior:aimBehavior,targetId:target.id,sourceId:source.id,pointerId:e.pointerId,start:p,current:p,power:0};updateAim(p);canvas.setPointerCapture?.(e.pointerId);render();return;}
  }
- for(const c of chain){const feedback=project.gameplay.find(b=>b.kind==='press-feedback'&&b.componentId===(c.prototypeId??c.id));if(feedback&&(c.contract!=='native.button.v1'||props(c).enabled))pressStates.set(c.id,{behavior:feedback.parameters,pointerId:e.pointerId,held:true});}const matchTile=chain.find(c=>matchCells.get(c.id)?.sceneId===scene);if(matchTile){
+ for(const c of chain){const feedback=behaviorOn('press-feedback',c.prototypeId??c.id);if(feedback&&(c.contract!=='native.button.v1'||props(c).enabled))pressStates.set(c.id,{behavior:feedback.parameters,pointerId:e.pointerId,held:true});}const matchTile=chain.find(c=>matchCells.get(c.id)?.sceneId===scene);if(matchTile){
  const board=matchBoards.get(matchTile.parentId);
  if(board?.snapshot().busy)return;
  selectMatchTile(matchTile);
@@ -944,7 +1153,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   matchGesture={pointerId:e.pointerId,boardId:matchTile.parentId,tileId:matchTile.id,start:p};
   canvas.setPointerCapture?.(e.pointerId);
  }
-}pressed=chain.find(c=>c.contract==='native.button.v1'&&props(c).enabled)?.id;pressPointerId=pressed?e.pointerId:undefined;const b=project.gameplay.find(b=>b.kind==='drag'&&chain.some(c=>(c.prototypeId??c.id)===b.componentId));if(b){const c=chain.find(c=>(c.prototypeId??c.id)===b.componentId);drag={b,targetId:c.id,start:p,m:[...transform(c)],pointerId:e.pointerId};canvas.setPointerCapture(e.pointerId);}frameEvents=frameActions=0;halted=false;for(const c of chain)if(c.contract!=='native.button.v1'||props(c).enabled)emit({kind:'click',componentId:c.prototypeId??c.id,instanceId:c.instanceId,targetId:c.id,pointerId:e.pointerId});process();render();};
+}pressed=chain.find(c=>c.contract==='native.button.v1'&&props(c).enabled)?.id;pressPointerId=pressed?e.pointerId:undefined;const b=project.gameplay.find(b=>b.kind==='drag'&&chain.some(c=>(c.prototypeId??c.id)===b.componentId));if(b){const c=chain.find(c=>(c.prototypeId??c.id)===b.componentId);const origin=centerOf(c),originZone=dropOccupancy.zoneOf(c.id);dragOrigins.set(c.id,origin);dropOccupancy.release(c.id);drag={b,targetId:c.id,start:p,current:p,origin,originZone,m:[...transform(c)],pointerId:e.pointerId};emit(instanceEvent('dragStart',c));canvas.setPointerCapture(e.pointerId);}frameEvents=frameActions=0;halted=false;for(const c of chain)if(c.contract!=='native.button.v1'||props(c).enabled)emit({kind:'click',componentId:c.prototypeId??c.id,instanceId:c.instanceId,targetId:c.id,pointerId:e.pointerId});process();render();};
  function swipeMatch(e,p){
   if(!matchGesture||matchGesture.pointerId!==e.pointerId)return false;
   if(!e.isTrusted||!running())return true;
@@ -963,7 +1172,8 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
  const move=e=>{
   if(paused)return;
   refreshOrientation();
-  const stage=viewport(),p=locate(e);
+  const stage=viewport(),p=locate(e);lastPointer=p;if(gestureInput?.pointerId===e.pointerId)gestureInput.current=p;
+  if(continuousInput?.pointerId===e.pointerId){if(continuousInput.kind==='mask'){const input=continuousInput,local=point(inverseMatrix(world(input.c)),p.x,p.y);maskState(input.c,input.behavior).stampSegment(input.last,local);input.last=local;}else addStrokePoint(p,continuousInput);process();render();return;}
   /* 3d:start */
   if(aiming3d?.pointerId===e.pointerId){if(e.isTrusted&&running())updateAim3d(p);return;}
   /* 3d:end */
@@ -1001,12 +1211,15 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
    else if(Math.abs(yInfluence)>1e-8)matrix[5]+=correction/yInfluence;
   }
   const previous=overrides.get(c.id)??{parameters:{}};
-  overrides.set(c.id,{...previous,transform:matrix});
+  overrides.set(c.id,{...previous,transform:matrix});drag.current=p;
+  const {zones,tag}=dropZonesFor(c),resolved=resolveDropZone({itemId:c.id,tag,zones,occupancy:dropOccupancy});hoverDrop=resolved&&resolved.kind!=='reject'?resolved.zone:undefined;
  };
 
  const up=e=>{
   refreshOrientation();
-  const p=locate(e),store=pendingStore;
+  const p=locate(e),store=pendingStore;lastPointer=p;endContinuous(e);const gesturePointerSources=endGestureInput(e,p)??new Set();finishDrag(e);
+  if(e.isTrusted&&running()){const released=hit(p);for(const c of released?ancestors(released.c):[])if(!gesturePointerSources.has(c.prototypeId??c.id)&&(c.contract!=='native.button.v1'||props(c).enabled))emit(instanceEvent('pointerUp',c,undefined,{targetId:c.id,pointerId:e.pointerId}));}
+  process();render();
   /* 3d:start */
   if(aiming3d?.pointerId===e.pointerId){
    const gesture=aiming3d,launch=aim3dVelocity(),body=bodies3d.get(gesture.targetId);
@@ -1038,7 +1251,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
   if(bridge)bridge.openStore(project.base.storeUrl);
   else window.open(project.base.storeUrl,'_blank','noopener');
  };
- const cancelPointer=e=>{/* 3d:start */if(aiming3d?.pointerId===e.pointerId)cancelAim3d(e.pointerId);/* 3d:end */if(aiming?.pointerId===e.pointerId){if(aiming.behavior.parameters.powerVariableId)variables[aiming.behavior.parameters.powerVariableId]=0;aiming=undefined;}if(matchGesture?.pointerId===e.pointerId)matchGesture=undefined;finishPointer(e);};
+ const cancelPointer=e=>{/* 3d:start */if(aiming3d?.pointerId===e.pointerId)cancelAim3d(e.pointerId);/* 3d:end */if(aiming?.pointerId===e.pointerId){if(aiming.behavior.parameters.powerVariableId)variables[aiming.behavior.parameters.powerVariableId]=0;aiming=undefined;}if(matchGesture?.pointerId===e.pointerId)matchGesture=undefined;if(continuousInput?.pointerId===e.pointerId){if(continuousInput.kind==='stroke')continuousInput.store.cancel();continuousInput=undefined;}if(gestureInput?.pointerId===e.pointerId){for(const hold of gestureInput.holds)if(hold.behavior.parameters.resetOnRelease!==false)variables[hold.behavior.parameters.variableId]=hold.behavior.parameters.min;gestureInput=undefined;}finishPointer(e);};
  const onClickUnlock=e=>{if(e?.isTrusted&&!edit&&!paused&&!closed)ensureAudio(true);};
  const onResize=()=>{if(!destroyed)render();};
  const resizeObserver=typeof globalThis.ResizeObserver==='function'?new globalThis.ResizeObserver(onResize):undefined;
@@ -1145,7 +1358,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
     const firstInput=()=>{
      /* 3d:start */
      if(aim3dReview){
-      const source=byId.get(aim3dReview.componentId),phys=project.gameplay.find(b=>b.kind==='physics-3d'&&b.componentId===source.id),body=body3dState(source,phys),zone=project.gameplay.find(b=>b.kind==='capture-zone-3d'&&byId.get(b.componentId).sceneId===scene);
+      const source=byId.get(aim3dReview.componentId),phys=behaviorOn('physics-3d',source.id),body=body3dState(source,phys),zone=project.gameplay.find(b=>b.kind==='capture-zone-3d'&&byId.get(b.componentId).sceneId===scene);
       let vx=0,vz=-aim3dReview.parameters.maxSpeed*.45;
       if(zone){const zc=byId.get(zone.componentId),zp=props(zc),dx=(zp.x??0)-body.x,dz=(zp.z??0)-body.z,len=Math.hypot(dx,dz)||1;vx=dx/len*aim3dReview.parameters.maxSpeed*.55;vz=dz/len*aim3dReview.parameters.maxSpeed*.55;}
       body.vx=vx;body.vy=0;body.vz=vz;body.atRest=false;body.restElapsed=0;body.movingTime=0;body.lastSafe={x:body.x,y:body.y,z:body.z};emit({kind:'launch',componentId:source.id});
@@ -1153,7 +1366,7 @@ export function mountNative(project,canvas,{edit=false,sceneId=project.base.star
      }
      /* 3d:end */
      if(aim){
-      const source=byId.get(aim.componentId),target=targetsFor(source)[0],body=physicsState(target,project.gameplay.find(b=>b.kind==='physics-body'&&b.componentId===source.id)),zone=project.gameplay.find(b=>b.kind==='capture-zone'&&byId.get(b.componentId).sceneId===scene);
+      const source=byId.get(aim.componentId),target=targetsFor(source)[0],body=physicsState(target,behaviorOn('physics-body',source.id)),zone=project.gameplay.find(b=>b.kind==='capture-zone'&&byId.get(b.componentId).sceneId===scene);
       let vx=aim.parameters.maxSpeed*.45,vy=0;
       if(zone){const zc=byId.get(zone.componentId),center=point(world(zc),props(zc).width/2,props(zc).height/2),dx=center.x-body.x,dy=center.y-body.y,length=Math.hypot(dx,dy)||1;vx=dx/length*aim.parameters.maxSpeed*.45;vy=dy/length*aim.parameters.maxSpeed*.45;}
       body.vx=vx;body.vy=vy;body.atRest=false;body.restElapsed=0;emit({kind:'launch',componentId:source.id,instanceId:target.instanceId});

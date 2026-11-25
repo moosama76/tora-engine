@@ -1,7 +1,7 @@
 import {moduleForProject} from './modules/index.mjs';
 import {assertValue,fieldLimits,record} from './review-fields.mjs';
 
-const primitiveBehaviors=new Set(['physics-body','aim-launch','capture-zone','oscillate','physics-3d','oscillate-3d','aim-launch-3d','capture-zone-3d','path-network','path-agent','path-gate','value-meter','camera-follow']);
+const primitiveBehaviors=new Set(['erase-mask','draw-stroke','physics-joint','instance-state','steer','drop-zone','swipe-input','hold-charge','physics-body','aim-launch','capture-zone','oscillate','physics-3d','oscillate-3d','aim-launch-3d','capture-zone-3d','path-network','path-agent','path-gate','value-meter','camera-follow']);
 const primitiveProject=project=>project.gameplay.some(behavior=>primitiveBehaviors.has(behavior.kind));
 function primaryCta(project){
  let fallback=null;

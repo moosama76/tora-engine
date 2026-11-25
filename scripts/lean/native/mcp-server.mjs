@@ -9,7 +9,7 @@ import {ProjectStore} from '../project-store.mjs';
 import {EditorState} from '../editor-state.mjs';
 import {NativeService} from './service.mjs';
 import {NativeAgentTools} from './agent-tools.mjs';
-import {capabilities} from './contracts.mjs';
+import {availablePacks,capabilities,capabilitiesForPacks,capabilitySummary} from './contracts.mjs';
 import {NativeReview} from './review.mjs';
 import {reviewRoutingFlags} from './review-resolver.mjs';
 import {ReviewIntake} from './review-intake.mjs';
@@ -22,8 +22,8 @@ const string={type:'string'},boolean={type:'boolean'},strings={type:'array',item
 const expected={type:'object',properties:{revisionId:string,contentHash:string},required:['revisionId','contentHash'],additionalProperties:false};
 const tools=[];
 function define(name,description,properties={},required=[],readOnly=false){tools.push({name:'tora_'+name,description,inputSchema:{type:'object',properties,required,additionalProperties:false},annotations:{readOnlyHint:readOnly,destructiveHint:!readOnly,openWorldHint:false}});}
-define('brief','Read current production instructions and authoring documentation before creating or modifying a playable. Returns full source text; no model calls.',{},[],true);
-define('capabilities','Discover supported visual and behavior contracts. Supply names for a compact subset; omit for the full registry.',{names:strings},[],true);
+define('brief','Read current production instructions and core authoring documentation. Load domain guides with packs or legacy full references with full:true.',{packs:strings,full:boolean},[],true);
+define('capabilities','Discover supported contracts. Use packs for domains, names for exact descriptors, summary for the pack index, or omit all for the full registry.',{names:strings,packs:strings,summary:boolean},[],true);
 define('compose','Compose an editable playable from a structured creative concept and prepared artwork. Read tora_brief and discover creative-concept capabilities first. Returns creative review status and requirement trace.',{id:string,name:string,concept:{type:'object'}},['id','concept']);
 define('create','Create an empty editable native project. Read tora_brief first.',{id:string,name:string,androidUrl:string},['id','name']);
 define('inspect','Inspect current state and revision identity. Narrow with ids/search; full explicitly returns the complete project.',{id:string,revisionId:string,ids:strings,fields:strings,search:string,full:boolean},['id'],true);
@@ -60,21 +60,29 @@ async function call(name,args){
    }
    throw Error('E_MCP_BRIEF_UNAVAILABLE');
   };
+  const requested=args.packs??[];
+  if(new Set(requested).size!==requested.length||requested.some(id=>!availablePacks.some(pack=>pack.id===id)))throw Error('E_MCP_UNKNOWN_PACK');
+  const domainPacks=requested.filter(id=>id!=='core');
   const files=[
    ['production',resolve(root,'PRODUCTION_MASTER.md')],
    ['winEffectsAndCta',resolve(root,'skills/tora-playables/references/win-effects-and-cta.md')],
    ['uiFundamentals',resolve(root,'skills/tora-ui-fundamentals/SKILL.md')],
-   ['authoring',resolve(root,'docs/TORA_CREATION_API.md')],
-   ['agentTools',resolve(root,'docs/NATIVE_AGENT_TOOLS.md')],
+   ['authoring',resolve(root,'docs/reference/CORE_AUTHORING.md')],
+   ...domainPacks.map(id=>['pack:'+id,resolve(root,`docs/reference/packs/${id}.md`)]),
+   ...(args.full?[['fullAuthoring',resolve(root,'docs/TORA_CREATION_API.md')],['agentTools',resolve(root,'docs/NATIVE_AGENT_TOOLS.md')]]:[]),
   ];
   let documents;
   try{
    const [playable,...rest]=await Promise.all([resolvePlayableBrief(),...files.map(async([docName,path])=>({name:docName,path,text:await readFile(path,'utf8')}))]);
    documents=[rest[0],playable,...rest.slice(1)];
   }catch{throw Error('E_MCP_BRIEF_UNAVAILABLE');}
-  briefRead=true;return {documents,store:store.root,instructions:'Apply these briefs. Establish one coherent visual style and an asset plan before implementation. Use the retained, authorized studio assets for studio intake. For sourced packs use free third-party libraries with verified commercial-use license evidence, author, source URL, and source hashes. Keep visual assets within one style family; audio may use a separate compatible pack. Asset creation and image generation are outside this authoring workflow. Inspect packaged screenshots and footage; tests do not establish visual quality. Use connected browser tools to inspect actual exported output.'};
+  briefRead=true;return {documents,availablePacks:availablePacks.map(({id,description})=>({id,description})),store:store.root,instructions:'Apply these briefs. Establish one coherent visual style and an asset plan before implementation. Use the retained, authorized studio assets for studio intake. For sourced packs use free third-party libraries with verified commercial-use license evidence, author, source URL, and source hashes. Keep visual assets within one style family; audio may use a separate compatible pack. Asset creation and image generation are outside this authoring workflow. Inspect packaged screenshots and footage; tests do not establish visual quality. Use connected browser tools to inspect actual exported output.'};
  }
- if(name==='tora_capabilities')return args.names?agent.run({command:'contracts',names:args.names}):capabilities();
+ if(name==='tora_capabilities'){
+  if(args.summary)return capabilitySummary();
+  if(args.packs){const scoped=capabilitiesForPacks(args.packs);if(!args.names)return scoped;}
+  return args.names||args.packs?agent.run({command:'contracts',names:args.names,packs:args.packs}):capabilities();
+ }
  if(!['tora_inspect'].includes(name)&&!briefRead)throw Error('E_MCP_READ_BRIEF_FIRST');
  if(name==='tora_review_claim')return review.claim(args.id,args.requestId);
  if(name==='tora_review_propose')return review.propose(args.id,args);

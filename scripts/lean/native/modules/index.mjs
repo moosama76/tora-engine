@@ -15,7 +15,7 @@ export function detectModule(index){
 export function resolveProjectRoles(index){
  const descriptor=detectModule(index);
  if(descriptor)return descriptor.resolveRoles(index);
- const primitiveKinds=new Set(['physics-body','aim-launch','capture-zone','oscillate','physics-3d','oscillate-3d','aim-launch-3d','capture-zone-3d','path-network','path-agent','path-gate','value-meter','camera-follow']);
+ const primitiveKinds=new Set(['erase-mask','draw-stroke','physics-joint','instance-state','steer','drop-zone','swipe-input','hold-charge','physics-body','aim-launch','capture-zone','oscillate','physics-3d','oscillate-3d','aim-launch-3d','capture-zone-3d','path-network','path-agent','path-gate','value-meter','camera-follow']);
  if(index.records('gameplay').some(behavior=>primitiveKinds.has(behavior.kind))){
   let fallback=null;
   for(const binding of index.records('eventBindings')){

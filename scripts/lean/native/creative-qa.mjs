@@ -480,6 +480,13 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='match-tile'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id+'.primary',componentId:behavior.componentId})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='aim-launch'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'aim-launch',componentId:behavior.componentId})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='aim-launch-3d'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'aim-launch-3d',componentId:behavior.componentId})).filter(eligible);
+    const liveInstances=globalThis.toraRuntime?.state?.()?.instances??[];
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='drag'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'drag',componentId:behavior.componentId,parameters:behavior.parameters})).filter(eligible);
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='drag'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'drag',componentId:behavior.componentId,parameters:behavior.parameters,fromInstance:true})).filter(entry=>{const c=byId.get(entry.componentId);return c.sceneId===current.base.startScene&&c.prototype&&c.parameters?.visible!==false&&liveInstances.some(instance=>instance.prototypeId===c.id);});
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='swipe-input'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'swipe',componentId:behavior.componentId})).filter(eligible);
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='hold-charge'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'hold',componentId:behavior.componentId})).filter(eligible);
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='draw-stroke'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'draw',componentId:behavior.componentId})).filter(eligible);
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='erase-mask'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'erase',componentId:behavior.componentId})).filter(eligible);
     candidates=candidates.sort((a,b)=>{
      const first=byId.get(a.componentId),second=byId.get(b.componentId);
      const aBinding=bindings.get(a.id),bBinding=bindings.get(b.id),aStore=aBinding?(aBinding.actions??[]).every(action=>['store','restart'].includes(action.kind)):false;
@@ -504,12 +511,44 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     };
     const world=target=>target.parentId?multiply(world(byId.get(target.parentId)),local(target)):local(target);
     const matrix=world(component),width=component.parameters.width,height=component.parameters.height;
-    const center={x:matrix[0]*width/2+matrix[2]*height/2+matrix[4],y:matrix[1]*width/2+matrix[3]*height/2+matrix[5]};
-    return {componentId:component.id,interaction:candidates[0]?.kind==='aim-launch'?'aim-launch':'click',x:rect.left+offsetX+center.x*scale,y:rect.top+offsetY+center.y*scale};
+    const screen=pt=>({x:rect.left+offsetX+pt.x*scale,y:rect.top+offsetY+pt.y*scale});
+    const liveMatches=candidates[0]?.fromInstance?liveInstances.filter(instance=>instance.prototypeId===component.id):[];
+    const center=liveMatches.length?{x:liveMatches[0].x+width/2,y:liveMatches[0].y+height/2}:{x:matrix[0]*width/2+matrix[2]*height/2+matrix[4],y:matrix[1]*width/2+matrix[3]*height/2+matrix[5]};
+    const start=screen(center),kind=candidates[0]?.kind;
+    if(kind==='drag'){
+     if(liveMatches.length>1&&current.gameplay.some(behavior=>behavior.kind==='drop-zone'&&behavior.componentId===component.id)){
+      const end=screen({x:liveMatches[1].x+width/2,y:liveMatches[1].y+height/2});
+      return {componentId:component.id,interaction:'drag-drop',...start,endX:end.x,endY:end.y};
+     }
+     const zones=current.gameplay.filter(behavior=>behavior.kind==='drop-zone'&&byId.has(behavior.componentId)&&behavior.componentId!==component.id).filter(eligible).filter(behavior=>(behavior.parameters.acceptTags?.length??0)===0||behavior.parameters.acceptTags.includes(candidates[0].parameters.tag??''));
+     zones.sort((a,b)=>Number(current.gameplay.some(item=>item.kind==='drag'&&item.componentId===b.componentId))-Number(current.gameplay.some(item=>item.kind==='drag'&&item.componentId===a.componentId)));
+     const destination=byId.get(zones[0]?.componentId);
+     if(destination){
+      const m=world(destination),w=destination.parameters.width,h=destination.parameters.height,end=screen({x:m[0]*w/2+m[2]*h/2+m[4],y:m[1]*w/2+m[3]*h/2+m[5]});
+      return {componentId:component.id,interaction:'drag-drop',...start,endX:end.x,endY:end.y};
+     }
+     const axis=candidates[0].parameters?.axis??'both';
+     return {componentId:component.id,interaction:'drag-drop',...start,endX:axis==='y'?start.x:start.x+60*scale,endY:axis==='y'?start.y+60*scale:start.y};
+    }
+    if(kind==='swipe')return {componentId:component.id,interaction:'swipe',...start,endX:start.x+60*scale,endY:start.y};
+    if(kind==='hold')return {componentId:component.id,interaction:'hold',...start};
+    if(kind==='draw'||kind==='erase'){
+     const from=screen({x:matrix[0]*width*.25+matrix[2]*height*.5+matrix[4],y:matrix[1]*width*.25+matrix[3]*height*.5+matrix[5]});
+     const to=screen({x:matrix[0]*width*.75+matrix[2]*height*.5+matrix[4],y:matrix[1]*width*.75+matrix[3]*height*.5+matrix[5]});
+     return {componentId:component.id,interaction:kind,x:from.x,y:from.y,endX:to.x,endY:to.y};
+    }
+    return {componentId:component.id,interaction:kind==='aim-launch'?'aim-launch':'click',...start};
    },{authored:project??null,preferred:primaryComponentId??null});
   },
   async prepareClick(target){if(target.interaction==='aim-launch')await page.mouse.move(target.x,target.y);},
-  async click(target){if(target.interaction==='aim-launch'){await page.mouse.down();await page.mouse.move(target.x-64,target.y+28);await page.mouse.up();}else await page.mouse.click(target.x,target.y);},
+  async click(target){
+   if(target.interaction==='aim-launch'){await page.mouse.down();await page.mouse.move(target.x-64,target.y+28);await page.mouse.up();}
+   else if(target.interaction==='drag-drop'){await page.mouse.move(target.x,target.y);await page.mouse.down();await page.mouse.move(target.endX,target.endY,{steps:3});await page.mouse.up();}
+   else if(target.interaction==='swipe'){await page.mouse.move(target.x,target.y);await page.mouse.down();await page.mouse.move(target.endX,target.endY,{steps:3});await page.mouse.up();}
+   else if(target.interaction==='hold'){await page.mouse.move(target.x,target.y);await page.mouse.down();await page.waitForTimeout(55);await page.mouse.up();}
+   else if(target.interaction==='draw'||target.interaction==='erase'){await page.mouse.move(target.x,target.y);await page.mouse.down();await page.mouse.move(target.endX,target.endY,{steps:3});await page.mouse.up();}
+   else await page.mouse.click(target.x,target.y);
+  },
   async enterEndCard(){
    const current=project??await page.evaluate(()=>{const el=globalThis.document.getElementById('project');return el?JSON.parse(el.textContent):null;});
    if(!current)return {available:false};
@@ -719,7 +758,7 @@ export async function runBrowserQa(options={}){
     for(let current=component;current;current=byId.get(current.parentId))if(current.prototype)return false;
     return true;
    }).map(component=>component.id));
-   result=await session.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(event=>event.kind==='click'&&active.has(event.componentId)).map(event=>event.componentId),...(project?.gameplay??[]).filter(behavior=>behavior.kind==='aim-launch'&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
+   result=await session.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(event=>event.kind==='click'&&active.has(event.componentId)).map(event=>event.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
   }catch(error){
    blockers.push(issue('blocker','layout-audit-failed',null,'Repair the runtime layout audit so every key state can be inspected.',{viewport,detail:`${state}: ${error.message}`,metrics:{state}}));return;
   }
@@ -797,7 +836,7 @@ export async function runBrowserQa(options={}){
        const sceneId=(await targetSession.getState())?.scene??project?.base?.startScene;
        const components=project?.components??[],byId=new Map(components.map(c=>[c.id,c]));
        const active=new Set(components.filter(c=>{if(c.sceneId!==sceneId)return false;for(let cur=c;cur;cur=byId.get(cur.parentId))if(cur.prototype)return false;return true;}).map(c=>c.id));
-       const res=await targetSession.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(e=>e.kind==='click'&&active.has(e.componentId)).map(e=>e.componentId),...(project?.gameplay??[]).filter(behavior=>behavior.kind==='aim-launch'&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
+       const res=await targetSession.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(e=>e.kind==='click'&&active.has(e.componentId)).map(e=>e.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
        addLayoutReport(res,viewport,'timeout',blockers,warnings);
       }
      }finally{await timedOut.close?.();}

@@ -32,6 +32,10 @@
   "inputs": [
     "scripts/lean/scene-document.mjs",
     "scripts/lean/native/match-board.mjs",
+    "scripts/lean/native/interaction-gestures.mjs",
+    "scripts/lean/native/instance-steering.mjs",
+    "scripts/lean/native/erase-mask.mjs",
+    "scripts/lean/native/draw-stroke.mjs",
     "scripts/lean/native/physics-2d.mjs",
     "scripts/lean/native/path-network.mjs",
     "scripts/lean/native/pixel-text.mjs",
@@ -41,6 +45,6 @@
     "packages/adapters/src/applovin.ts",
     "scripts/lean/native/runtime.mjs"
   ],
-  "javascriptBytes": 140828,
+  "javascriptBytes": 176837,
   "externalImports": []
 }

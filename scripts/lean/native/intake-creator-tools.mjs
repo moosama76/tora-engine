@@ -13,7 +13,7 @@ function bounded(value,limit=24_000){
  const text=JSON.stringify(value);if(Buffer.byteLength(text)>limit)throw Error('E_CREATOR_TOOL_RESPONSE_LIMIT');return value;
 }
 export const creatorToolDefinitions=[
- {name:'discover_contracts',description:'Discover exact Tora visual, behavior, operation, action, event, camera, and limit contracts before authoring.',parameters:{type:'object',properties:{names:{type:'array',items:{type:'string'},maxItems:16}},required:['names'],additionalProperties:false}},
+ {name:'discover_contracts',description:'Discover exact Tora contracts before authoring. Use packs for complete domains, names for individual descriptors, or both.',parameters:{type:'object',properties:{names:{type:'array',items:{type:'string'},maxItems:16},packs:{type:'array',items:{type:'string'},maxItems:7}},additionalProperties:false}},
  {name:'list_assets',description:'List creator uploads and verified local CC0 media with dimensions and provenance. Optionally search allowlisted live CC0 providers.',parameters:{type:'object',properties:{query:{type:'string'},kind:{type:'string',enum:['sprite','audio','mesh']},styleFamily:{type:'string'},includeRemote:{type:'boolean'}},additionalProperties:false}},
  {name:'fetch_remote_pack',description:'Fetch and verify one allowlisted Kenney or OpenGameArt CC0 pack. Returns cached normalized media and license receipts.',parameters:{type:'object',properties:{sourceUrl:{type:'string'},packId:{type:'string'},fileFilter:{type:'string'}},required:['sourceUrl'],additionalProperties:false}},
  {name:'stage_assets',description:'Stage verified uploaded, local catalog, or fetched remote assets into the draft. Asset-source slider and one visual style family are enforced.',parameters:{type:'object',properties:{intakeAssetIds:{type:'array',items:{type:'string'}},catalogAssetIds:{type:'array',items:{type:'string'}},remoteAssetIds:{type:'array',items:{type:'string'}}},additionalProperties:false}},
@@ -34,8 +34,8 @@ export class IntakeCreatorTools{
   return this[method](args);
  }
  async discoverContracts(args){
-  check(exact(args,['names'])&&Array.isArray(args.names), 'E_CREATOR_TOOL_ARGUMENT');
-  return bounded(await this.agent.run({command:'contracts',names:args.names}));
+  check(exact(args,['names','packs'])&&(Array.isArray(args.names)||Array.isArray(args.packs)), 'E_CREATOR_TOOL_ARGUMENT');
+  return bounded(await this.agent.run({command:'contracts',names:args.names,packs:args.packs}),args.packs?65536:24000);
  }
  async studioAssets(){
   const output=[];

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import process from 'node:process';
+import {Buffer} from 'node:buffer';
 import {setTimeout,clearTimeout} from 'node:timers';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -349,4 +350,29 @@ test('flagged editor sound draft resolves through MCP without a provider',async 
   assert.equal(await page.locator('#review-after').getAttribute('data-playing'),'true');
  }
  assert.deepEqual(errors,[]);
+});
+
+test('MCP scopes brief and capability discovery by domain without breaking full compatibility',async t=>{
+ const c=await client(t),compact=c.value(await c.call('tora_brief'));
+ assert.ok(Buffer.byteLength(JSON.stringify(compact))<=31514);
+ assert.ok(compact.documents.some(document=>document.name==='authoring'&&document.path.endsWith('CORE_AUTHORING.md')));
+ assert.ok(!compact.documents.some(document=>document.name==='agentTools'));
+ const scoped=c.value(await c.call('tora_brief',{packs:['core','match-board','3d']}));
+ assert.deepEqual(scoped.documents.filter(document=>document.name.startsWith('pack:')).map(document=>document.name),['pack:match-board','pack:3d']);
+ assert.equal(scoped.documents.filter(document=>document.name==='authoring').length,1);
+ const full=c.value(await c.call('tora_brief',{full:true}));
+ assert.ok(full.documents.some(document=>document.name==='fullAuthoring'));
+ assert.ok(full.documents.some(document=>document.name==='agentTools'));
+ const summary=c.value(await c.call('tora_capabilities',{summary:true}));
+ assert.ok(Buffer.byteLength(JSON.stringify(summary))<2048);
+ assert.ok(summary.packs.some(pack=>pack.id==='path-network'&&pack.members.includes('path-agent')));
+ const pack=c.value(await c.call('tora_capabilities',{packs:['match-board']}));
+ assert.ok(pack.behaviors['match-board']);assert.ok(pack.behaviors.drag);
+ assert.equal(pack.behaviors['path-agent'],undefined);assert.equal(pack.contracts['native.stage3d.v1'],undefined);
+ const pack3d=c.value(await c.call('tora_capabilities',{packs:['3d']}));
+ assert.ok(pack3d.events.includes('launch')&&pack3d.events.includes('bodyBounce')&&pack3d.events.includes('zoneCapture'));
+ const named=c.value(await c.call('tora_capabilities',{packs:['match-board'],names:['native.stage3d.v1']}));
+ assert.ok(named.contracts['native.stage3d.v1']);
+ const legacy=c.value(await c.call('tora_capabilities',{}));assert.ok(legacy.contracts['native.stage3d.v1']);
+ const rejected=await c.call('tora_brief',{packs:['unknown']});assert.equal(rejected.result.isError,true);
 });

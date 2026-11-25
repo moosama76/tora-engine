@@ -9,7 +9,7 @@ import {runtimeBundle} from './compiler.mjs';
 import {exportProjectFile,importProjectPath} from './local-bundle.mjs';
 import {playableHTML} from './html.mjs';
 import {registerSource} from './assets.mjs';
-import {capabilities} from './contracts.mjs';
+import {capabilities,capabilitiesForPacks} from './contracts.mjs';
 import {composeNativeConcept,CREATIVE_CONCEPT_SCHEMA} from './concept.mjs';
 import {references,check} from './document.mjs';
 const collections=['scenes','components','variables','gameplay','events','eventBindings','assets'];
@@ -21,7 +21,23 @@ function records(project){return collections.flatMap(collection=>project[collect
 export class NativeAgentTools{
  constructor(service=new NativeService(new ProjectStore(resolve('.tora/native-projects')),undefined)){this.service=service;if(!service.history)service.history=new EditorState(service.store);}
  async run(input){check(input&&typeof input==='object'&&!Array.isArray(input),'E_AGENT_ARGUMENT');const {command,id}=input;
- if(command==='contracts'){const cap=capabilities(),result={};check(Array.isArray(input.names)&&input.names.length>0&&input.names.length<=16,'E_AGENT_CONTRACT_SCOPE');for(const name of input.names){if(cap.contracts[name])result[name]=cap.contracts[name];else if(cap.behaviors[name])result[name]=cap.behaviors[name];else if(name==='creative-concept')result['creative-concept']=CREATIVE_CONCEPT_SCHEMA;else if(name==='operations')result.operations=cap.operations;else if(name==='actions')result.actions=cap.actions;else if(name==='events')result.events=cap.events;else if(name==='limits')result.limits=cap.limits;else throw Error('E_AGENT_UNKNOWN_CONTRACT');}return bounded(result,24576);}
+ if(command==='contracts'){
+  const cap=capabilities();check(input.packs===undefined||Array.isArray(input.packs),'E_AGENT_CONTRACT_SCOPE');
+  const result=input.packs?capabilitiesForPacks(input.packs):{};
+  if(input.names!==undefined)check(Array.isArray(input.names)&&input.names.length>0&&input.names.length<=16,'E_AGENT_CONTRACT_SCOPE');
+  else check(Boolean(input.packs),'E_AGENT_CONTRACT_SCOPE');
+  for(const name of input.names??[]){
+   if(cap.contracts[name]){if(input.packs){result.contracts??={};result.contracts[name]=cap.contracts[name];}else result[name]=cap.contracts[name];}
+   else if(cap.behaviors[name]){if(input.packs){result.behaviors??={};result.behaviors[name]=cap.behaviors[name];}else result[name]=cap.behaviors[name];}
+   else if(name==='creative-concept')result['creative-concept']=CREATIVE_CONCEPT_SCHEMA;
+   else if(name==='operations')result.operations=cap.operations;
+   else if(name==='actions')result.actions=cap.actions;
+   else if(name==='events')result.events=cap.events;
+   else if(name==='limits')result.limits=cap.limits;
+   else throw Error('E_AGENT_UNKNOWN_CONTRACT');
+  }
+  return bounded(result,input.packs?65536:24576);
+ }
  if(command==='compose'){
   const composition=composeNativeConcept(input.concept);
   const summary={status:'COMPOSED',projectId:id,conceptHash:composition.conceptHash,conceptAccepted:false,accepted:false,creativeStatus:composition.creativeStatus,unmetRequirements:composition.unmetRequirements,requirements:composition.requirements,...(composition.recipe?{recipe:composition.recipe}:{})};

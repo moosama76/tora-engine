@@ -37,8 +37,10 @@ function circleBoxContact(circle,box){
  return {nx:ox*ca-oy*sa,ny:ox*sa+oy*ca,penetration};
 }
 
+function ignores(a,b){return Boolean(a.ignoreGroup&&a.ignoreGroup!=='none'&&(a.ignoreGroup==='all'||a.ignoreGroup===(b.collisionGroup??'all')));}
+
 function collide(body,other,onEvent){
- if(body.captured||other.captured)return;
+ if(body.captured||other.captured||ignores(body,other)||ignores(other,body))return;
  let nx=body.x-other.x,ny=body.y-other.y,penetration;
  if(body.shape==='circle'&&other.shape==='circle'){
   const distance=length(nx,ny),overlap=radius(body)+radius(other)-distance;
@@ -55,7 +57,7 @@ function collide(body,other,onEvent){
   const contact=boxBoxContact(body,other);if(!contact)return;
   nx=contact.nx;ny=contact.ny;penetration=contact.penetration;
  }else return;
- const inverseBody=body.mode==='dynamic'?1:0,inverseOther=other.mode==='dynamic'?1:0,total=inverseBody+inverseOther;
+ const inverseBody=body.mode==='dynamic'?1/(body.mass??1):0,inverseOther=other.mode==='dynamic'?1/(other.mass??1):0,total=inverseBody+inverseOther;
  if(!total)return;
  body.x+=nx*penetration*inverseBody/total;body.y+=ny*penetration*inverseBody/total;
  if(other.mode==='dynamic'){other.x-=nx*penetration*inverseOther/total;other.y-=ny*penetration*inverseOther/total;}
@@ -88,7 +90,14 @@ function capture(body,zones,dt,onEvent){
  }
 }
 
-export function stepPhysics({bodies,zones=[],bounds,dt,onEvent=()=>{}}){
+function projectJoints(joints,bodies){
+ for(const joint of joints){
+  if(joint.broken)continue;const body=bodies.find(item=>item.id===joint.bodyId),anchor=bodies.find(item=>item.id===joint.anchorId);if(!body||body.mode!=='dynamic')continue;
+  const ax=anchor?.x??joint.x??0,ay=anchor?.y??joint.y??0,dx=body.x-ax,dy=body.y-ay,distance=length(dx,dy);if(distance<=joint.lengthPx||distance<.0001)continue;
+  const nx=dx/distance,ny=dy/distance;body.x=ax+nx*joint.lengthPx;body.y=ay+ny*joint.lengthPx;const outward=body.vx*nx+body.vy*ny;if(outward>0){body.vx-=nx*outward;body.vy-=ny*outward;}
+ }
+}
+export function stepPhysics({bodies,zones=[],joints=[],bounds,dt,onEvent=()=>{}}){
  const dynamic=bodies.filter(body=>body.mode==='dynamic'&&!body.captured);
  const fastest=dynamic.reduce((speed,body)=>Math.max(speed,length(body.vx,body.vy)),0);
  const smallest=dynamic.reduce((size,body)=>Math.min(size,radius(body)),24);
@@ -118,6 +127,7 @@ export function stepPhysics({bodies,zones=[],bounds,dt,onEvent=()=>{}}){
    }
    capture(body,zones,h,onEvent);
   }
+  projectJoints(joints,bodies);
  }
  for(const body of dynamic){
   const speed=length(body.vx,body.vy);
