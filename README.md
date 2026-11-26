@@ -15,7 +15,7 @@
 
 ---
 
-## 2-Step Quickstart
+## Quickstart
 
 **Prerequisites:** Node.js `>= 22`, Rust (`rustc` + `cargo`).
 
