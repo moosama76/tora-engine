@@ -1,4 +1,5 @@
 # Tora — Local MCP-First Playable Ad Framework
+[![M8ven Score](https://m8ven.ai/badge/mcp/moosama76-tora-engine-cd3fcm?v=86d74ba3d885cd01144d1e74220cd1d2)](https://m8ven.ai/mcp/moosama76-tora-engine-cd3fcm?s=readme)
 
 **Build editable, responsive 2D & 3D HTML5 playable ads directly from Claude Code, Cursor, OpenAI Codex, or Gemini CLI at $0 extra API cost** — backed by deterministic authoring transactions, 4-viewport Creative QA, real-assets-only provenance, and Unity Ads + AppLovin single-file HTML exports.
 
@@ -90,33 +91,6 @@ npm run test:mcp           # MCP server + editor end-to-end integration tests
 
 ---
 
-## License
-
-Tora is free and open-source software licensed under the [Apache License 2.0](LICENSE).
-
-Free for everyone, forever. Unlimited personal and commercial use, including third-party production, without royalties, subscription fees, or organization-size restrictions.
-
-Contributions, modifications, and commercial integrations are welcome.
-
-### Restrictions
-
-Redistributing, reselling, sublicensing, or offering the Tora authoring software itself as a hosted service requires separate written authorization.
-
-These restrictions do not prohibit selling or delivering exported playable advertisements to clients.
-
-### Future Licensing
-
-Tora is currently free for all organizations. Future licensing changes are governed by Section 5 of the [LICENSE](LICENSE). Rights to lawfully exported playables remain unaffected.
-
-### Commercial Services
-
-Need custom ad-network adapters, production-ready playable advertisements, technical assistance, or team integration?
-
-Contact [mohamed@tora.work.gd](mailto:mohamed@tora.work.gd).
-
 ### Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-
-[![M8ven Score](https://m8ven.ai/badge/mcp/moosama76-tora-engine-cd3fcm?v=86d74ba3d885cd01144d1e74220cd1d2)](https://m8ven.ai/mcp/moosama76-tora-engine-cd3fcm?s=readme)
