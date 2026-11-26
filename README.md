@@ -66,7 +66,7 @@ npm run build:website        # Static portfolio & showcase website
 | **Standalone HTML5 Draft** | Self-contained single HTML | **Included (Core)** | Automated static + 4-viewport Creative QA |
 | **Unity Ads** | MRAID 3.0 single HTML (<= 5 MB) | **Included (Core)** | Automated static rule check + mock MRAID 3.0 host tests *(official Unity Ads certification & physical-device QA remain separate)* |
 | **AppLovin** | MRAID 2.0 single HTML (<= 5 MB) | **Included (Core)** | Automated static rule check + mock MRAID 2.0 host tests *(AppLovin Playable Preview & official acceptance remain separate)* |
-| **Google Ads, Meta, ironSource, Mintegral, TikTok** | Network-specific wrappers & validators | **On Request** | Need another ad network? Contact [`mohamed@tora.work.gd`](mailto:mohamed@tora.work.gd?subject=Custom%20Ad-Network%20Export%20Request) |
+| **Google Ads, Meta, ironSource, Mintegral, TikTok** | Network-specific wrappers & validators | **On Request** | Need another ad network? Contact [`mohamed.osama189110@gmail.com`](mailto:mohamed.osama189110@gmail.com?subject=Custom%20Ad-Network%20Export%20Request) |
 
 > **Honest QA Boundary:** Automated tests and `tora_qa` prove engineering health only. Always inspect real exported screenshots/video, test on physical iOS/Android devices, and run each ad network's official preview tool before launching paid UA campaigns.
 
