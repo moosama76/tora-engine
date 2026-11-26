@@ -1,52 +1,54 @@
 import {mkdir, writeFile, cp, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 import process from 'node:process';
 import {reviewRuntimeBundle} from './lean/native/compiler.mjs';
 import {DEMO_PROJECTS, DEMO_ALIASES, buildDemoSeed} from './lean/native/demos.mjs';
 import {networkTargets} from './lean/native/network-targets.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const out = resolve(process.argv[2] ?? resolve(root, 'dist/pages-editor'));
 
-await rm(out, {recursive: true, force: true});
-await mkdir(resolve(out, 'seeds'), {recursive: true});
+export async function buildPagesEditor(out = resolve(root, 'dist/pages-editor'), {seeds: suppliedSeeds} = {}) {
+  await rm(out, {recursive: true, force: true});
+  await mkdir(resolve(out, 'seeds'), {recursive: true});
 
-const seeds = [];
-for (const demo of DEMO_PROJECTS) {
-  const seed = await buildDemoSeed(demo.id, root);
-  seeds.push(seed);
-  await writeFile(resolve(out, 'seeds', `${demo.id}.json`), JSON.stringify({
-    id: seed.id,
-    meta: seed.meta,
-    doc: seed.doc,
-    render: seed.render,
-    metadata: seed.metadata,
-    exportedHtml: seed.unityHtml,
-    applovinHtml: seed.applovinHtml,
-    standaloneHtml: seed.standaloneHtml,
-    bundleText: seed.bundleText,
-  }));
-}
+  const seeds = [];
+  for (const demo of DEMO_PROJECTS) {
+    const seed = suppliedSeeds?.find(item => item.id === demo.id) ?? await buildDemoSeed(demo.id, root);
+    seeds.push(seed);
+    await writeFile(resolve(out, 'seeds', `${demo.id}.json`), JSON.stringify({
+      id: seed.id,
+      meta: seed.meta,
+      doc: seed.doc,
+      render: seed.render,
+      metadata: seed.metadata,
+      exportedHtml: seed.unityHtml,
+      applovinHtml: seed.applovinHtml,
+      standaloneHtml: seed.standaloneHtml,
+      networkArtifacts: seed.networkArtifacts,
+      bundleText: seed.bundleText,
+    }));
+  }
 
-const demosManifest = {
-  defaultProject: DEMO_PROJECTS[0].id,
-  aliases: DEMO_ALIASES,
-  demos: seeds.map(seed => ({
-    ...seed.meta,
-    revisionId: seed.doc.revisionId,
-    installed: true,
-    seedFile: `seeds/${seed.id}.json`,
-  })),
-};
+  const demosManifest = {
+    defaultProject: DEMO_PROJECTS[0].id,
+    aliases: DEMO_ALIASES,
+    demos: seeds.map(seed => ({
+      ...seed.meta,
+      revisionId: seed.doc.revisionId,
+      installed: true,
+      seedFile: `seeds/${seed.id}.json`,
+    })),
+  };
 
-await cp(resolve(root, 'scripts/lean/editor/brand'), resolve(out, 'brand'), {recursive: true});
-await cp(resolve(root, 'scripts/lean/editor/review-editor.css'), resolve(out, 'review-editor.css'));
-await cp(resolve(root, 'scripts/lean/editor/review-editor.js'), resolve(out, 'review-editor.js'));
-await writeFile(resolve(out, 'review-runtime.js'), await reviewRuntimeBundle());
-await writeFile(resolve(out, 'demos.json'), JSON.stringify(demosManifest, null, 2) + '\n');
+  await cp(resolve(root, 'scripts/lean/editor/brand'), resolve(out, 'brand'), {recursive: true});
+  await cp(resolve(root, 'scripts/lean/editor/review-editor.css'), resolve(out, 'review-editor.css'));
+  await cp(resolve(root, 'scripts/lean/editor/review-editor.js'), resolve(out, 'review-editor.js'));
+  await writeFile(resolve(out, 'review-runtime.js'), await reviewRuntimeBundle());
+  await writeFile(resolve(out, 'demos.json'), JSON.stringify(demosManifest, null, 2) + '\n');
 
-const cacheBust = encodeURIComponent(seeds.map(s => s.doc.revisionId.slice(0, 8)).join('-'));
-const hostedEntry = `/* global document,location,URL,URLSearchParams,fetch,localStorage,crypto */
+  const cacheBust = encodeURIComponent(seeds.map(s => s.doc.revisionId.slice(0, 8)).join('-'));
+  const hostedEntry = `/* global document,location,URL,URLSearchParams,fetch,localStorage,crypto */
 const base = new URL('./', import.meta.url);
 const manifest = await fetch(new URL('demos.json?v=${cacheBust}', base), {cache: 'no-store'}).then(r => {
   if (!r.ok) throw Error('Could not load Tora demo catalog.');
@@ -137,8 +139,11 @@ globalThis.toraHostedReview = {
     }
     if (p.endsWith('/export')) {
       if (body.target === 'standalone-browser-draft') return {html: seed.standaloneHtml || seed.exportedHtml};
+      if (body.target === 'unity-ads-ua-playable') return {html: seed.unityHtml || seed.exportedHtml};
       if (body.target === 'applovin-growth-playable') return {html: seed.applovinHtml || seed.exportedHtml};
-      return {html: seed.exportedHtml};
+      const artifact = seed.networkArtifacts?.[body.target];
+      if (!artifact) throw Error('E_NATIVE_UNSUPPORTED_TARGET');
+      return artifact;
     }
     if (p.endsWith('/accept')) {
       state.accepted = true;
@@ -167,12 +172,19 @@ if (nav) {
   back.href = '../';
   back.textContent = '← Tora';
   nav.prepend(back);
+  const sponsor = document.createElement('a');
+  sponsor.className = 'review-button';
+  sponsor.href = 'https://github.com/sponsors/moosama76';
+  sponsor.target = '_blank';
+  sponsor.rel = 'noopener noreferrer';
+  sponsor.textContent = 'Apache 2.0 · Sponsor Tora';
+  nav.append(sponsor);
 }
 `;
 
-await writeFile(resolve(out, 'hosted-entry.js'), hostedEntry);
+  await writeFile(resolve(out, 'hosted-entry.js'), hostedEntry);
 
-const html = `<!doctype html>
+  const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -186,5 +198,12 @@ const html = `<!doctype html>
 </body>
 </html>
 `;
-await writeFile(resolve(out, 'index.html'), html);
-globalThis.console.log(`Built multi-demo Tora review editor (${seeds.map(s => s.id).join(', ')}) for static hosting: ${out}`);
+  await writeFile(resolve(out, 'index.html'), html);
+  return {out, demos: seeds.map(s => s.id)};
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const out = resolve(process.argv[2] ?? resolve(root, 'dist/pages-editor'));
+  const built = await buildPagesEditor(out);
+  globalThis.console.log(`Built multi-demo Tora review editor (${built.demos.join(', ')}) for static hosting: ${built.out}`);
+}

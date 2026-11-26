@@ -599,6 +599,7 @@ export async function openIntake(initialIntakeId) {
         tile.append(reviewElement('div', '🔊 WAV', 'tora-wav-tile'));
       }
       tile.append(reviewElement('p', asset.name));
+      if (asset.optimization) tile.append(reviewElement('p', `${formatBytes(asset.bytes)} · optimized from ${formatBytes(asset.optimization.originalBytes)} (-${asset.optimization.savedPercent}%)`));
       media.append(tile);
     }
     for (const ref of intake.references ?? []) {

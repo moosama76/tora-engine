@@ -43,8 +43,13 @@
     "packages/adapters/src/index.ts",
     "packages/adapters/src/unity.ts",
     "packages/adapters/src/applovin.ts",
+    "packages/adapters/src/ironsource.ts",
+    "packages/adapters/src/meta.ts",
+    "packages/adapters/src/google.ts",
+    "packages/adapters/src/mintegral.ts",
+    "packages/adapters/src/tiktok.ts",
     "scripts/lean/native/runtime.mjs"
   ],
-  "javascriptBytes": 176837,
+  "javascriptBytes": 201782,
   "externalImports": []
 }

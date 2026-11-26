@@ -348,3 +348,20 @@ fn visibility_events_are_explicit_and_not_borrowed_across_mraid_versions() {
     value["rules"]["viewability"]["value"]["requiredEvents"] = json!([]);
     assert!(parse_rule_pack(&value.to_string()).is_err());
 }
+
+#[test]
+fn unverified_typed_vendor_host_blocks_review() {
+    let profile = load_builtin("meta-audience-playable").unwrap();
+    let mut pack = profile.as_value();
+    pack["rules"]["vendorHost"] = json!({
+        "status": "unverified",
+        "reason": "Host contract not reviewed",
+        "sources": ["specs"]
+    });
+    let changed = parse_rule_pack(&pack.to_string()).unwrap();
+    let review = changed.assess_rules(changed.reviewed_at(), Some(changed.reviewed_at()));
+    assert_eq!(review.status, RuleReviewStatus::BlockedUnverifiedRules);
+    assert!(review.findings.iter().any(|finding| {
+        finding.code == "B_RULE_UNVERIFIED" && finding.path == "/rules/vendorHost"
+    }));
+}

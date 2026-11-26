@@ -1,5 +1,5 @@
 use crate::CommandOutput;
-use rule_checker::{ReviewDate, load_builtin};
+use rule_checker::{Packaging, ReviewDate, load_builtin};
 use std::{collections::BTreeSet, fs, io::Read, path::Path};
 
 fn failure(code: &str, message: impl ToString, exit_code: u8, json: bool) -> CommandOutput {
@@ -41,7 +41,7 @@ pub fn dispatch(arguments: &[String]) -> Result<CommandOutput, String> {
 
 fn run(arguments: &[String], json: bool) -> Result<CommandOutput, String> {
     if arguments.get(1).is_none_or(|s| s != "check") {
-        return Err("Usage: playable artifact check <index.html> --network <profile> [--confirm-reviewed YYYY-MM-DD] [--json]".into());
+        return Err("Usage: playable artifact check <index.html|artifact.zip> --network <profile> [--confirm-reviewed YYYY-MM-DD] [--json]".into());
     }
     let input = arguments
         .get(2)
@@ -79,6 +79,10 @@ fn run(arguments: &[String], json: bool) -> Result<CommandOutput, String> {
     };
     let today = ReviewDate::today_utc().map_err(|e| e.to_string())?;
     let path = Path::new(input);
+    let zip = matches!(
+        profile.rules().packaging.verified_value(),
+        Some(Packaging::Zip { .. })
+    );
     let metadata = match fs::symlink_metadata(path) {
         Ok(m) => m,
         Err(e) => return Ok(failure("E_ARTIFACT_READ", e, 5, json)),
@@ -89,7 +93,11 @@ fn run(arguments: &[String], json: bool) -> Result<CommandOutput, String> {
     {
         return Ok(failure(
             "E_ARTIFACT_PACKAGE",
-            "Expected one bounded regular HTML file, not a directory/ZIP/symlink",
+            if zip {
+                "Expected one bounded regular ZIP file, not a directory/symlink"
+            } else {
+                "Expected one bounded regular HTML file, not a directory/ZIP/symlink"
+            },
             5,
             json,
         ));

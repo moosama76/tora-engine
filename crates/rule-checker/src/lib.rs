@@ -78,6 +78,10 @@ fn official_https(url: &str, network: &NetworkId) -> bool {
             "www.playturbo.com",
         ]
         .contains(&host),
+        NetworkId::Meta => ["www.facebook.com", "developers.facebook.com"].contains(&host),
+        NetworkId::GoogleAds => ["support.google.com", "developers.google.com"].contains(&host),
+        NetworkId::Ironsource => ["developers.is.com", "docs.unity.com"].contains(&host),
+        NetworkId::Tiktok => ["ads.tiktok.com"].contains(&host),
     }
 }
 fn size_valid(size: &SizeRule, path: &str) -> Result<(), RuleError> {
@@ -210,6 +214,9 @@ fn validate(p: &RulePack) -> Result<(), RuleError> {
     rule!(packaging, "packaging");
     rule!(inline, "inline");
     rule!(mraid, "mraid");
+    if let Some(vendor_host) = &r.vendor_host {
+        review_valid(vendor_host, "/rules/vendorHost", &source_ids)?;
+    }
     rule!(autoplay, "autoplay");
     rule!(first_click, "firstClick");
     rule!(viewability, "viewability");
@@ -230,6 +237,27 @@ fn validate(p: &RulePack) -> Result<(), RuleError> {
             "/rules/packaging",
             "Entry must be a safe HTML basename; no paths, URL or traversal",
         )?;
+        if let Packaging::Zip {
+            required_files,
+            name_matches_archive,
+            flat_root,
+            ..
+        } = packaging
+        {
+            require(
+                required_files.len() <= 15
+                    && required_files
+                        .iter()
+                        .all(|name| safe_id(name) || name == "config.json"),
+                "/rules/packaging",
+                "ZIP companion files must be safe flat basenames",
+            )?;
+            require(
+                !name_matches_archive || !flat_root,
+                "/rules/packaging",
+                "Archive-named HTML cannot use a flat root",
+            )?;
+        }
     }
     if let Some(inline) = r.inline.any_value() {
         require(
@@ -247,10 +275,21 @@ fn validate(p: &RulePack) -> Result<(), RuleError> {
             .iter()
             .chain(&inline.host_exceptions)
         {
+            let allowed = script.host_provided
+                && match script.src.as_str() {
+                    "mraid.js" => script.placement == ScriptPlacement::HeadBeforeRuntime,
+                    "https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js" => {
+                        script.placement == ScriptPlacement::HeadBeforeRuntime
+                    }
+                    "https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js" => {
+                        script.placement == ScriptPlacement::BodyBeforeRuntime
+                    }
+                    _ => false,
+                };
             require(
-                script.src == "mraid.js" && script.host_provided,
+                allowed,
                 "/rules/inline",
-                "Only exact host-provided mraid.js is supported; no CDN, glob, query or bundled SDK",
+                "Only exact declared MRAID, Google ExitApi, or TikTok host scripts are supported",
             )?;
         }
         require(
@@ -288,10 +327,10 @@ fn validate(p: &RulePack) -> Result<(), RuleError> {
             "/rules/viewability",
             "Expected explicit, unique visibility event subscriptions",
         )?;
-        if r.mraid
-            .any_value()
-            .is_some_and(|m| matches!(m.version, MraidVersion::V2))
-        {
+        if r.mraid.any_value().is_some_and(|m| {
+            m.as_ref()
+                .is_some_and(|rule| matches!(rule.version, MraidVersion::V2))
+        }) {
             require(
                 !visibility
                     .required_events
@@ -373,6 +412,19 @@ pub fn load_builtin(profile_id: &str) -> Result<Profile, RuleError> {
         "mintegral-appgrowth-single-html" => {
             include_str!("../../../network-rules/mintegral-appgrowth-single-html.json")
         }
+        "ironsource-levelplay-playable" => {
+            include_str!("../../../network-rules/ironsource-levelplay-playable.json")
+        }
+        "meta-audience-playable" => {
+            include_str!("../../../network-rules/meta-audience-playable.json")
+        }
+        "google-ads-app-playable" => {
+            include_str!("../../../network-rules/google-ads-app-playable.json")
+        }
+        "mintegral-appgrowth-zip" => {
+            include_str!("../../../network-rules/mintegral-appgrowth-zip.json")
+        }
+        "tiktok-ads-playable" => include_str!("../../../network-rules/tiktok-ads-playable.json"),
         _ => {
             return Err(RuleError {
                 code: "E_RULE_PROFILE_UNKNOWN",

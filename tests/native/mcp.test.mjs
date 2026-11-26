@@ -96,7 +96,19 @@ test('MCP uploads and attaches real PNG artwork to an editable image object',asy
  const edited=c.value(await c.call('tora_edit',{id,expected:uploaded.expected,scope:['hero'],operations:[{kind:'createComponent',component:{id:'hero',contract:'native.image.v1',assetSlots:[{slotId:'source',assetId:'asset.hero'}],parameters:{width:100,height:100}}}]}));
  assert.equal(edited.status,'COMMITTED');
  const output=resolve(c.root,'image.tora.json');c.value(await c.call('tora_export',{id,format:'project',output}));
- const text=await readFile(output,'utf8');assert.ok(text.includes(data));assert.ok(text.includes('asset.hero'));
+ const text=await readFile(output,'utf8'),bundle=JSON.parse(text);assert.ok(bundle.assets[uploaded.asset.hash]);assert.ok(text.includes('asset.hero'));
+});
+
+
+test('MCP uploads a bounded workspace file and reuses its retained original',async t=>{
+ const c=await client(t),id='mcp-file-upload';const created=c.value(await c.call('tora_create',{id,name:'Workspace upload'}));
+ const source=resolve(c.root,'source.png'),original=await readFile('fixtures/native/ding-dang-assets/cat_0.png');await writeFile(source,original);
+ const uploaded=c.value(await c.call('tora_upload_asset',{id,expected:created.expected,filePath:source,asset:{id:'asset.hero',mime:'image/png',rights:'Repository fixture',optimize:'auto'}}));
+ assert.equal(uploaded.status,'UPLOADED');assert.equal(uploaded.asset.optimization.originalBytes,original.length);
+ const restored=c.value(await c.call('tora_upload_asset',{id,expected:uploaded.expected,asset:{id:'asset.hero',mime:'image/png',sourceHash:uploaded.asset.optimization.originalHash,rights:'Repository fixture',optimize:'lossless'}}));
+ assert.equal(restored.status,'UPLOADED');assert.ok(restored.asset.bytes<=700000);
+ const rejected=await c.call('tora_upload_asset',{id,expected:restored.expected,filePath:'/etc/passwd',asset:{id:'asset.bad',mime:'image/png',rights:'Invalid'}});
+ assert.equal(rejected.result.isError,true);assert.match(JSON.stringify(rejected.result),/E_NATIVE_ASSET_PATH/);
 });
 
 
@@ -117,8 +129,8 @@ test('MCP discovers the creative contract and composes an editable v2 restoratio
  assert.ok(current.project.eventBindings.some(binding=>binding.id==='contact.finish'));
  const output=resolve(c.root,'restoration.tora.json');
  c.value(await c.call('tora_export',{id:'mcp-strategic',format:'project',output}));
- const bundle=await readFile(output,'utf8');
- assert.ok(bundle.includes(input.restoration.areas[0].after.data));
+ const bundleText=await readFile(output,'utf8'),bundle=JSON.parse(bundleText),after=current.project.assets.find(asset=>asset.id===input.restoration.areas[0].after.id);
+ assert.ok(bundle.assets[after.hash]);
  const stale=globalThis.structuredClone(input);stale.product.gameplayTruth='Rescue a kitten.';
  const rejected=await c.call('tora_compose',{id:'mcp-stale-concept',concept:stale});
  assert.equal(rejected.result.isError,true);

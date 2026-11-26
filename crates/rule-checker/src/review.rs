@@ -138,6 +138,9 @@ impl Profile {
         check!(packaging, "packaging");
         check!(inline, "inline");
         check!(mraid, "mraid");
+        if let Some(vendor_host) = &r.vendor_host {
+            check_review(vendor_host, "/rules/vendorHost", &mut findings);
+        }
         check!(autoplay, "autoplay");
         check!(first_click, "firstClick");
         check!(viewability, "viewability");

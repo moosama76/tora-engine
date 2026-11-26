@@ -72,6 +72,6 @@ test('agent enforces pinned fields, changed scope, issued preview digests and lo
  assert.deepEqual(new Set(candidate.notes['1']),new Set(['licensed-sound','gate']));
  assert.equal(fixtureData.project.assets.length,0);
  const details=await callTool('inspect',{ids:['licensed-sound'],previewDigest:candidate.previewDigest});
- assert.equal(details.records[0].mime,'audio/wav');
+ assert.ok(['audio/wav','audio/mpeg'].includes(details.records[0].mime));
  assert.ok(!('data' in details.records[0]));
 });

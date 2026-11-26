@@ -84,7 +84,7 @@ export class IntakeCreatorTools{
     try{return JSON.parse(asset.provenance).styleFamily;}catch{return asset.provenance?.styleFamily;}
    }).filter(Boolean));if(styleFamily)families.add(styleFamily);check(families.size<=1,'E_ASSET_STYLE_FAMILY');
   }
-  const root=resolve(this.service.store.root,this.intake.projectId),metadata=await registerSource(root,{id,mime,data:bytes.toString('base64'),rights}),asset={...metadata,provenance:JSON.stringify(provenance)};
+  const root=resolve(this.service.store.root,this.intake.projectId),metadata=await registerSource(root,{id,mime,data:bytes.toString('base64'),rights}),record={...metadata};delete record.optimization;const asset={...record,provenance:JSON.stringify(provenance)};
   const envelope={format:'tora-transaction-1',expected:identity(current),operations:[{kind:'registerAsset',asset}]},preview=await this.service.preview(this.intake.projectId,envelope);
   await this.service.transact(this.intake.projectId,{...envelope,previewDigest:preview.previewDigest});this.lastQa=null;return asset;
  }

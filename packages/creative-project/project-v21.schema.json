@@ -67,7 +67,7 @@
         },
         "storeUrl": {
           "type": "string",
-          "pattern": "^https://(play\\.google\\.com/store/apps/details\\?id=[a-zA-Z0-9._-]+|apps\\.apple\\.com/[a-zA-Z0-9/._?=&-]+)$"
+          "pattern": "^$|^https://(play\\.google\\.com/store/apps/details\\?id=[a-zA-Z0-9._-]+|apps\\.apple\\.com/[a-zA-Z0-9/._?=&-]+)$"
         }
       },
       "required": [
@@ -1840,6 +1840,9 @@
                     "type": "string",
                     "maxLength": 96
                   },
+                  "attachToCamera": {
+                    "type": "boolean"
+                  },
                   "fairwayRamp": {
                     "type": "boolean"
                   },
@@ -2349,6 +2352,95 @@
                   "ratePerSecond",
                   "min",
                   "max"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "virtual-joystick"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "fixed",
+                      "floating"
+                    ]
+                  },
+                  "radiusPx": {
+                    "type": "number",
+                    "minimum": 20,
+                    "maximum": 180
+                  },
+                  "deadZone": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.5
+                  },
+                  "axisXVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "axisYVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "angleVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "magnitudeVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "moveComponentId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "moveSpeed": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 2000
+                  },
+                  "orientToMove": {
+                    "type": "boolean"
+                  },
+                  "drawControl": {
+                    "type": "boolean"
+                  },
+                  "baseColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  },
+                  "knobColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+                  }
+                },
+                "required": [
+                  "mode",
+                  "radiusPx",
+                  "deadZone"
                 ]
               }
             },
@@ -4384,6 +4476,218 @@
               "kind",
               "parameters"
             ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "fps-controller-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "z": {
+                    "type": "number",
+                    "minimum": -500,
+                    "maximum": 500
+                  },
+                  "yaw": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "pitch": {
+                    "type": "number",
+                    "minimum": -1.4,
+                    "maximum": 1.4
+                  },
+                  "minYaw": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "maxYaw": {
+                    "type": "number",
+                    "minimum": -6.2832,
+                    "maximum": 6.2832
+                  },
+                  "minPitch": {
+                    "type": "number",
+                    "minimum": -1.4,
+                    "maximum": 0
+                  },
+                  "maxPitch": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1.4
+                  },
+                  "moveSpeed": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 50
+                  },
+                  "lookSensitivity": {
+                    "type": "number",
+                    "minimum": 0.0005,
+                    "maximum": 0.05
+                  },
+                  "playerRadius": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 2
+                  },
+                  "boundsX": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 100
+                  },
+                  "boundsZ": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 100
+                  },
+                  "joystickBehaviorId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "aimJoystickBehaviorId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "aimMode": {
+                    "enum": [
+                      "delta",
+                      "rate"
+                    ]
+                  },
+                  "aimTurnSpeed": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 10
+                  },
+                  "invertAimY": {
+                    "type": "boolean"
+                  },
+                  "moveXVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "moveYVariableId": {
+                    "type": "string",
+                    "maxLength": 96
+                  },
+                  "lookMode": {
+                    "enum": [
+                      "drag",
+                      "none"
+                    ]
+                  },
+                  "bobAmplitude": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0.25
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "z",
+                  "yaw",
+                  "pitch",
+                  "moveSpeed",
+                  "lookSensitivity"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "steer-3d"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "chase-camera",
+                      "strafe-camera",
+                      "patrol"
+                    ]
+                  },
+                  "speed": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 50
+                  },
+                  "stopDistance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 50
+                  },
+                  "faceCamera": {
+                    "type": "boolean"
+                  },
+                  "boundsX": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 100
+                  },
+                  "boundsZ": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "mode",
+                  "speed"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "componentId",
+              "kind",
+              "parameters"
+            ]
           }
         ]
       },
@@ -4820,6 +5124,72 @@
                 "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
               },
               "kind": {
+                "const": "joystickStart"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "joystickEnd"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "raycastMiss3d"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
                 "const": "bodyBounce"
               },
               "componentId": {
@@ -4925,6 +5295,32 @@
               },
               "kind": {
                 "const": "dragReject"
+              },
+              "componentId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "otherId": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "componentId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+              },
+              "kind": {
+                "const": "raycastHit3d"
               },
               "componentId": {
                 "type": "string",
@@ -6119,6 +6515,94 @@
                     "fontSize",
                     "risePx",
                     "seconds"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "raycast3d"
+                    },
+                    "stageId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "mode": {
+                      "enum": [
+                        "crosshair",
+                        "pointer"
+                      ]
+                    },
+                    "maxDistance": {
+                      "type": "number",
+                      "minimum": 1,
+                      "maximum": 500
+                    },
+                    "targetTeam": {
+                      "enum": [
+                        "any",
+                        "neutral",
+                        "player",
+                        "enemy",
+                        "hazard",
+                        "pickup"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "stageId"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "spawnAt3d"
+                    },
+                    "prototypeId": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_.-]{0,95}$"
+                    },
+                    "x": {
+                      "type": "number",
+                      "minimum": -500,
+                      "maximum": 500
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": -500,
+                      "maximum": 500
+                    },
+                    "z": {
+                      "type": "number",
+                      "minimum": -500,
+                      "maximum": 500
+                    },
+                    "jitterX": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "jitterZ": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 16
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "prototypeId",
+                    "x",
+                    "y",
+                    "z"
                   ]
                 },
                 {

@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {canonical,projectContent} from '../../../packages/creative-project/src/canonical.ts';
 import {check,exact,applyOperations,validateDocument} from './document.mjs';
 import {compileNative,hash,projectUses3d,runtime3dBundle,runtimeBundle} from './compiler.mjs';
-import {lowerAssets,registerSource,safeFile} from './assets.mjs';
+import {lowerAssets,readOriginal,registerSource,safeFile} from './assets.mjs';
 import {capabilities} from './contracts.mjs';
 import {CREATIVE_QA_FORMAT,runStaticPreflight} from './creative-qa.mjs';
 import {isAudioMime} from './media-validate.mjs';
@@ -27,7 +27,7 @@ export class NativeService{
   check(envelope.previewDigest===preview.previewDigest,'E_NATIVE_PREVIEW_STALE');
   const project=preview.project;
   const touchesAudioWiring=envelope.operations.some(op=>['putBehavior','putBinding','replaceAsset'].includes(op.kind));
-  const touchesAssetUpload=envelope.operations.some(op=>op.kind==='registerAsset');
+  const touchesAssetUpload=envelope.operations.some(op=>['registerAsset','updateAsset'].includes(op.kind));
   if(envelope.expected.revisionId!=='initial'&&(touchesAudioWiring||touchesAssetUpload)&&project.gameplay.some(b=>b.kind==='audio')&&project.assets.some(a=>isAudioMime(a.mime))){
    const lowered=await lowerAssets(resolve(this.store.root,id),project.assets);
    const preflight=await runStaticPreflight({...project,assets:lowered});
@@ -60,6 +60,6 @@ export class NativeService{
   return this.buildCache.getOrBuild(key,()=>compileNative(project,{assets,target}));
  }
  async render(id,revisionId){check(typeof revisionId==='string','E_NATIVE_ARGUMENT');const {project}=await this.read(id,revisionId),assets=await lowerAssets(resolve(this.store.root,id),project.assets),artifact=await compileNative(project,{assets});return {assets,artifact:artifact.manifest};}
- async upload(id,{expected,asset}){await this.read(id);const metadata=await registerSource(resolve(this.store.root,id),asset),envelope={format:'tora-transaction-1',expected,operations:[{kind:'registerAsset',asset:metadata}]};const preview=await this.preview(id,envelope);return {...await this.transact(id,{...envelope,previewDigest:preview.previewDigest}),asset:metadata};}
+ async upload(id,{expected,asset}){const current=await this.read(id),input={...asset};if(input.sourceHash){input.data=(await readOriginal(resolve(this.store.root,id),input.sourceHash)).toString('base64');delete input.sourceHash;}const metadata=await registerSource(resolve(this.store.root,id),input),{optimization,...record}=metadata,kind=current.project.assets.some(asset=>asset.id===record.id)?'updateAsset':'registerAsset',envelope={format:'tora-transaction-1',expected,operations:[{kind,asset:record}]};const preview=await this.preview(id,envelope);return {...await this.transact(id,{...envelope,previewDigest:preview.previewDigest}),asset:{...record,...(optimization?{optimization}:{})}};}
  async export(id,{revisionId,target}){check(typeof revisionId==='string','E_NATIVE_ARGUMENT');assertNetworkTarget(target);const {project,accepted}=await this.read(id,revisionId),artifact=await this.build(id,project,target),outputDir=resolve(this.store.root,id,'qa',revisionId,target),creativeQa=requireCreativeQa(await this.qaRunner({html:artifact.html,outputDir,network:target}));return {...artifact,creativeQa,manifest:{...artifact.manifest,accepted,creativeQa:{format:CREATIVE_QA_FORMAT,ok:true,blockers:0,warnings:creativeQa.warnings.length},checks:[...artifact.manifest.checks,'creative-qa']}};}
 }

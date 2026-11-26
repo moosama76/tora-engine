@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Buffer} from 'node:buffer';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {ProjectStore} from '../../scripts/lean/project-store.mjs';
 import {EditorState} from '../../scripts/lean/editor-state.mjs';
@@ -38,7 +38,9 @@ test('studio intake preserves originals, resolves references and publishes one c
     const asset = state.assets.find(asset => asset.name === input.name);
     uploaded.set(input.name, asset.id);
     assert.deepEqual(await intake.upload(draft.id, input), state);
-    assert.deepEqual(await intake.asset(draft.id, asset.id), {mime:input.mime,bytes:Buffer.from(input.data,'base64')});
+    const delivery = await intake.asset(draft.id, asset.id), original = Buffer.from(input.data, 'base64');
+    assert.equal(delivery.bytes.length, asset.bytes);
+    assert.deepEqual(await readFile(resolve(intake.folder(draft.id), 'sources/assets/originals', asset.optimization.originalHash.slice(7))), original);
   }
   assert.equal((await intake.submit(draft.id)).status, 'queued');
   const otherClient = new ReviewIntake(new NativeService(store, new EditorState(store)));

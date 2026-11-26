@@ -529,8 +529,10 @@ name = "packer"
 version = "0.1.0"
 dependencies = [
  "asset-pipeline",
+ "crc32fast",
  "creative-project-schema",
  "data-encoding",
+ "flate2",
  "serde",
  "serde_json",
 ]

@@ -119,8 +119,8 @@ async function stageAudio(service,id,imports){
   const data=(await readFile(resolve(root,file.file))).toString('base64');
   const receipt=validateAssetPolicy({mime:file.mime,data,provenance},{role:'audio'});
   const rights=[source.author+', '+source.license+'. '+source.sourceUrl,receipt.attribution].filter(Boolean).join('\n');
-  const asset=await registerSource(resolve(service.store.root,id),{id:item.assetId,mime:file.mime,data,rights});
-  operations.push({kind:'registerAsset',asset:{...asset,provenance:JSON.stringify(receipt)}});
+  const asset=await registerSource(resolve(service.store.root,id),{id:item.assetId,mime:file.mime,data,rights}),record={...asset};delete record.optimization;
+  operations.push({kind:'registerAsset',asset:{...record,provenance:JSON.stringify(receipt)}});
  }
  return operations;
 }

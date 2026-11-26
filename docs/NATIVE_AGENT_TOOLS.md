@@ -57,7 +57,7 @@ Other commands:
   Produces an edit-mode preview of the requested scene, without changing the project.
   Open the artifact in a browser to capture screenshots or inspect it.
 - `export`: `id`, optional `revisionId`, `output`, and optional
-  `target:"standalone-browser-draft"|"unity-ads-ua-playable"` (standalone is the default).
+  `target:"standalone-browser-draft"|"unity-ads-ua-playable"|"applovin-growth-playable"|"meta-audience-playable"|"google-ads-app-playable"|"ironsource-levelplay-playable"|"mintegral-appgrowth-zip"|"tiktok-ads-playable"` (standalone is the default). ZIP targets require a `.zip` output; Mintegral requires the basename `<projectId>.zip`.
 - `export` with `format:"project"`: `id` and `output` for the current editable bundle.
 - `import`: `file` and optional `copy:true`; validates and imports an editable bundle.
   Project collision handling and asset validation use the shared bundle adapter.
@@ -66,10 +66,11 @@ Contract requests accept registered component contracts, behavior names, or
 `operations`, `events`, `actions`, and `limits`. The registry is returned only when
 explicitly requested; it is not attached to every mutation response.
 
-Standalone HTML remains a browser draft. Unity output is `ASSEMBLED_UNVERIFIED` and
-uses host-injected MRAID 3, first-interaction timing, hidden pause, and CTA-only
-`mraid.open`. Run `playable artifact check` on the exact `index.html`; `STATIC_PASS`
-is static qualification only. Neither compilation nor static inspection establishes
+Standalone HTML remains a browser draft. Every network output starts as
+`ASSEMBLED_UNVERIFIED`: Unity/AppLovin use MRAID, Meta uses FbPlayableAd, Google
+uses ExitApi, ironSource uses DAPI, Mintegral uses its global lifecycle, and TikTok
+uses its Playable SDK. Run `playable artifact check` on the exact HTML or ZIP;
+`STATIC_PASS` is static qualification only. Neither compilation nor static inspection establishes
 visual, physical-device, official ad-network, or campaign acceptance.
 
 ## Creative QA gate
@@ -111,8 +112,9 @@ remain supported and have not been retired.
 
 `tora_compose` exposes the same composer through MCP after `tora_brief`. Discover
 the current schema with `tora_capabilities` and `names:["creative-concept"]`.
-CLI `contracts` accepts the same name. The MCP transport retains its 1 MiB message
-limit, so prepare appropriately sized embedded media.
+CLI `contracts` accepts the same name. The MCP transport has a bounded 12 MiB message limit for raw base64 uploads;
+large local files can instead use `tora_upload_asset` with a workspace `filePath`.
+Auto optimization retains original masters and returns a delivery receipt.
 
 `compose` also accepts `tora-creative-concept-2` with mechanic `match-restore` and
 `experience.goal=2` for existing restoration projects. The historical illustrated

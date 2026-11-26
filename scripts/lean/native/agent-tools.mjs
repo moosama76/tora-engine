@@ -1,7 +1,7 @@
 /** Compact deterministic adapters over the native authoring service. No model calls. */
 import {Buffer} from 'node:buffer';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {resolve,dirname} from 'node:path';
+import {resolve,dirname,basename} from 'node:path';
 import {ProjectStore} from '../project-store.mjs';
 import {EditorState} from '../editor-state.mjs';
 import {NativeService} from './service.mjs';
@@ -44,8 +44,9 @@ export class NativeAgentTools{
   // Check response capacity before creating a project or committing a revision.
   bounded({...summary,expected:{revisionId:'rev-'+'0'.repeat(36),contentHash:'sha256:'+'0'.repeat(64)}},24576);
   const created=await this.service.create({id,name:input.name??input.concept?.product?.name});
-  for(const asset of composition.assets)await registerSource(resolve(this.service.store.root,id),asset);
-  const envelope={format:'tora-transaction-1',expected:identity(created),operations:composition.operations};
+  const registered=new Map();for(const asset of composition.assets)registered.set(asset.id,await registerSource(resolve(this.service.store.root,id),asset));
+  const operations=composition.operations.map(operation=>{if(operation.kind!=='registerAsset'||!registered.has(operation.asset.id))return operation;const metadata=registered.get(operation.asset.id);return {...operation,asset:{...operation.asset,hash:metadata.hash,mime:metadata.mime,bytes:metadata.bytes}};});
+  const envelope={format:'tora-transaction-1',expected:identity(created),operations};
   const preview=await this.service.preview(id,envelope);
   const record=composition.recipe?(state,revision)=>{
    state.authoring={recipe:composition.recipe,conceptHash:composition.conceptHash,createdRevisionId:revision.revisionId};
@@ -83,9 +84,9 @@ export class NativeAgentTools{
  if(command==='history'){check(input.expected,'E_AGENT_EXPECTED');const r=await this.service.navigate(id,{expected:input.expected,action:input.action});return {status:'SAVED',expected:identity(r)};}
  if(command==='export'||command==='render'||command==='qa'){
   if(command==='qa'){const output=resolve(input.output??resolve(this.service.store.root,id,'qa','manual',current.revisionId));const {runCreativeQa}=await import('./creative-qa.mjs');const artifact=await this.service.build(id,current.project,input.target??'standalone-browser-draft');return bounded(await runCreativeQa({html:artifact.html,outputDir:output,network:input.target??'standalone-browser-draft'}),65536);}
-  check(typeof input.output==='string'&&input.output.length>0,'E_AGENT_OUTPUT');const output=resolve(input.output);let html,artifactHash,sceneId;
-  if(command==='render'){sceneId=input.sceneId??current.project.base.startScene;check(current.project.scenes.some(scene=>scene.id===sceneId),'E_AGENT_UNKNOWN_SCENE');const render=await this.service.render(id,current.revisionId);html=playableHTML({...current.project,assets:render.assets},await runtimeBundle(),{edit:true,sceneId});const {hash}=await import('./compiler.mjs');artifactHash=hash(html);}else{const artifact=await this.service.export(id,{revisionId:current.revisionId,target:input.target??'standalone-browser-draft'});html=artifact.html;artifactHash=artifact.manifest.artifactHash;}
-  await mkdir(dirname(output),{recursive:true});await writeFile(output,html);return bounded({status:command==='render'?'RENDER_READY':'EXPORTED',projectId:id,expected:identity(current),output,artifactHash,target:command==='render'?'editor-preview':input.target??'standalone-browser-draft',...(sceneId?{sceneId,edit:true}:{})},4096);
+  check(typeof input.output==='string'&&input.output.length>0,'E_AGENT_OUTPUT');const output=resolve(input.output);let html,archiveBytes,artifactHash,sceneId,manifest;
+  if(command==='render'){sceneId=input.sceneId??current.project.base.startScene;check(current.project.scenes.some(scene=>scene.id===sceneId),'E_AGENT_UNKNOWN_SCENE');const render=await this.service.render(id,current.revisionId);html=playableHTML({...current.project,assets:render.assets},await runtimeBundle(),{edit:true,sceneId});const {hash}=await import('./compiler.mjs');artifactHash=hash(html);}else{const artifact=await this.service.export(id,{revisionId:current.revisionId,target:input.target??'standalone-browser-draft'});html=artifact.html;archiveBytes=artifact.archiveBytes;artifactHash=artifact.manifest.artifactHash;manifest=artifact.manifest;if(artifact.archiveBytes){check(output.toLowerCase().endsWith('.zip'),'E_AGENT_OUTPUT');if((input.target??'') === 'mintegral-appgrowth-zip')check(basename(output)===`${id}.zip`,'E_AGENT_OUTPUT');}}
+  await mkdir(dirname(output),{recursive:true});await writeFile(output,archiveBytes??html);return bounded({status:command==='render'?'RENDER_READY':'EXPORTED',projectId:id,expected:identity(current),output,artifactHash,target:command==='render'?'editor-preview':input.target??'standalone-browser-draft',...(manifest?{bytes:manifest.bytes,packaging:manifest.packaging}:{}),...(sceneId?{sceneId,edit:true}:{})},4096);
  }
  throw Error('E_AGENT_COMMAND');
  }

@@ -1,0 +1,27 @@
+{
+  "schemaVersion":"1.0.0",
+  "profileId":"google-ads-app-playable",
+  "networkId":"google-ads",
+  "channelId":"app-playable",
+  "rulesVersion":"2026-11-26-review-1",
+  "reviewedAt":"2026-11-26",
+  "sources":[
+    {"id":"specs","url":"https://support.google.com/google-ads/answer/1722124","title":"Google Ads HTML5 creative requirements","checkedAt":"2026-11-26","notes":"ZIP packaging, root index.html, ad.size/ad.orientation metadata, and the exact Google-hosted ExitApi script are profile-bound."},
+    {"id":"api","url":"https://developers.google.com/doubleclick-publishers/html5/exitapi","title":"Google HTML5 ExitApi","checkedAt":"2026-11-26","notes":"Deliberate CTA uses ExitApi.exit(); no MRAID bridge is substituted."}
+  ],
+  "rules":{
+    "uploadSize":{"status":"verified","value":{"limitBytes":5000000,"operator":"<=","byteBasis":"conservative-decimal-mb"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Exact compressed ZIP upload must fit the conservative decimal 5 MB ceiling."},
+    "packaging":{"status":"verified","value":{"kind":"zip","entryFile":"index.html","flatRoot":true,"requiredFiles":[],"nameMatchesArchive":false},"sources":["specs"],"basis":"public-documentation","notes":"Deterministic ZIP with index.html at the flat root and no companion game files."},
+    "inline":{"status":"verified","value":{"requireInlineAssets":true,"externalRequests":"forbidden","requiredHostScripts":[{"src":"https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js","placement":"head-before-runtime","hostProvided":true}],"hostExceptions":[{"src":"https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js","placement":"head-before-runtime","hostProvided":true}]},"sources":["specs","api"],"basis":"public-documentation","notes":"Only the exact declared Google host script is external; every game asset remains inline."},
+    "mraid":{"status":"verified","value":null,"sources":["api"],"basis":"public-documentation","notes":"Google App campaigns use ExitApi, not MRAID."},
+    "vendorHost":{"status":"verified","value":"google-exitapi","sources":["api"],"basis":"public-documentation","notes":"Deliberate CTA invokes ExitApi.exit() after the trusted user gesture."},
+    "autoplay":{"status":"verified","value":{"audio":"muted-until-first-interaction","onHidden":"mute-and-pause","timerStart":"first-interaction"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Local audio and visibility safety policy."},
+    "firstClick":{"status":"verified","value":"distinct-cta-only","sources":["api"],"basis":"public-documentation","notes":"Only the authored CTA invokes ExitApi."},
+    "viewability":{"status":"verified","value":{"policy":"ready-and-visible","requiredEvents":["visibilitychange"],"allowInitialStateQuery":true},"sources":["specs"],"basis":"conservative-local-policy","notes":"Document visibility controls local lifecycle in the compiled runtime."},
+    "orientations":{"status":"verified","value":"both","sources":["specs"],"basis":"public-documentation","notes":"The ad.orientation metadata declares portrait,landscape and QA covers both."},
+    "preview":{"status":"verified","value":{"url":"https://support.google.com/google-ads/answer/1722124","instructions":"Validate the exact ZIP through the current official Google HTML5/App campaign workflow and physical devices. Check metadata, ExitApi CTA, audio, rotation, and resume. No official validator result is implied."},"sources":["specs"],"basis":"public-documentation","notes":"Official procedure reference only; not executed."},
+    "companionAssets":{"status":"verified","value":[],"sources":["specs"],"basis":"conservative-local-policy","notes":"Campaign settings and store destination remain in Google Ads."}
+  },
+  "additionalRules":[],
+  "unresolved":[]
+}

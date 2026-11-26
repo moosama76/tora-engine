@@ -18,8 +18,8 @@ function fail(code, message) {
 }
 
 /** Validate bounded MPEG Layer III (MP3) frames and return stream stats. */
-export function validateMp3(bytes, code = 'E_AUDIO_MP3_MALFORMED') {
-  if (!(bytes instanceof Uint8Array) || bytes.length < 16 || bytes.length > 700000) fail(code);
+export function validateMp3(bytes, code = 'E_AUDIO_MP3_MALFORMED', maxBytes = 700000) {
+  if (!(bytes instanceof Uint8Array) || bytes.length < 16 || bytes.length > maxBytes) fail(code);
   let offset = 0;
   // Skip optional ID3v2 tag header
   if (bytes.length >= 10 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {

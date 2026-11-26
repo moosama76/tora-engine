@@ -8,6 +8,7 @@ import {NativeReview} from './review.mjs';
 import {NativeAgentTools} from './agent-tools.mjs';
 import {createHarvestConcept} from './author-harvest.mjs';
 import {authorProjectThroughService} from './author-primitive-proofs.mjs';
+import {networkTargetIds} from './network-targets.mjs';
 
 export const DEMO_ALIASES=Object.freeze({
  'tiny-harvest-win-cta':'tiny-harvest',
@@ -130,6 +131,7 @@ export async function buildDemoSeed(rawId,rootDir=resolve(import.meta.dirname,'.
   const unity=await service.export(meta.id,{revisionId:doc.revisionId,target:'unity-ads-ua-playable'});
   const applovin=await service.export(meta.id,{revisionId:doc.revisionId,target:'applovin-growth-playable'});
   const standalone=await service.export(meta.id,{revisionId:doc.revisionId,target:'standalone-browser-draft'});
+  const networkArtifacts={};for(const target of networkTargetIds){const artifact=await service.build(meta.id,doc.project,target);networkArtifacts[target]={html:artifact.html,...(artifact.archiveBase64?{archiveBase64:artifact.archiveBase64,archiveFilename:artifact.archiveFilename}:{}),manifest:artifact.manifest};}
   const cleanMetadata={
    ...metadata,
    requests:[],
@@ -150,6 +152,7 @@ export async function buildDemoSeed(rawId,rootDir=resolve(import.meta.dirname,'.
    applovinManifest:applovin.manifest,
    standaloneHtml:standalone.html,
    standaloneManifest:standalone.manifest,
+   networkArtifacts,
    bundleText:bundle.text??JSON.stringify(bundle),
   };
  }finally{

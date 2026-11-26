@@ -2,7 +2,10 @@
 //! Static verification only; grants no device or ad-network acceptance.
 mod inspect;
 pub mod native;
-pub use inspect::{ArtifactFacts, inspect_applovin_html, inspect_network_html};
+mod zip;
+pub use inspect::{
+    ArtifactFacts, inspect_applovin_html, inspect_network_html, inspect_network_zip,
+};
 use serde_json::Value;
 use std::fmt;
 

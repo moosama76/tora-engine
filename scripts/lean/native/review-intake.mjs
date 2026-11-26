@@ -165,14 +165,14 @@ export class ReviewIntake {
   async upload(id, input) {
     return this.service.history.lock('intake-' + id, async () => {
       const current = await this.read(id);
-      check(exact(input, ['name','mime','data','kind','note']) && validText(input.name, 180) && !/[\\/]/u.test(input.name), 'E_INTAKE_ARGUMENT');
+      check(exact(input, ['name','mime','data','kind','note','optimize','preserveResolution']) && validText(input.name, 180) && !/[\\/]/u.test(input.name), 'E_INTAKE_ARGUMENT');
       const kind = input.kind ?? 'asset';
       check(['asset', 'reference'].includes(kind), 'E_INTAKE_ARGUMENT');
       const allowedMimes = kind === 'reference' ? referenceTypes : mediaTypes;
-      check(allowedMimes.includes(input.mime) && typeof input.data === 'string' && input.data.length <= 933336, 'E_INTAKE_ARGUMENT');
+      check(allowedMimes.includes(input.mime) && typeof input.data === 'string' && input.data.length <= 11184812, 'E_INTAKE_ARGUMENT');
       if (input.note !== undefined) check(validText(input.note, 240), 'E_INTAKE_ARGUMENT');
       const bytes = Buffer.from(input.data, 'base64');
-      check(bytes.length > 0 && bytes.length <= 700000 && bytes.toString('base64') === input.data, 'E_INTAKE_ASSET_SIZE');
+      check(bytes.length > 0 && bytes.length <= (kind === 'asset' ? 8000000 : 700000) && bytes.toString('base64') === input.data, 'E_INTAKE_ASSET_SIZE');
       const digest = hash(bytes);
       const folder = this.folder(id);
       if (kind === 'reference') {
@@ -182,9 +182,10 @@ export class ReviewIntake {
         check(current.status === 'draft', 'E_INTAKE_STALE');
         check(existingRefs.length < maxReferenceCount, 'E_INTAKE_ASSET_LIMIT');
         await mkdir(resolve(folder, 'references'), {recursive: true});
-        const asset = await registerSource(folder, {id: refId, mime: input.mime, data: input.data, rights: current.rights});
+        const asset = await registerSource(folder, {id: refId, mime: input.mime, data: input.data, rights: current.rights, optimize: input.optimize, preserveResolution: input.preserveResolution});
         await writeRecord(resolve(folder, 'references', refId + '.json'), {
           id: refId, name: input.name, mime: asset.mime, hash: asset.hash, bytes: asset.bytes,
+          ...(asset.optimization ? {optimization: asset.optimization} : {}),
           ...(input.note ? {note: input.note} : {}),
         });
         return this.read(id);
@@ -192,10 +193,10 @@ export class ReviewIntake {
       const assetId = 'studio-' + hash(JSON.stringify([input.name, input.mime, digest])).slice(7, 39);
       if (current.assets.some(asset => asset.id === assetId)) return current;
       check(current.status === 'draft', 'E_INTAKE_STALE');
-      check(current.assets.length < maxAssetCount &&
-        current.assets.reduce((total, asset) => total + asset.bytes, 0) + bytes.length <= maxPackBytes, 'E_INTAKE_ASSET_LIMIT');
-      const asset = await registerSource(folder, {id:assetId, mime:input.mime, data:input.data, rights:current.rights});
-      await writeRecord(resolve(folder,'assets',assetId + '.json'), {id:assetId,name:input.name,mime:asset.mime,hash:asset.hash,bytes:asset.bytes});
+      check(current.assets.length < maxAssetCount, 'E_INTAKE_ASSET_LIMIT');
+      const asset = await registerSource(folder, {id:assetId, mime:input.mime, data:input.data, rights:current.rights, optimize:input.optimize, preserveResolution:input.preserveResolution});
+      check(current.assets.reduce((total, asset) => total + asset.bytes, 0) + asset.bytes <= maxPackBytes, 'E_INTAKE_ASSET_LIMIT');
+      await writeRecord(resolve(folder,'assets',assetId + '.json'), {id:assetId,name:input.name,mime:asset.mime,hash:asset.hash,bytes:asset.bytes,...(asset.optimization?{optimization:asset.optimization}:{})});
       return this.read(id);
     });
   }

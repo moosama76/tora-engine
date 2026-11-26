@@ -130,6 +130,9 @@ pub fn read_source(root: &Path, path: &str) -> Result<Vec<u8>> {
     Ok(data)
 }
 fn supported(bytes: &[u8]) -> Result<ImageFormat> {
+    supported_with_color_policy(bytes, true)
+}
+fn supported_with_color_policy(bytes: &[u8], reject_color_profile: bool) -> Result<ImageFormat> {
     let format = image::guess_format(bytes).map_err(|e| err("E_ASSET_FORMAT", e))?;
     match format {
         ImageFormat::Png => {
@@ -148,10 +151,12 @@ fn supported(bytes: &[u8]) -> Result<ImageFormat> {
                 let kind = &bytes[offset + 4..offset + 8];
                 // We emit unprofiled sRGB-assumed RGBA. These chunks can change browser
                 // appearance without changing raw channels; reject before decode/hash/dedup.
-                if matches!(
-                    kind,
-                    b"gAMA" | b"cHRM" | b"iCCP" | b"cICP" | b"mDCV" | b"cLLI"
-                ) {
+                if reject_color_profile
+                    && matches!(
+                        kind,
+                        b"gAMA" | b"cHRM" | b"iCCP" | b"cICP" | b"mDCV" | b"cLLI"
+                    )
+                {
                     return Err(err(
                         "E_ASSET_COLOR_PROFILE",
                         "PNG color metadata requires reviewed conversion to sRGB before import",
@@ -620,6 +625,358 @@ pub fn build_atlas(root: &Path, requests: &[Request], side: u32) -> Result<Atlas
     Ok(winner)
 }
 
+const OPTIMIZE_MAX_PIXELS: u64 = 16_777_216;
+const OPTIMIZE_MAX_SOURCE_SIDE: u32 = 4096;
+const DELIVERY_BYTES: usize = 700_000;
+const SOFT_BYTES: usize = 450_000;
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum OptimizeMode {
+    #[default]
+    Auto,
+    Lossless,
+    None,
+}
+#[derive(Clone, Copy, Debug, Default, Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "camelCase")]
+pub struct OptimizeOptions {
+    pub mode: OptimizeMode,
+    pub preserve_resolution: bool,
+}
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OptimizedImage {
+    #[serde(skip)]
+    pub bytes: Vec<u8>,
+    pub mime: String,
+    pub width: u32,
+    pub height: u32,
+    pub original_width: u32,
+    pub original_height: u32,
+    pub has_alpha: bool,
+    pub operations: Vec<String>,
+}
+
+fn resize_upload(pixels: &RgbaImage, width: u32, height: u32) -> RgbaImage {
+    let mut rgba = DynamicImage::ImageRgba8(pixels.clone()).into_rgba32f();
+    for p in rgba.pixels_mut() {
+        for c in 0..3 {
+            p[c] *= p[3];
+        }
+    }
+    let mut resized =
+        image::imageops::resize(&rgba, width, height, image::imageops::FilterType::Lanczos3);
+    for p in resized.pixels_mut() {
+        if p[3] > 0.0 {
+            for c in 0..3 {
+                p[c] = (p[c] / p[3]).clamp(0.0, 1.0);
+            }
+        }
+    }
+    DynamicImage::ImageRgba32F(resized).into_rgba8()
+}
+
+fn best_png(pixels: &RgbaImage) -> Result<(Vec<u8>, String)> {
+    let mut winner = (png(pixels)?, "rgba/High/Adaptive".to_owned());
+    compression::visit_encodings(pixels, |id, bytes| {
+        if bytes.len() < winner.0.len() {
+            winner = (bytes, id);
+        }
+        Ok(())
+    })?;
+    Ok(winner)
+}
+
+fn jpeg_quality(pixels: &RgbaImage, quality: u8) -> Result<Vec<u8>> {
+    let rgb = DynamicImage::ImageRgba8(pixels.clone()).into_rgb8();
+    let mut data = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut data, quality)
+        .encode(
+            rgb.as_raw(),
+            rgb.width(),
+            rgb.height(),
+            image::ExtendedColorType::Rgb8,
+        )
+        .map_err(|e| err("E_ASSET_ENCODE", e))?;
+    Ok(data)
+}
+
+#[derive(Clone)]
+struct ColorBox {
+    colors: Vec<[u8; 4]>,
+}
+impl ColorBox {
+    fn range(&self, channel: usize) -> u8 {
+        self.colors
+            .iter()
+            .map(|c| c[channel])
+            .max()
+            .unwrap_or(0)
+            .saturating_sub(self.colors.iter().map(|c| c[channel]).min().unwrap_or(0))
+    }
+    fn average(&self) -> [u8; 4] {
+        let mut sum = [0_u64; 4];
+        for color in &self.colors {
+            for channel in 0..4 {
+                sum[channel] += u64::from(color[channel]);
+            }
+        }
+        let count = self.colors.len() as u64;
+        std::array::from_fn(|channel| ((sum[channel] + count / 2) / count) as u8)
+    }
+}
+
+fn quantized_png(pixels: &RgbaImage) -> Result<Vec<u8>> {
+    let mut boxes = vec![ColorBox {
+        colors: pixels.pixels().map(|p| p.0).collect(),
+    }];
+    while boxes.len() < 256 {
+        let Some((index, _)) = boxes
+            .iter()
+            .enumerate()
+            .filter(|(_, item)| item.colors.len() > 1)
+            .max_by_key(|(_, item)| {
+                let range = (0..4).map(|channel| item.range(channel)).max().unwrap_or(0);
+                (range, item.colors.len())
+            })
+        else {
+            break;
+        };
+        let mut item = boxes.swap_remove(index);
+        let channel = (0..4)
+            .max_by_key(|channel| (item.range(*channel), std::cmp::Reverse(*channel)))
+            .unwrap_or(0);
+        item.colors.sort_unstable_by_key(|color| color[channel]);
+        let right = item.colors.split_off(item.colors.len() / 2);
+        boxes.push(ColorBox {
+            colors: item.colors,
+        });
+        boxes.push(ColorBox { colors: right });
+    }
+    boxes.sort_by_key(|item| item.average());
+    let palette: Vec<_> = boxes.iter().map(ColorBox::average).collect();
+    let mut indices = Vec::with_capacity((pixels.width() as usize) * (pixels.height() as usize));
+    for pixel in pixels.pixels() {
+        let index = palette
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, color)| {
+                (0..4)
+                    .map(|channel| {
+                        let difference = i32::from(pixel.0[channel]) - i32::from(color[channel]);
+                        (difference * difference) as u32
+                    })
+                    .sum::<u32>()
+            })
+            .map(|(index, _)| index)
+            .ok_or_else(|| err("E_ASSET_ENCODE", "empty quantization palette"))?;
+        indices.push(index as u8);
+    }
+    let mut out = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut out, pixels.width(), pixels.height());
+        encoder.set_color(png::ColorType::Indexed);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.set_compression(png::Compression::High);
+        encoder.set_filter(png::Filter::Adaptive);
+        encoder.set_palette(
+            palette
+                .iter()
+                .flat_map(|c| c[..3].iter().copied())
+                .collect::<Vec<_>>(),
+        );
+        let mut alpha: Vec<_> = palette.iter().map(|c| c[3]).collect();
+        while alpha.last() == Some(&255) {
+            alpha.pop();
+        }
+        if !alpha.is_empty() {
+            encoder.set_trns(alpha);
+        }
+        encoder
+            .write_header()
+            .map_err(|e| err("E_ASSET_ENCODE", e))?
+            .write_image_data(&indices)
+            .map_err(|e| err("E_ASSET_ENCODE", e))?;
+    }
+    decode_embedded_png(&out)?;
+    Ok(out)
+}
+
+fn auto_encode(pixels: &RgbaImage, operations: &mut Vec<String>) -> Result<(Vec<u8>, String)> {
+    let (best, encoding) = best_png(pixels)?;
+    operations.push(format!("exact-png:{encoding}"));
+    let opaque = pixels.pixels().all(|p| p[3] == 255);
+    let mut winner = best;
+    let mut mime = "image/png".to_owned();
+    if opaque && winner.len() > 80_000 {
+        let candidate = jpeg_quality(pixels, 84)?;
+        if candidate.len() * 4 <= winner.len() * 3 {
+            winner = candidate;
+            mime = "image/jpeg".into();
+            operations.push("jpeg:quality-84;>=25%-savings".into());
+        }
+    }
+    if winner.len() > SOFT_BYTES {
+        if opaque {
+            for quality in [84, 76, 68] {
+                let candidate = jpeg_quality(pixels, quality)?;
+                if candidate.len() < winner.len() {
+                    winner = candidate;
+                    mime = "image/jpeg".into();
+                    operations.push(format!("jpeg:quality-{quality};budget"));
+                    if winner.len() <= SOFT_BYTES {
+                        break;
+                    }
+                }
+            }
+        }
+        if mime == "image/png" {
+            let candidate = quantized_png(pixels)?;
+            if candidate.len() < winner.len() {
+                winner = candidate;
+                operations.push("median-cut:256-color-rgba".into());
+            }
+        }
+    }
+    Ok((winner, mime))
+}
+
+/// Decode and normalize an uploaded image without changing the strict inspect() contract.
+pub fn optimize_image_bytes(bytes: &[u8], options: &OptimizeOptions) -> Result<OptimizedImage> {
+    if bytes.is_empty() || bytes.len() as u64 > MAX_FILE {
+        return Err(err("E_ASSET_TOO_LARGE", "expected 1 byte through 8 MiB"));
+    }
+    let format = supported_with_color_policy(bytes, false)?;
+    let mut reader = ImageReader::with_format(Cursor::new(bytes), format);
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(OPTIMIZE_MAX_SOURCE_SIDE);
+    limits.max_image_height = Some(OPTIMIZE_MAX_SOURCE_SIDE);
+    limits.max_alloc = Some(96 * 1024 * 1024);
+    reader.limits(limits);
+    let mut decoder = reader
+        .into_decoder()
+        .map_err(|e| err("E_ASSET_CORRUPT", e))?;
+    let (width, height) = decoder.dimensions();
+    if width == 0 || height == 0 || u64::from(width) * u64::from(height) > OPTIMIZE_MAX_PIXELS {
+        return Err(err(
+            "E_ASSET_TOO_LARGE",
+            "uploaded image exceeds 16,777,216 pixels",
+        ));
+    }
+    let source_has_icc = decoder
+        .icc_profile()
+        .map_err(|e| err("E_ASSET_CORRUPT", e))?
+        .is_some();
+    let orientation = decoder
+        .orientation()
+        .map_err(|e| err("E_ASSET_CORRUPT", e))?;
+    let mut image = DynamicImage::from_decoder(decoder).map_err(|e| err("E_ASSET_CORRUPT", e))?;
+    image.apply_orientation(orientation);
+    let original_width = image.width();
+    let original_height = image.height();
+    let mut pixels = image.into_rgba8();
+    let has_alpha = pixels.pixels().any(|p| p[3] != 255);
+    if options.mode == OptimizeMode::None {
+        if bytes.len() > DELIVERY_BYTES || original_width > MAX_SIDE || original_height > MAX_SIDE {
+            return Err(err(
+                "E_NATIVE_ASSET_SIZE",
+                "unoptimized delivery exceeds 700,000 bytes or 2048px side",
+            ));
+        }
+        return Ok(OptimizedImage {
+            bytes: bytes.to_vec(),
+            mime: format.to_mime_type().into(),
+            width: original_width,
+            height: original_height,
+            original_width,
+            original_height,
+            has_alpha,
+            operations: vec!["validate-only;original-bytes".into()],
+        });
+    }
+    let mut operations = vec!["decode-rgba8;normalize-orientation;strip-color-metadata".into()];
+    let mut output;
+    if options.mode == OptimizeMode::Lossless {
+        if original_width > MAX_SIDE || original_height > MAX_SIDE {
+            return Err(err(
+                "E_NATIVE_ASSET_SIZE",
+                "lossless mode cannot downscale a source beyond 2048px",
+            ));
+        }
+        let (best, encoding) = best_png(&pixels)?;
+        operations.push(format!("exact-png:{encoding}"));
+        output = (best, "image/png".to_owned());
+        if format == ImageFormat::Jpeg && !source_has_icc && bytes.len() < output.0.len() {
+            output = (bytes.to_vec(), "image/jpeg".into());
+            operations.push("retain-original-baseline-jpeg".into());
+        }
+    } else {
+        if options.preserve_resolution && (original_width > MAX_SIDE || original_height > MAX_SIDE)
+        {
+            return Err(err(
+                "E_NATIVE_ASSET_SIZE",
+                "preserveResolution conflicts with the 2048px delivery side limit",
+            ));
+        }
+        if pixels.width() > MAX_SIDE || pixels.height() > MAX_SIDE {
+            let scale = (MAX_SIDE as f64 / pixels.width().max(pixels.height()) as f64).min(1.0);
+            let width = ((pixels.width() as f64 * scale).round() as u32).max(1);
+            let height = ((pixels.height() as f64 * scale).round() as u32).max(1);
+            let old = (pixels.width(), pixels.height());
+            pixels = resize_upload(&pixels, width, height);
+            operations.push(format!(
+                "resize:{}x{}->{}x{};Lanczos3-premultiplied",
+                old.0, old.1, width, height
+            ));
+        }
+        output = auto_encode(&pixels, &mut operations)?;
+        if !options.preserve_resolution {
+            let mut iterations = 0;
+            while output.0.len() > DELIVERY_BYTES && iterations < 4 {
+                let old = (pixels.width(), pixels.height());
+                let width = ((old.0 * 3) / 4).max(1);
+                let height = ((old.1 * 3) / 4).max(1);
+                if (width, height) == old {
+                    break;
+                }
+                pixels = resize_upload(&pixels, width, height);
+                operations.push(format!(
+                    "resize:{}x{}->{}x{};byte-budget",
+                    old.0, old.1, width, height
+                ));
+                output = auto_encode(&pixels, &mut operations)?;
+                iterations += 1;
+            }
+        }
+    }
+    if output.0.len() > DELIVERY_BYTES {
+        return Err(err(
+            "E_NATIVE_ASSET_SIZE",
+            "optimized delivery exceeds 700,000 bytes",
+        ));
+    }
+    if output.1 == "image/png" {
+        let decoded = decode_embedded_png(&output.0)?;
+        if decoded.dimensions() != pixels.dimensions() {
+            return Err(err(
+                "E_ASSET_CORRUPT",
+                "optimized PNG dimensions changed unexpectedly",
+            ));
+        }
+    }
+    Ok(OptimizedImage {
+        bytes: output.0,
+        mime: output.1,
+        width: pixels.width(),
+        height: pixels.height(),
+        original_width,
+        original_height,
+        has_alpha,
+        operations,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -900,5 +1257,102 @@ mod tests {
         fs::write(f.0.join("oriented"), bytes).unwrap();
         let d = decode(&f.0, &req("a", "oriented")).unwrap();
         assert_eq!((d.info.width, d.info.height), (2, 3));
+    }
+    #[test]
+    fn optimization_normalizes_profiles_and_preserves_flat_art_dimensions() {
+        let pixels = RgbaImage::from_pixel(16, 12, image::Rgba([0, 0, 255, 255]));
+        let mut bytes = Vec::new();
+        let mut encoder = image::codecs::png::PngEncoder::new(&mut bytes);
+        encoder.set_icc_profile(vec![0; 128]).unwrap();
+        encoder
+            .write_image(pixels.as_raw(), 16, 12, image::ExtendedColorType::Rgba8)
+            .unwrap();
+        assert_eq!(inspect_bytes_error(&bytes), "E_ASSET_COLOR_PROFILE");
+        let optimized = optimize_image_bytes(&bytes, &OptimizeOptions::default()).unwrap();
+        assert_eq!(optimized.mime, "image/png");
+        assert_eq!((optimized.width, optimized.height), (16, 12));
+        assert_eq!(decode_embedded_png(&optimized.bytes).unwrap(), pixels);
+        assert!(!optimized.bytes.windows(4).any(|chunk| chunk == b"iCCP"));
+    }
+    fn inspect_bytes_error(bytes: &[u8]) -> &'static str {
+        supported(bytes).unwrap_err().code
+    }
+    #[test]
+    fn optimization_modes_and_photo_candidate_are_bounded() {
+        let pixels = RgbaImage::from_fn(256, 256, |x, y| {
+            let mut value = x.wrapping_add(y.wrapping_mul(0x9e37_79b9));
+            value = (value ^ (value >> 16)).wrapping_mul(0x21f0_aaad);
+            value = (value ^ (value >> 15)).wrapping_mul(0x735a_2d97);
+            value ^= value >> 15;
+            image::Rgba([value as u8, (value >> 8) as u8, (value >> 16) as u8, 255])
+        });
+        let bytes = png(&pixels).unwrap();
+        let none = optimize_image_bytes(
+            &bytes,
+            &OptimizeOptions {
+                mode: OptimizeMode::None,
+                preserve_resolution: false,
+            },
+        )
+        .unwrap();
+        assert_eq!(none.bytes, bytes);
+        let lossless = optimize_image_bytes(
+            &bytes,
+            &OptimizeOptions {
+                mode: OptimizeMode::Lossless,
+                preserve_resolution: true,
+            },
+        )
+        .unwrap();
+        assert_eq!((lossless.width, lossless.height), (256, 256));
+        assert_eq!(decode_embedded_png(&lossless.bytes).unwrap(), pixels);
+        let auto = optimize_image_bytes(&bytes, &OptimizeOptions::default()).unwrap();
+        assert_eq!(
+            auto.mime,
+            "image/jpeg",
+            "auto={} lossless={} operations={:?}",
+            auto.bytes.len(),
+            lossless.bytes.len(),
+            auto.operations
+        );
+        assert!(auto.bytes.len() <= DELIVERY_BYTES);
+        assert!(auto.bytes.len() * 4 <= lossless.bytes.len() * 3);
+        assert_eq!(
+            optimize_image_bytes(&vec![0; MAX_FILE as usize + 1], &OptimizeOptions::default())
+                .unwrap_err()
+                .code,
+            "E_ASSET_TOO_LARGE"
+        );
+    }
+    #[test]
+    fn jpeg_budget_stops_early_once_under_soft_target() {
+        let pixels = RgbaImage::from_fn(1024, 1024, |x, y| {
+            let mut h = x
+                .wrapping_mul(374_761_393)
+                .wrapping_add(y.wrapping_mul(668_265_263));
+            h = (h ^ (h >> 13)).wrapping_mul(1_274_126_177);
+            let grain = ((h >> 16) & 7) as i32 - 3;
+            let fx = x as f32 / 1024.0;
+            let fy = y as f32 / 1024.0;
+            let wave = ((fx * 24.0).sin() * (fy * 18.0).cos() * 32.0) as i32;
+            let r = ((fx * 210.0) as i32 + wave + grain).clamp(0, 255) as u8;
+            let g = ((fy * 195.0) as i32 - wave / 2 + 25 + grain).clamp(0, 255) as u8;
+            let b = ((((fx + fy) * 100.0) as i32) - grain).clamp(0, 255) as u8;
+            image::Rgba([r, g, b, 255])
+        });
+        let bytes = png(&pixels).unwrap();
+        assert!(bytes.len() > SOFT_BYTES, "png bytes={}", bytes.len());
+        let auto = optimize_image_bytes(&bytes, &OptimizeOptions::default()).unwrap();
+        assert_eq!(auto.mime, "image/jpeg");
+        assert!(
+            auto.bytes.len() <= SOFT_BYTES,
+            "jpeg bytes={}",
+            auto.bytes.len()
+        );
+        assert!(
+            !auto.operations.iter().any(|op| op.contains("quality-68")),
+            "should stop once under SOFT_BYTES: {:?}",
+            auto.operations
+        );
     }
 }

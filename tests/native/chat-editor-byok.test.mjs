@@ -315,14 +315,16 @@ test('chat-first New Playable and Chat Feedback Editor work end-to-end with free
   await page.locator('#review-after').waitFor({state: 'hidden', timeout: 10000});
   await page.locator('#review-requests', {hasText: 'Applied'}).waitFor({timeout: 10000});
 
-  // Open Export menu and verify optional Store URL + Unity/AppLovin target selector + Browser Draft options live there
+  // Store requirements follow the selected target; draft options remain independent.
   await page.click('#review-export-menu > summary');
   await page.waitForSelector('#review-store-url');
-  assert.equal(await page.locator('#review-store-url').getAttribute('required'), null);
+  assert.equal(await page.locator('#review-store-url').getAttribute('required'), '');
   assert.equal(await page.locator('#review-store-url').inputValue(), '');
   const targetOptions = await page.locator('#review-export-target option').allTextContents();
   assert.ok(targetOptions.some(text => /Unity Ads/i.test(text)));
   assert.ok(targetOptions.some(text => /AppLovin/i.test(text)));
+  await page.selectOption('#review-export-target', 'meta-audience-playable');
+  assert.equal(await page.locator('#review-store-url').getAttribute('required'), null);
   await page.selectOption('#review-export-target', 'applovin-growth-playable');
   assert.match(await page.locator('#review-export').textContent(), /AppLovin/);
   assert.match(await page.locator('#review-export-verification').textContent(), /AppLovin Playable Preview/);

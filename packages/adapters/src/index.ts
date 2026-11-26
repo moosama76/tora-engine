@@ -1,4 +1,4 @@
-/** Network-neutral host contract. Vendor adapters belong to later tickets. */
+/** Network-neutral host contract shared by all compiled vendor adapters. */
 export type Unsubscribe = () => void;
 export interface NetworkBridge {
   /** Resolves only when the host permits initialization; rejects on failure/close. */
@@ -8,6 +8,9 @@ export interface NetworkBridge {
   isClosed(): boolean;
   onVisibilityChanged(listener: (visible: boolean) => void): Unsubscribe;
   onClosed(listener: () => void): Unsubscribe;
+  onVolumeChanged?(listener: (volume: number) => void): Unsubscribe;
+  notifyGameEnd?(): void;
+  notifyGameRetry?(): void;
   openStore(url: string): void;
   destroy(): void;
 }

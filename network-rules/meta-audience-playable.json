@@ -1,0 +1,27 @@
+{
+  "schemaVersion":"1.0.0",
+  "profileId":"meta-audience-playable",
+  "networkId":"meta",
+  "channelId":"audience-playable",
+  "rulesVersion":"2026-11-26-review-1",
+  "reviewedAt":"2026-11-26",
+  "sources":[
+    {"id":"specs","url":"https://www.facebook.com/business/ads/playable-ads","title":"Meta playable ads","checkedAt":"2026-11-26","notes":"Single-HTML playable profile with the Meta FbPlayableAd CTA host. Dashboard destination configuration remains separate."},
+    {"id":"preview","url":"https://www.facebook.com/business/ads/playable-ads","title":"Meta playable preview guidance","checkedAt":"2026-11-26","notes":"Official Ads Manager preview and physical devices have not been run by this static rule review."}
+  ],
+  "rules":{
+    "uploadSize":{"status":"verified","value":{"limitBytes":2000000,"operator":"<=","byteBasis":"conservative-decimal-mb"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Conservative decimal 2 MB ceiling on final single-HTML bytes."},
+    "packaging":{"status":"verified","value":{"kind":"single-html","entryFile":"index.html","minified":true},"sources":["specs"],"basis":"public-documentation","notes":"Single HTML with all game assets inline."},
+    "inline":{"status":"verified","value":{"requireInlineAssets":true,"externalRequests":"forbidden","requiredHostScripts":[],"hostExceptions":[]},"sources":["specs"],"basis":"conservative-local-policy","notes":"No MRAID or external host script is embedded; FbPlayableAd is provided by the host."},
+    "mraid":{"status":"verified","value":null,"sources":["specs"],"basis":"public-documentation","notes":"Meta uses FbPlayableAd rather than MRAID."},
+    "vendorHost":{"status":"verified","value":"meta-fb-playable-ad","sources":["specs"],"basis":"public-documentation","notes":"Deliberate CTA calls FbPlayableAd.onCTAClick() with no URL argument."},
+    "autoplay":{"status":"verified","value":{"audio":"muted-until-first-interaction","onHidden":"mute-and-pause","timerStart":"first-interaction"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Muted startup and document-hidden pause are enforced locally."},
+    "firstClick":{"status":"verified","value":"distinct-cta-only","sources":["specs"],"basis":"public-documentation","notes":"No automatic or first-gameplay-tap redirect."},
+    "viewability":{"status":"verified","value":{"policy":"ready-and-visible","requiredEvents":["visibilitychange"],"allowInitialStateQuery":true},"sources":["specs"],"basis":"conservative-local-policy","notes":"Document visibility is the local browser/mock-host lifecycle contract."},
+    "orientations":{"status":"verified","value":"both","sources":["specs"],"basis":"conservative-local-policy","notes":"Portrait and landscape are checked locally."},
+    "preview":{"status":"verified","value":{"url":"https://www.facebook.com/business/ads/playable-ads","instructions":"Preview the exact HTML in the official Meta workflow, then test physical devices, both orientations, background/resume, and the deliberate CTA. Dashboard store configuration is required separately; no official acceptance is claimed."},"sources":["preview"],"basis":"public-documentation","notes":"Official preview reference only; not executed."},
+    "companionAssets":{"status":"verified","value":[],"sources":["specs"],"basis":"conservative-local-policy","notes":"Campaign-level assets are outside this playable upload."}
+  },
+  "additionalRules":[],
+  "unresolved":[]
+}

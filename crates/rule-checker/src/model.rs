@@ -8,6 +8,10 @@ pub enum NetworkId {
     Applovin,
     UnityAds,
     Mintegral,
+    Meta,
+    GoogleAds,
+    Ironsource,
+    Tiktok,
 }
 impl NetworkId {
     pub fn as_str(&self) -> &'static str {
@@ -15,6 +19,10 @@ impl NetworkId {
             Self::Applovin => "applovin",
             Self::UnityAds => "unity-ads",
             Self::Mintegral => "mintegral",
+            Self::Meta => "meta",
+            Self::GoogleAds => "google-ads",
+            Self::Ironsource => "ironsource",
+            Self::Tiktok => "tiktok",
         }
     }
 }
@@ -117,13 +125,24 @@ impl SizeRule {
     deny_unknown_fields
 )]
 pub enum Packaging {
-    SingleHtml { entry_file: String, minified: bool },
-    Zip { entry_file: String, flat_root: bool },
+    SingleHtml {
+        entry_file: String,
+        minified: bool,
+    },
+    Zip {
+        entry_file: String,
+        flat_root: bool,
+        #[serde(default)]
+        required_files: Vec<String>,
+        #[serde(default)]
+        name_matches_archive: bool,
+    },
 }
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum ScriptPlacement {
     HeadBeforeRuntime,
+    BodyBeforeRuntime,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -175,6 +194,17 @@ pub struct MraidRule {
     pub ready: ReadyPolicy,
     pub click_api: ClickApi,
 }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum VendorHostRule {
+    Dapi,
+    MetaFbPlayableAd,
+    #[serde(rename = "google-exitapi")]
+    GoogleExitApi,
+    MintegralGlobal,
+    #[serde(rename = "tiktok-playable-sdk")]
+    TikTokPlayableSdk,
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum AudioPolicy {
@@ -214,6 +244,12 @@ pub enum HostVisibilityEvent {
     ViewableChange,
     #[serde(rename = "exposureChange")]
     ExposureChange,
+    #[serde(rename = "visibilitychange")]
+    DocumentVisibilityChange,
+    #[serde(rename = "gameStart")]
+    GameStart,
+    #[serde(rename = "gameClose")]
+    GameClose,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -278,7 +314,9 @@ pub struct Rules {
     pub upload_size: Rule<SizeRule>,
     pub packaging: Rule<Packaging>,
     pub inline: Rule<InlineRules>,
-    pub mraid: Rule<MraidRule>,
+    pub mraid: Rule<Option<MraidRule>>,
+    #[serde(default)]
+    pub vendor_host: Option<Rule<VendorHostRule>>,
     pub autoplay: Rule<AutoplayRule>,
     pub first_click: Rule<FirstClickRule>,
     pub viewability: Rule<ViewabilityRule>,

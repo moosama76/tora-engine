@@ -233,29 +233,34 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
   let sharedGlCanvas, sharedRenderer, sharedCacheCanvas, sharedCacheCtx, sharedStageId;
 
   function ensureRenderer() {
-    if (sharedRenderer) return sharedRenderer;
-    sharedGlCanvas = document.createElement('canvas');
-    sharedGlCanvas.addEventListener?.('webglcontextrestored', () => {
-      sharedStageId = undefined;
-      for (const entry of stages.values()) {
-        entry.compiled = false;
-        entry.textureDirty = true;
-        entry.lastRenderedTime = -1;
-        entry.lastFlagStep = -1;
-      }
-      onTextureReady?.();
-    });
-    sharedCacheCanvas = document.createElement('canvas');
-    sharedCacheCtx = sharedCacheCanvas.getContext('2d');
-    sharedRenderer = new WebGLRenderer({
-      canvas: sharedGlCanvas,
-      antialias: true,
-      alpha: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'default',
-    });
-    sharedRenderer.shadowMap.type = PCFSoftShadowMap;
-    return sharedRenderer;
+    if (sharedRenderer !== undefined) return sharedRenderer;
+    try {
+      sharedGlCanvas = document.createElement('canvas');
+      sharedGlCanvas.addEventListener?.('webglcontextrestored', () => {
+        sharedStageId = undefined;
+        for (const entry of stages.values()) {
+          entry.compiled = false;
+          entry.textureDirty = true;
+          entry.lastRenderedTime = -1;
+          entry.lastFlagStep = -1;
+        }
+        onTextureReady?.();
+      });
+      sharedCacheCanvas = document.createElement('canvas');
+      sharedCacheCtx = sharedCacheCanvas.getContext?.('2d');
+      sharedRenderer = new WebGLRenderer({
+        canvas: sharedGlCanvas,
+        antialias: true,
+        alpha: false,
+        preserveDrawingBuffer: false,
+        powerPreference: 'default',
+      });
+      sharedRenderer.shadowMap.type = PCFSoftShadowMap;
+      return sharedRenderer;
+    } catch {
+      sharedRenderer = null;
+      return null;
+    }
   }
 
   function getMeshGeometry(assetId) {
@@ -305,9 +310,10 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
     const p = stageComp.parameters;
     const scene = new Scene();
     scene.background = new Color(p.skyColor || '#b8e2ed');
-    const camera = new PerspectiveCamera(p.cameraFov ?? 39, 1, 0.1, 120);
+    const camera = new PerspectiveCamera(p.cameraFov ?? 39, 1, 0.1, 160);
     camera.position.set(p.cameraX ?? 10, p.cameraY ?? 18, p.cameraZ ?? 21);
     camera.lookAt(p.lookAtX ?? 0, p.lookAtY ?? 0.15, p.lookAtZ ?? 0);
+    scene.add(camera);
     scene.add(new HemisphereLight(p.hemiSkyColor || '#fff9dd', p.hemiGroundColor || '#527b75', p.hemiIntensity ?? 1.8));
     const sun = new DirectionalLight(p.sunColor || '#fff0cf', p.sunIntensity ?? 2.1);
     sun.position.set(p.sunX ?? -9, p.sunY ?? 18, p.sunZ ?? 8);
@@ -315,24 +321,20 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
 
     const sharedTex = getTexture(stageComp.assetSlots?.[0]?.assetId);
     const nodes = new Map();
+    const dynamicNodes = new Map();
     const wavingFlags = [];
     const confettiSystems = [];
 
-    // Build all descendant native.mesh3d.v1 nodes in parent-first order
-    const descendants = [];
-    const collect = parentId => {
-      for (const comp of project.components) {
-        if (comp.parentId === parentId && comp.contract === 'native.mesh3d.v1' && !comp.prototype) {
-          descendants.push(comp);
-          collect(comp.id);
-        }
-      }
-    };
-    collect(stageComp.id);
+    function tagSubtree(rootObj, rootId, sourceId, cameraAttached) {
+      rootObj.traverse(node => {
+        node.userData.toraRootId = rootId;
+        node.userData.toraSourceId = sourceId;
+        if (cameraAttached) node.userData.cameraAttached = true;
+      });
+    }
 
-    for (const comp of descendants) {
+    function createMeshObject(comp, parentObj, rootId, sourceId, cameraAttached) {
       const mp = comp.parameters;
-      const parentObj = comp.parentId === stageComp.id ? scene : (nodes.get(comp.parentId) ?? scene);
       let obj;
       const makeMat = () => {
         const opts = {};
@@ -375,11 +377,39 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       obj.rotation.set(mp.rx ?? 0, mp.ry ?? 0, mp.rz ?? 0);
       obj.scale.set(mp.sx ?? 1, mp.sy ?? 1, mp.sz ?? 1);
       obj.visible = mp.visible !== false;
+      tagSubtree(obj, rootId, sourceId, cameraAttached);
       parentObj.add(obj);
+      return obj;
+    }
+
+    // Build all descendant native.mesh3d.v1 nodes in parent-first order
+    const descendants = [];
+    const rootByComp = new Map();
+    const collect = (parentId, rootComp, camAttached) => {
+      for (const comp of project.components) {
+        if (comp.parentId === parentId && comp.contract === 'native.mesh3d.v1' && !comp.prototype) {
+          const ownRoot = rootComp ?? comp;
+          const attached = camAttached || Boolean(comp.parameters.attachToCamera);
+          rootByComp.set(comp.id, {rootId: ownRoot.id, sourceId: ownRoot.id, cameraAttached: attached});
+          descendants.push(comp);
+          collect(comp.id, ownRoot, attached);
+        }
+      }
+    };
+    collect(stageComp.id, null, false);
+
+    for (const comp of descendants) {
+      const mp = comp.parameters;
+      const meta = rootByComp.get(comp.id);
+      const parentObj = mp.attachToCamera && comp.parentId === stageComp.id
+        ? camera
+        : (comp.parentId === stageComp.id ? scene : (nodes.get(comp.parentId) ?? scene));
+      const obj = createMeshObject(comp, parentObj, meta.rootId, meta.sourceId, meta.cameraAttached);
       nodes.set(comp.id, obj);
 
       if (mp.confetti) {
         const cGroup = new Group();
+        cGroup.userData.isConfetti = true;
         const cGeo = new BoxGeometry(0.08, 0.025, 0.12);
         const cMats = ['#ffda69', '#fff6c9', '#ef8774', '#7cc6bf'].map(c => new MeshBasicMaterial({color: c}));
         const pieces = Array.from({length: 28}, (_, i) => {
@@ -421,7 +451,9 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       scene,
       camera,
       nodes,
+      dynamicNodes,
       nodeEntries,
+      createMeshObject,
       wavingFlags,
       confettiSystems,
       guideGroup,
@@ -434,6 +466,7 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       lastRenderedTime: -1,
       lastRenderedW: 0,
       lastRenderedH: 0,
+      lastPoseSig: '',
       guideDirty: true,
       focusZ: 0,
       lastTime: -1,
@@ -470,6 +503,40 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
           ? {x: hitVec.x, y: hitVec.y, z: hitVec.z}
           : null;
       },
+      raycast(ndcX, ndcY, maxDistance = 80, {isTarget = () => true, isOccluder = () => false} = {}) {
+        scene.updateMatrixWorld(true);
+        camera.updateMatrixWorld(true);
+        ndc.set(ndcX, ndcY);
+        raycaster.near = 0.05;
+        raycaster.far = maxDistance;
+        raycaster.setFromCamera(ndc, camera);
+        const hits = raycaster.intersectObjects(scene.children, true);
+        const seen = new Set();
+        for (const hit of hits) {
+          let hidden = false;
+          for (let cur = hit.object; cur; cur = cur.parent) {
+            if (!cur.visible || cur === guideGroup || cur.userData?.cameraAttached || cur.userData?.isConfetti) {
+              hidden = true;
+              break;
+            }
+          }
+          if (hidden) continue;
+          const rootId = hit.object.userData?.toraRootId;
+          const sourceId = hit.object.userData?.toraSourceId;
+          if (!rootId || seen.has(rootId)) continue;
+          seen.add(rootId);
+          if (isTarget(rootId, sourceId)) {
+            return {
+              id: rootId,
+              sourceId,
+              distance: hit.distance,
+              point: {x: hit.point.x, y: hit.point.y, z: hit.point.z},
+            };
+          }
+          if (isOccluder(rootId, sourceId)) return null;
+        }
+        return null;
+      },
     };
     stages.set(stageComp.id, entry);
     return entry;
@@ -479,7 +546,7 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
     return stages.get(stageComp.id) ?? buildStage(stageComp);
   }
 
-  function renderStage(stageComp, ctx2d, pixelWidth, pixelHeight, stageWidth, stageHeight, {time, ambientTime, propsOf, bodies3d, aimLocked, groundFn, worldWidth = stageWidth, worldHeight = stageHeight}) {
+  function syncStage(stageComp, {time = 0, ambientTime, propsOf, bodies3d, fpsPose, instances3d = [], aimLocked = false, groundFn, worldWidth = 390, worldHeight = 700}) {
     const entry = getStage(stageComp);
     const waveTime = ambientTime ?? time;
     const p = propsOf(stageComp);
@@ -489,10 +556,38 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       entry.scene.background = new Color(nextSky);
     }
 
-    // Sync mesh3d node transforms & visibility from live parameters + 3D physics + drop shadows
-    for (const {id, obj, comp} of entry.nodeEntries) {
+    // Sync dynamically spawned mesh3d prototype instances (add missing, remove despawned)
+    const liveIds = new Set(instances3d.map(item => item.id));
+    for (const [dynId, dynObj] of entry.dynamicNodes) {
+      if (!liveIds.has(dynId)) {
+        dynObj.parent?.remove(dynObj);
+        entry.dynamicNodes.delete(dynId);
+      }
+    }
+    for (const comp of instances3d) {
+      if (entry.dynamicNodes.has(comp.id)) continue;
+      const parentObj = comp.parentId === stageComp.id
+        ? entry.scene
+        : (entry.dynamicNodes.get(comp.parentId) ?? entry.nodes.get(comp.parentId) ?? entry.scene);
+      const rootId = comp.instanceId ?? comp.id;
+      const rootComp = instances3d.find(node => node.id === rootId) ?? comp;
+      const sourceId = rootComp.prototypeId ?? rootComp.id;
+      const obj = entry.createMeshObject(comp, parentObj, rootId, sourceId, Boolean(comp.parameters.attachToCamera));
+      entry.dynamicNodes.set(comp.id, obj);
+    }
+
+    // Sync mesh3d node transforms, visibility & colors from live parameters + 3D physics + drop shadows
+    const allNodes = [
+      ...entry.nodeEntries,
+      ...instances3d.map(comp => ({id: comp.id, obj: entry.dynamicNodes.get(comp.id), comp})).filter(row => row.obj),
+    ];
+    let poseParts = '';
+    for (const {id, obj, comp} of allNodes) {
       const mp = propsOf(comp);
       obj.visible = mp.visible !== false;
+      if (!mp.useTexture && obj.isMesh && obj.material?.color && mp.color) {
+        obj.material.color.set(mp.color);
+      }
       const body = bodies3d?.get(id);
       if (body && body.mode === 'dynamic') {
         const cap = body.captured ? Math.min(1, (body.captureElapsed ?? 0) / 0.55) : 0;
@@ -519,6 +614,9 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
         obj.position.set(mp.x ?? 0, mp.y ?? 0, mp.z ?? 0);
         obj.rotation.set(mp.rx ?? 0, mp.ry ?? 0, mp.rz ?? 0);
         obj.scale.set(mp.sx ?? 1, mp.sy ?? 1, mp.sz ?? 1);
+      }
+      if (fpsPose || entry.dynamicNodes.size > 0) {
+        poseParts += `${id}:${obj.visible ? 1 : 0},${obj.position.x.toFixed(3)},${obj.position.y.toFixed(3)},${obj.position.z.toFixed(3)},${obj.rotation.y.toFixed(3)},${mp.color ?? ''}|`;
       }
     }
 
@@ -548,30 +646,50 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       });
     }
 
-    // Smooth camera tracking + portrait/landscape framing (verbatim from original scene.ts)
+    // Camera pose: first-person FPS controller or smooth tracking / golf framing
     const portrait = worldHeight >= worldWidth;
     const dt = entry.lastTime < 0 || waveTime < entry.lastTime ? 0 : Math.min(0.05, waveTime - entry.lastTime);
-    const followBody = p.followTargetId ? bodies3d?.get(p.followTargetId) : undefined;
-    const targetZ = followBody ? followBody.z * (p.followZFactor ?? 0.12) : (p.lookAtZ ?? 0);
-    if (entry.lastTime < 0 || waveTime < entry.lastTime) entry.focusZ = targetZ;
-    else if (!aimLocked) entry.focusZ += (targetZ - entry.focusZ) * (1 - Math.exp(-6 * dt));
-    entry.lastTime = waveTime;
-
     entry.camera.aspect = worldWidth / Math.max(1, worldHeight);
-    const intro = Math.max(0, 1 - waveTime / 1.5);
-    const victorySway = !p.followTargetId && (p.introLift ?? 2) === 0;
-    if (!aimLocked) {
-      const swayX = victorySway ? Math.sin(waveTime * 0.42) * 1.15 : 0;
-      const swayZ = victorySway ? (Math.cos(waveTime * 0.42) - 1) * 0.55 : 0;
-      const baseX = (portrait ? (p.cameraX ?? 10) : (p.landscapeCameraX ?? 13)) + swayX;
-      const baseY = portrait ? (p.cameraY ?? 18) + intro * (p.introLift ?? 2) : (p.landscapeCameraY ?? 15);
-      const baseZ = (portrait ? (p.cameraZ ?? 21) : (p.landscapeCameraZ ?? 18)) + swayZ;
-      const y = dt === 0 ? baseY : entry.camera.position.y + (baseY - entry.camera.position.y) * (1 - Math.exp(-6 * dt));
-      entry.camera.position.set(baseX, y, baseZ + entry.focusZ);
-      entry.camera.fov = portrait ? (p.cameraFov ?? 39) : (p.landscapeCameraFov ?? 22.6199);
-      entry.camera.lookAt(p.lookAtX ?? 0, p.lookAtY ?? 0.15, entry.focusZ);
+    let victorySway = false;
+    if (fpsPose) {
+      entry.lastTime = waveTime;
+      entry.camera.rotation.order = 'YXZ';
+      entry.camera.position.set(fpsPose.x, fpsPose.y + (fpsPose.bob ?? 0), fpsPose.z);
+      entry.camera.rotation.set(fpsPose.pitch, fpsPose.yaw, 0);
+      entry.camera.fov = portrait ? (p.cameraFov ?? 68) : (p.landscapeCameraFov ?? 54);
+      poseParts += `cam:${entry.camera.position.x.toFixed(3)},${entry.camera.position.y.toFixed(3)},${entry.camera.position.z.toFixed(3)},${fpsPose.yaw.toFixed(4)},${fpsPose.pitch.toFixed(4)},${entry.camera.fov.toFixed(2)}`;
+    } else {
+      const followBody = p.followTargetId ? bodies3d?.get(p.followTargetId) : undefined;
+      const targetZ = followBody ? followBody.z * (p.followZFactor ?? 0.12) : (p.lookAtZ ?? 0);
+      if (entry.lastTime < 0 || waveTime < entry.lastTime) entry.focusZ = targetZ;
+      else if (!aimLocked) entry.focusZ += (targetZ - entry.focusZ) * (1 - Math.exp(-6 * dt));
+      entry.lastTime = waveTime;
+      const intro = Math.max(0, 1 - waveTime / 1.5);
+      victorySway = !p.followTargetId && (p.introLift ?? 2) === 0;
+      if (!aimLocked) {
+        const swayX = victorySway ? Math.sin(waveTime * 0.42) * 1.15 : 0;
+        const swayZ = victorySway ? (Math.cos(waveTime * 0.42) - 1) * 0.55 : 0;
+        const baseX = (portrait ? (p.cameraX ?? 10) : (p.landscapeCameraX ?? 13)) + swayX;
+        const baseY = portrait ? (p.cameraY ?? 18) + intro * (p.introLift ?? 2) : (p.landscapeCameraY ?? 15);
+        const baseZ = (portrait ? (p.cameraZ ?? 21) : (p.landscapeCameraZ ?? 18)) + swayZ;
+        const y = dt === 0 ? baseY : entry.camera.position.y + (baseY - entry.camera.position.y) * (1 - Math.exp(-6 * dt));
+        entry.camera.position.set(baseX, y, baseZ + entry.focusZ);
+        entry.camera.fov = portrait ? (p.cameraFov ?? 39) : (p.landscapeCameraFov ?? 22.6199);
+        entry.camera.lookAt(p.lookAtX ?? 0, p.lookAtY ?? 0.15, entry.focusZ);
+      }
     }
     entry.camera.updateProjectionMatrix();
+    entry.camera.updateMatrixWorld(true);
+    return {entry, waveTime, victorySway, poseParts};
+  }
+
+  function renderStage(stageComp, ctx2d, pixelWidth, pixelHeight, stageWidth, stageHeight, options) {
+    const {entry, waveTime, victorySway, poseParts} = syncStage(stageComp, {
+      ...options,
+      worldWidth: options.worldWidth ?? stageWidth,
+      worldHeight: options.worldHeight ?? stageHeight,
+    });
+    const {bodies3d} = options;
 
     // Render into offscreen WebGL2 buffer & composite onto main Canvas2D stage
     if (pixelWidth < 2 || pixelHeight < 2) {
@@ -580,7 +698,7 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       return entry;
     }
     const renderer = ensureRenderer();
-    if (renderer.getContext?.()?.isContextLost?.()) {
+    if (!renderer || renderer.getContext?.()?.isContextLost?.()) {
       ctx2d.fillStyle = entry.skyColor;
       ctx2d.fillRect(0, 0, stageWidth, stageHeight);
       return entry;
@@ -631,7 +749,8 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
     const flagDirty = entry.wavingFlags.length > 0 && entry.lastFlagStep !== flagStep;
     const swayDirty = victorySway && Math.abs(waveTime - entry.lastRenderedTime) >= 0.032;
     const bodyDirty = hasMovingBody && entry.lastRenderedTime !== waveTime;
-    const didRender = resized || sharedStageId !== stageComp.id || entry.guideDirty || entry.textureDirty || entry.lastRenderedTime < 0 || entry.lastRenderedW !== rw || entry.lastRenderedH !== rh || flagDirty || swayDirty || bodyDirty;
+    const poseDirty = poseParts !== entry.lastPoseSig;
+    const didRender = resized || sharedStageId !== stageComp.id || entry.guideDirty || entry.textureDirty || entry.lastRenderedTime < 0 || entry.lastRenderedW !== rw || entry.lastRenderedH !== rh || flagDirty || swayDirty || bodyDirty || poseDirty;
     if (didRender) {
       if (entry.wavingFlags.length > 0 && entry.lastFlagStep !== flagStep) {
         for (const flag of entry.wavingFlags) waveFlagGeometry(flag.geo, flag.rest, flagStep / 20);
@@ -646,6 +765,7 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
       entry.lastRenderedTime = waveTime;
       entry.lastRenderedW = rw;
       entry.lastRenderedH = rh;
+      entry.lastPoseSig = poseParts;
       entry.guideDirty = false;
       entry.textureDirty = false;
     }
@@ -659,10 +779,13 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
 
   function reset() {
     for (const entry of stages.values()) {
+      for (const dynObj of entry.dynamicNodes.values()) dynObj.parent?.remove(dynObj);
+      entry.dynamicNodes.clear();
       entry.focusZ = 0;
       entry.lastTime = -1;
       entry.lastRenderedTime = -1;
       entry.lastFlagStep = -1;
+      entry.lastPoseSig = '';
       entry.guideDirty = true;
       entry.setGuide([]);
     }
@@ -691,5 +814,5 @@ export function createStage3dManager(project, assetsMap, onTextureReady) {
     sharedStageId = undefined;
   }
 
-  return {getStage, renderStage, reset, dispose};
+  return {getStage, syncStage, renderStage, reset, dispose};
 }

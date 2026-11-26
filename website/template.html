@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0068E6">
+  <meta name="description" content="Tora is an open-source local MCP-first framework for building editable, responsive 2D and 3D HTML5 playable ads with automatic asset optimization and seven free ad-network exporters using Claude Code, Cursor, Codex, Gemini CLI, or BYOK APIs.">
+  <title>Tora — Local MCP-First Playable Ad Framework</title>
+  <link rel="icon" href="assets/mark.svg?v=v2" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css?v=v2">
+  <script type="module" src="script.js?v=v2"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#" aria-label="Tora home">
+        <img src="assets/tora-wordmark.svg" alt="Tora" width="112" height="45">
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#demos">Demos</a>
+        <a href="#workflow">How it works</a>
+        <a href="#compare">Tora vs. LLM</a>
+        <a href="#exports">Exports</a>
+        <a href="#sponsor">Sponsor</a>
+        <a class="btn btn-cream" href="editor/">Live Editor</a>
+        <a class="btn btn-coral" href="https://github.com/moosama76/tora-engine" target="_blank" rel="noopener">GitHub ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <span class="kicker-pill">Open Source · Local MCP-First · $0 Extra API Cost</span>
+        <h1 id="hero-title">Build editable 2D &amp; 3D <em>playable ads</em> from your AI coding agent.</h1>
+        <p class="hero-sub">
+          Clone Tora locally, connect <strong>Claude Code, Cursor, OpenAI Codex, or Gemini CLI</strong> via MCP — or optionally plug in your own API key (Gemini, OpenAI, Claude, OpenRouter, DeepSeek, Kimi, Qwen, GLM) — and ship auto-optimized playables across <strong>7 free ad networks</strong> built strictly with real assets.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-coral btn-lg" href="editor/">Launch Live Editor →</a>
+          <a class="btn btn-sun btn-lg" href="https://github.com/moosama76/tora-engine" target="_blank" rel="noopener">Clone on GitHub ↗</a>
+        </div>
+        <div class="trust-row" aria-label="Key capabilities">
+          <span class="pill-mint">✓ 2D + 3D Native Engine</span>
+          <span class="pill-mint">✓ Auto Asset Optimization (8 MiB → ≤ 700 KB)</span>
+          <span class="pill-mint">✓ 4-Viewport Creative QA</span>
+          <span class="pill-mint">✓ 7 Free Ad-Network Exporters</span>
+        </div>
+      </div>
+
+      <aside class="card quickstart-card" aria-label="2-step local quickstart">
+        <div class="card-head">
+          <strong>2-Step Local Quickstart</strong>
+          <span class="pill-sun">Node ≥ 22 · Rust</span>
+        </div>
+
+        <div class="code-box">
+          <div class="code-box-head">
+            <span>1. Install &amp; run local setup</span>
+            <button type="button" class="copy-btn" data-copy="git clone https://github.com/moosama76/tora-engine.git&#10;cd tora-engine&#10;npm install &amp;&amp; npm run setup">Copy</button>
+          </div>
+          <pre><code>git clone https://github.com/moosama76/tora-engine.git
+cd tora-engine
+npm install &amp;&amp; npm run setup</code></pre>
+        </div>
+
+        <div class="code-box">
+          <div class="code-box-head">
+            <span>2. Connect your agent or open studio</span>
+            <button type="button" class="copy-btn" id="mcp-copy-btn">Copy</button>
+          </div>
+          <div class="tab-row" role="tablist" aria-label="Client setup">
+            <button type="button" class="tab-btn" role="tab" aria-selected="true" data-tab="claude">Claude Code</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="cursor">Cursor / Gemini</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="codex">Codex</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="studio">Local Studio</button>
+          </div>
+          <pre><code id="mcp-snippet">claude mcp add tora \
+  -e TORA_PROJECT_STORE="$(pwd)/.tora/native-projects" \
+  -- node "$(pwd)/scripts/lean/native/mcp-server.mjs"</code></pre>
+        </div>
+
+        <p class="card-note">
+          Your art, audio, and API keys stay 100% on your machine. Run <code>npm run dev:editor</code> anytime for visual review notes, side-by-side comparison, and one-click exports.
+        </p>
+      </aside>
+    </section>
+
+    <section id="demos" class="section wrap" aria-labelledby="demos-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">01 / Live Native Playables</span>
+          <h2 id="demos-title">Play real builds. Inspect them in the editor.</h2>
+        </div>
+        <p class="section-sub">
+          Every demo below is a complete single-file <code>tora-native</code> playable with embedded CC0 sprites, 3D meshes, and compressed MP3 audio. No external network calls.
+        </p>
+      </div>
+
+      <div class="demo-grid">
+        <article class="card demo-card">
+          <a class="demo-thumb" href="traffic-tycoon/play.html" aria-label="Play Traffic Tycoon">
+            <img src="assets/traffic-tycoon.png" alt="Traffic Tycoon isometric 2D playable ad" width="1200" height="750">
+            <span class="size-badge" title="{{TRAFFIC_BYTES}} bytes complete standalone Unity HTML">{{TRAFFIC_SIZE}}</span>
+          </a>
+          <div class="demo-body">
+            <div class="demo-meta">
+              <h3>Traffic Tycoon</h3>
+              <span class="pill-cream">2D Path Economy</span>
+            </div>
+            <p>Tap glowing roads to dispatch vehicles, untangle intersections, and grow a living miniature city.</p>
+            <div class="demo-actions">
+              <a class="btn btn-coral" href="traffic-tycoon/play.html">Play Live ↗</a>
+              <a class="btn btn-cream" href="editor/?project=traffic-tycoon">Open in Editor →</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card demo-card">
+          <a class="demo-thumb" href="mini-golf/play.html" aria-label="Play Mini Golf 3D">
+            <img src="assets/mini-golf.png" alt="Mini Golf 3D WebGL2 playable ad" width="1200" height="750">
+            <span class="size-badge" title="{{GOLF_BYTES}} bytes complete standalone Unity HTML">{{GOLF_SIZE}}</span>
+          </a>
+          <div class="demo-body">
+            <div class="demo-meta">
+              <h3>Mini Golf 3D</h3>
+              <span class="pill-cream">3D WebGL2 Physics</span>
+            </div>
+            <p>Drag to aim, bounce off wooden rails, and sink shots across 3D courses with camera follow and celebrations.</p>
+            <div class="demo-actions">
+              <a class="btn btn-coral" href="mini-golf/play.html">Play Live ↗</a>
+              <a class="btn btn-cream" href="editor/?project=mini-golf">Open in Editor →</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card demo-card">
+          <a class="demo-thumb" href="tiny-harvest/play.html" aria-label="Play Tiny Harvest">
+            <img src="assets/tiny-harvest.png" alt="Tiny Harvest cozy match-3 playable ad" width="1200" height="750">
+            <span class="size-badge" title="{{HARVEST_BYTES}} bytes complete standalone Unity HTML">{{HARVEST_SIZE}}</span>
+          </a>
+          <div class="demo-body">
+            <div class="demo-meta">
+              <h3>Tiny Harvest</h3>
+              <span class="pill-cream">2D Match-3</span>
+            </div>
+            <p>Swipe crops on a responsive 5×5 board, clear tiles, trigger celebratory sound effects, and restore the farm.</p>
+            <div class="demo-actions">
+              <a class="btn btn-coral" href="tiny-harvest/play.html">Play Live ↗</a>
+              <a class="btn btn-cream" href="editor/?project=tiny-harvest">Open in Editor →</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="workflow" class="section wrap" aria-labelledby="workflow-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">02 / Architecture &amp; Workflow</span>
+          <h2 id="workflow-title">Engineered for shipping real UA creatives.</h2>
+        </div>
+        <p class="section-sub">
+          Not a throwaway HTML generator. Tora enforces structured scenes, automatic asset optimization, real provenance, and automated QA before export.
+        </p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="card feature-card">
+          <span class="step-badge">01</span>
+          <h3>MCP-First ($0 API Cost) + Universal BYOK</h3>
+          <p>Drive Tora from <strong>Claude Code, Cursor, Codex, or Gemini CLI</strong> using your existing coding subscription — or connect Gemini, OpenAI, Claude, <strong>OpenRouter, DeepSeek, Kimi, Qwen, GLM</strong>, or local Ollama/vLLM inside the visual Studio UI.</p>
+        </article>
+        <article class="card feature-card">
+          <span class="step-badge">02</span>
+          <h3>Atomic Editable 2D &amp; 3D Scene Graph</h3>
+          <p>Every playable lives in a strict structured scene schema validated across Node and Rust. Transforms, sprites, 3D meshes, physics, path networks, audio, events, and bindings update via revision-checked, undoable transactions.</p>
+        </article>
+        <article class="card feature-card">
+          <span class="step-badge">03</span>
+          <h3>Automatic Asset Optimization &amp; Real Provenance</h3>
+          <p>Drop raw PNG, JPEG, WAV, or MP3 files up to <strong>8 MiB</strong>. Tora preserves untouched original masters, auto-optimizes delivery bytes under 700 KB (with lossless/opt-out controls), and records SHA-256 receipts — zero AI art slop.</p>
+        </article>
+        <article class="card feature-card">
+          <span class="step-badge">04</span>
+          <h3>Deterministic 4-Viewport Creative QA</h3>
+          <p>Before export, Tora’s built-in Playwright QA runner tests portrait &amp; landscape phone viewports, muted-until-tap audio unlock, acoustic levels, text clipping, primary gameplay, and Store CTA wiring.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="compare" class="section wrap" aria-labelledby="compare-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">03 / Tora vs. Using an LLM Directly</span>
+          <h2 id="compare-title">Why connect your LLM to Tora instead of prompting raw HTML?</h2>
+        </div>
+        <p class="section-sub">
+          Keep the AI coding agent you already use — Tora adds the structured engine, asset optimizer, QA, and 7-network packer.
+        </p>
+      </div>
+
+      <div class="compare-grid">
+        <article class="card compare-card">
+          <div class="compare-card-head">
+            <span class="pill-cream">Raw HTML Prompting</span>
+            <h3>Using an LLM Directly</h3>
+          </div>
+          <ul class="compare-list is-direct">
+            <li>Rewrites full HTML files on small tweaks</li>
+            <li>Manual image &amp; audio compression for ad size caps</li>
+            <li>Hand-rolled MRAID, DAPI &amp; ZIP SDK wrappers</li>
+            <li>Desktop guesswork on safe areas &amp; audio unlock</li>
+            <li>Code-only diffs with no visual review for teams</li>
+            <li>Burns tokens regenerating engine boilerplate</li>
+          </ul>
+        </article>
+
+        <article class="card compare-card tier-featured">
+          <div class="compare-card-head">
+            <span class="pill-sun">MCP · Open Source</span>
+            <h3>Using Tora + Your LLM</h3>
+          </div>
+          <ul class="compare-list is-tora">
+            <li>Structured, editable scene graph with undo/redo</li>
+            <li>Auto asset optimization (8 MiB → ≤ 700 KB) + lossless restore</li>
+            <li>7 verified HTML &amp; ZIP ad-network exporters included free</li>
+            <li>Automated 4-viewport mobile &amp; audio Creative QA</li>
+            <li>Visual Studio UI with frame notes &amp; <code>.tora.json</code> handoff</li>
+            <li>Runs locally via MCP at <strong>$0 extra API cost</strong></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="exports" class="section wrap" aria-labelledby="exports-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">04 / Ad-Network Exports</span>
+          <h2 id="exports-title">Seven free exporters. Honest verification scope.</h2>
+        </div>
+        <p class="section-sub">
+          Single-file HTML5 and deterministic ZIP packages built cleanly from one project — every target included free and open source.
+        </p>
+      </div>
+
+      <div class="export-grid">
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>Unity Ads</h3>
+            <span class="fmt-badge fmt-html">HTML</span>
+          </div>
+          <div class="export-spec"><code>MRAID 3.0</code><span>&lt; 5 MB</span></div>
+          <p class="export-check">Static rule pack + mock MRAID 3.0 host lifecycle tests.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>AppLovin</h3>
+            <span class="fmt-badge fmt-html">HTML</span>
+          </div>
+          <div class="export-spec"><code>MRAID 2.0</code><span>≤ 5 MB</span></div>
+          <p class="export-check">Static rule pack + mock MRAID 2.0 host lifecycle tests.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>Meta (FB &amp; IG)</h3>
+            <span class="fmt-badge fmt-html">HTML</span>
+          </div>
+          <div class="export-spec"><code>FbPlayableAd</code><span>≤ 2 MB</span></div>
+          <p class="export-check">Static rule pack + strict ≤ 2 MB budget &amp; Meta CTA mock tests.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>ironSource / LevelPlay</h3>
+            <span class="fmt-badge fmt-html">HTML</span>
+          </div>
+          <div class="export-spec"><code>DAPI</code><span>≤ 5 MB</span></div>
+          <p class="export-check">Static rule pack + mock DAPI ready, viewable &amp; volume tests.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>Google Ads (App)</h3>
+            <span class="fmt-badge fmt-zip">ZIP</span>
+          </div>
+          <div class="export-spec"><code>ExitApi</code><span>≤ 5 MB</span></div>
+          <p class="export-check">Deterministic ZIP (<code>index.html</code>) + <code>ad.size</code> &amp; ExitApi checks.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>Mintegral</h3>
+            <span class="fmt-badge fmt-zip">ZIP</span>
+          </div>
+          <div class="export-spec"><code>&lt;id&gt;/&lt;id&gt;.html</code><span>≤ 5 MB</span></div>
+          <p class="export-check">Deterministic ZIP + mock <code>gameReady</code> / <code>install</code> global tests.</p>
+        </article>
+
+        <article class="card export-card">
+          <div class="export-top">
+            <h3>TikTok</h3>
+            <span class="fmt-badge fmt-zip">ZIP</span>
+          </div>
+          <div class="export-spec"><code>Playable SDK</code><span>≤ 5 MB</span></div>
+          <p class="export-check">ZIP (<code>index.html</code> + <code>config.json</code>) + mock <code>openAppStore</code> tests.</p>
+        </article>
+
+        <article class="card export-card export-card-draft">
+          <div class="export-top">
+            <h3>Standalone HTML5</h3>
+            <span class="fmt-badge fmt-draft">DRAFT</span>
+          </div>
+          <div class="export-spec"><code>Browser</code><span>Single file</span></div>
+          <p class="export-check">Self-contained build with automated 4-viewport Creative QA.</p>
+        </article>
+      </div>
+
+      <div class="card export-note">
+        <span class="pill-mint">All 7 Exporters Included Free</span>
+        <p>
+          Automated <code>playable-cli</code> rule checks and mock-host Playwright tests verify engineering compliance; official ad-network preview tools (Unity, AppLovin, Meta, Google, ironSource, Playturbo, TikTok) and physical iOS/Android devices remain separate acceptance gates before live campaigns.
+        </p>
+      </div>
+    </section>
+
+    <section id="sponsor" class="section wrap" aria-labelledby="sponsor-title">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">05 / Open Source &amp; GitHub Sponsors</span>
+          <h2 id="sponsor-title">Free &amp; open source. Backed by sponsors.</h2>
+        </div>
+        <p class="section-sub">
+          Every exporter and optimization tool stays 100% open source. Monthly GitHub Sponsors tiers fund maintenance and give teams priority support, spec updates, and recognition.
+        </p>
+      </div>
+
+      <div class="pricing-grid">
+        <article class="card tier-card">
+          <div class="tier-head">
+            <span class="pill-cream">Individual</span>
+            <h3>Community Backer</h3>
+            <div class="tier-price"><span class="price-amount">$25</span><span class="price-cadence">/mo</span></div>
+          </div>
+          <p class="tier-desc">For indie developers and solo playable builders backing open UA tooling.</p>
+          <ul class="tier-list">
+            <li>Name &amp; link in repository <code>README.md</code> Backers list</li>
+            <li>GitHub Sponsor badge supporting open playable tooling</li>
+            <li>Vote on community templates &amp; feature priorities</li>
+            <li>Funds maintenance of all 7 free network exporters</li>
+          </ul>
+          <a class="btn btn-cream btn-full" href="https://github.com/sponsors/moosama76" target="_blank" rel="noopener">Sponsor $25/mo ↗</a>
+        </article>
+
+        <article class="card tier-card">
+          <div class="tier-head">
+            <span class="pill-mint">Studios &amp; UA Teams</span>
+            <h3>Studio Sponsor</h3>
+            <div class="tier-price"><span class="price-amount">$250</span><span class="price-cadence">/mo</span></div>
+          </div>
+          <p class="tier-desc">For game studios and boutique UA teams shipping playables regularly.</p>
+          <ul class="tier-list">
+            <li>Company logo in <code>README.md</code> &amp; website credits</li>
+            <li>Priority GitHub issue triage &amp; bug reproduction</li>
+            <li>Early feedback access to new 2D/3D &amp; pipeline updates</li>
+            <li>Quarterly roadmap input with maintainers</li>
+          </ul>
+          <a class="btn btn-sun btn-full" href="https://github.com/sponsors/moosama76" target="_blank" rel="noopener">Sponsor $250/mo ↗</a>
+        </article>
+
+        <article class="card tier-card tier-featured">
+          <div class="tier-head">
+            <span class="pill-sun">Enterprise</span>
+            <h3>Enterprise Patron</h3>
+            <div class="tier-price"><span class="price-amount">$3,500</span><span class="price-cadence">/mo</span></div>
+          </div>
+          <p class="tier-desc">For large production studios, mobile publishers &amp; ad-network platforms.</p>
+          <ul class="tier-list">
+            <li>Headline partner placement on homepage, <code>README.md</code>, docs &amp; releases</li>
+            <li>Priority ad-network SDK &amp; rule-pack updates + dedicated exporter parity</li>
+            <li>Private Slack/Discord channel + monthly sync &amp; 6 hrs/mo MCP/CI support</li>
+            <li>Fast-track fixes for blocking bugs &amp; direct roadmap influence on 3D &amp; QA</li>
+          </ul>
+          <a class="btn btn-coral btn-full" href="https://github.com/sponsors/moosama76" target="_blank" rel="noopener">Sponsor $3,500/mo ↗</a>
+        </article>
+      </div>
+
+      <div class="card donate-strip">
+        <div class="donate-strip-copy">
+          <span class="pill-sun">Custom / One-Time</span>
+          <p><strong>Prefer a custom amount or a one-time donation?</strong> Support a specific feature, thank the maintainers after a campaign launch, or set any custom monthly amount directly on GitHub Sponsors.</p>
+        </div>
+        <a class="btn btn-sun" href="https://github.com/sponsors/moosama76" target="_blank" rel="noopener">Donate / Custom Amount ↗</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <div class="footer-brand">
+        <img src="assets/tora-wordmark.svg" alt="Tora" width="96" height="39">
+        <p>Open-source local MCP-first playable ad framework for game studios &amp; UA teams.</p>
+      </div>
+      <div class="footer-links">
+        <a href="editor/">Live Editor</a>
+        <a href="https://github.com/moosama76/tora-engine" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/moosama76/tora-engine/blob/main/docs/TORA_AGENT_SETUP.md" target="_blank" rel="noopener">MCP Docs</a>
+        <a href="https://github.com/sponsors/moosama76" target="_blank" rel="noopener">Sponsor Tora</a>
+      </div>
+      <span class="footer-copy">© <span id="year">2026</span> Tora Playables</span>
+    </div>
+  </footer>
+</body>
+</html>

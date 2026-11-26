@@ -3,28 +3,44 @@ use data_encoding::BASE64;
 use serde_json::Value;
 
 pub const PREFIX_HEAD: &str = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\"><title>Tora playable draft</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:";
-pub const PREFIX_TAIL: &str = "}canvas{width:100%;height:100%;display:block;touch-action:none}</style></head><body><canvas aria-label=\"Playable game\"></canvas><script type=\"application/json\" id=\"project\">";
+pub const PREFIX_TAIL: &str =
+    "}canvas{width:100%;height:100%;display:block;touch-action:none}</style>";
+pub const PREFIX_BODY: &str = "</head><body><canvas aria-label=\"Playable game\"></canvas><script type=\"application/json\" id=\"project\">";
 pub const PREFIX: &str = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1,maximum-scale=1\"><title>Tora playable draft</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#102a34}canvas{width:100%;height:100%;display:block;touch-action:none}</style></head><body><canvas aria-label=\"Playable game\"></canvas><script type=\"application/json\" id=\"project\">";
+const GOOGLE_HEAD: &str = "<meta name=\"ad.size\" content=\"width=320,height=480\"><meta name=\"ad.orientation\" content=\"portrait,landscape\"><script type=\"text/javascript\" src=\"https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js\"></script>";
+const TIKTOK_SCRIPT: &str = "<script src=\"https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js\"></script>";
+pub const PROFILES: [&str; 7] = [
+    "applovin-growth-playable",
+    "unity-ads-ua-playable",
+    "ironsource-levelplay-playable",
+    "meta-audience-playable",
+    "google-ads-app-playable",
+    "mintegral-appgrowth-zip",
+    "tiktok-ads-playable",
+];
 
-pub fn strip_prefix(html: &str) -> Option<&str> {
+pub fn strip_prefix<'a>(html: &'a str, profile_id: &str) -> Option<&'a str> {
     let rest = html.strip_prefix(PREFIX_HEAD)?;
     let bytes = rest.as_bytes();
     if bytes.len() < 7 || bytes[0] != b'#' || !bytes[1..7].iter().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }
-    rest[7..].strip_prefix(PREFIX_TAIL)
+    rest[7..]
+        .strip_prefix(PREFIX_TAIL)?
+        .strip_prefix(if profile_id == "google-ads-app-playable" {
+            GOOGLE_HEAD
+        } else {
+            ""
+        })?
+        .strip_prefix(PREFIX_BODY)
 }
 
 pub fn is_native_html(bytes: &[u8]) -> bool {
-    let head = PREFIX_HEAD.as_bytes();
-    let tail = PREFIX_TAIL.as_bytes();
-    bytes.len() >= head.len() + 7 + tail.len()
-        && &bytes[..head.len()] == head
-        && bytes[head.len()] == b'#'
-        && bytes[head.len() + 1..head.len() + 7]
+    std::str::from_utf8(bytes).ok().is_some_and(|html| {
+        PROFILES
             .iter()
-            .all(|b| b.is_ascii_hexdigit())
-        && &bytes[head.len() + 7..head.len() + 7 + tail.len()] == tail
+            .any(|profile| strip_prefix(html, profile).is_some())
+    })
 }
 const SCRIPT: &str = include_str!("../trusted/native.js");
 const SCRIPT_3D: &str = include_str!("../trusted/native-3d.js");
@@ -230,24 +246,42 @@ pub fn inspect(bytes: &[u8]) -> Result<ArtifactFacts, PackError> {
 }
 
 pub fn inspect_for_profile(bytes: &[u8], profile_id: &str) -> Result<ArtifactFacts, PackError> {
-    if !["applovin-growth-playable", "unity-ads-ua-playable"].contains(&profile_id) {
+    if !PROFILES.contains(&profile_id) {
         return Err(error(
             "E_ADAPTER_PROFILE",
             "No compiled native adapter for this exact profile",
         ));
     }
-    if bytes.len() > 5_000_000
-        || (profile_id == "unity-ads-ua-playable" && bytes.len() == 5_000_000)
+    let zip_inner = [
+        "google-ads-app-playable",
+        "mintegral-appgrowth-zip",
+        "tiktok-ads-playable",
+    ]
+    .contains(&profile_id);
+    let limit = if profile_id == "meta-audience-playable" {
+        2_000_000
+    } else {
+        5_000_000
+    };
+    if bytes.len() > crate::MAX_HTML_BYTES
+        || (!zip_inner
+            && (bytes.len() > limit
+                || (profile_id == "unity-ads-ua-playable" && bytes.len() == limit)))
     {
         return Err(error(
             "E_ARTIFACT_SIZE",
-            format!("Native {profile_id} creative violates its 5,000,000 byte limit"),
+            format!("Native {profile_id} creative violates its byte limit"),
         ));
     }
     let html = std::str::from_utf8(bytes).map_err(|e| error("E_HTML_ENCODING", e))?;
-    let middle = format!("</script><script>{SCRIPT}");
-    let middle_3d = format!("</script><script>{SCRIPT_3D}");
-    let mounted = strip_prefix(html)
+    let vendor = if profile_id == "tiktok-ads-playable" {
+        TIKTOK_SCRIPT
+    } else {
+        ""
+    };
+    let middle = format!("</script>{vendor}<script>{SCRIPT}");
+    let middle_3d = format!("</script>{vendor}<script>{SCRIPT_3D}");
+    let mounted = strip_prefix(html, profile_id)
         .ok_or_else(|| error("E_ARTIFACT_TRUSTED_STRUCTURE", "Native HTML prefix differs"))?
         .strip_suffix(&mount_suffix(profile_id))
         .ok_or_else(|| {
@@ -371,8 +405,13 @@ pub fn inspect_for_profile(bytes: &[u8], profile_id: &str) -> Result<ArtifactFac
     }
     let base = &project["base"];
     let store = base["storeUrl"].as_str().unwrap_or("");
-    if !valid_store(store) {
-        return Err(error("E_NATIVE_STORE", "Invalid native store destination"));
+    if ["unity-ads-ua-playable", "applovin-growth-playable"].contains(&profile_id)
+        && !valid_store(store)
+    {
+        return Err(error(
+            "E_NATIVE_STORE",
+            "This profile requires a valid native store destination",
+        ));
     }
     let width = u32::try_from(base["width"].as_u64().unwrap_or(0))
         .map_err(|e| error("E_NATIVE_SCHEMA", e))?;

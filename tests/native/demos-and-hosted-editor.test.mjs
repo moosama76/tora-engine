@@ -14,6 +14,8 @@ import {lowerAssets} from '../../scripts/lean/native/assets.mjs';
 import {DEMO_PROJECTS, materializeDemo} from '../../scripts/lean/native/demos.mjs';
 import {analyzeAudio} from '../../scripts/lean/native/audio-analysis.mjs';
 import {Buffer} from 'node:buffer';
+import {networkTargets} from '../../scripts/lean/native/network-targets.mjs';
+import {readZip} from '../../scripts/lean/native/zip.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -154,6 +156,19 @@ test('hosted static editor serves all 3 demos via ?project and Demos menu with e
   await page.click('#review-moments button[data-moment="timeout"]');
   await page.click('#review-moments button[data-moment="opening"]');
 
+  const hostedArtifacts = await page.evaluate(async targets => {
+    const output = {};
+    for (const target of targets) output[target] = await globalThis.toraHostedReview.request('/api/projects/traffic-tycoon/export', {revisionId: 'seed', target});
+    return output;
+  }, networkTargets.filter(target => target.hostKind !== 'browser').map(target => target.id));
+  for (const target of networkTargets.filter(target => target.hostKind !== 'browser')) {
+    const artifact = hostedArtifacts[target.id]; assert.ok(artifact.html, target.id);
+    if (target.packaging === 'zip') {
+      assert.ok(artifact.archiveBase64, target.id); const entries = readZip(Buffer.from(artifact.archiveBase64, 'base64'));
+      assert.ok(entries.some(entry => entry.name.endsWith('.html')), target.id);
+      if (target.id === 'tiktok-ads-playable') assert.ok(entries.some(entry => entry.name === 'config.json'));
+    }
+  }
   assert.deepEqual(errors, []);
 });
 

@@ -72,7 +72,7 @@ test('all three asset-source modes enforce their server-side staging gates',()=>
 
 test('real local CC0 staging registers decoded bytes and rejects a second visual style family',async t=>{
  const {service}=await setup(t),draft=await source(service,'staging-gates-test'),intakes=new ReviewIntake(service),catalog=await new AssetCatalog().load(),farm=catalog.list({query:'farm',kind:'sprite',limit:1})[0],space=catalog.list({query:'space',kind:'sprite',limit:1})[0],tools=new IntakeCreatorTools(service,intakes,draft,{catalog});
- const staged=await tools.stageAssets({catalogAssetIds:[farm.id]});assert.equal(staged.staged.length,1);const current=await service.read('staging-gates-test'),asset=current.project.assets.find(entry=>entry.id===farm.id);assert.equal(asset.hash,farm.sha256);assert.equal(JSON.parse(asset.provenance).origin,'local-cc0');
+ const staged=await tools.stageAssets({catalogAssetIds:[farm.id]});assert.equal(staged.staged.length,1);const current=await service.read('staging-gates-test'),asset=current.project.assets.find(entry=>entry.id===farm.id);assert.match(asset.hash,/^sha256:[a-f0-9]{64}$/);const provenance=JSON.parse(asset.provenance);assert.equal(provenance.origin,'local-cc0');assert.equal(provenance.sourceHash,farm.sha256);
  await assert.rejects(tools.stageAssets({catalogAssetIds:[space.id]}),/E_ASSET_STYLE_FAMILY/);assert.equal((await service.read('staging-gates-test')).project.assets.length,1);
 });
 

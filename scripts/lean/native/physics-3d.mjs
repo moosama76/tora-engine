@@ -224,3 +224,36 @@ export function predictTrajectory3d({body, walls, zones, vx, vz, dots = 15}) {
   }
   return points;
 }
+
+/** Push a vertical cylinder (x, z, radius) out of rotated OBB walls and arena perimeter bounds. */
+export function resolveWallSlide3d(x, z, radius, walls = [], boundsX = 12, boundsZ = 12) {
+  let px = x, pz = z;
+  const r = Math.max(0.05, radius ?? 0.45);
+  for (let pass = 0; pass < 2; pass++) {
+    for (const wall of walls) {
+      const c = Math.cos(wall.angle ?? 0), s = Math.sin(wall.angle ?? 0);
+      const dx = px - wall.x, dz = pz - wall.z;
+      const lx = c * dx + s * dz, lz = -s * dx + c * dz;
+      const cx = Math.max(-wall.hx, Math.min(wall.hx, lx));
+      const cz = Math.max(-wall.hz, Math.min(wall.hz, lz));
+      let nx = lx - cx, nz = lz - cz;
+      const d = Math.hypot(nx, nz);
+      if (d >= r) continue;
+      if (d < 1e-8) {
+        if (wall.hx - Math.abs(lx) < wall.hz - Math.abs(lz)) { nx = lx < 0 ? -1 : 1; nz = 0; }
+        else { nx = 0; nz = lz < 0 ? -1 : 1; }
+      } else {
+        nx /= d;
+        nz /= d;
+      }
+      const wx = c * nx - s * nz, wz = s * nx + c * nz;
+      px += wx * (r - d + 1e-4);
+      pz += wz * (r - d + 1e-4);
+    }
+    const maxX = Math.max(0, (boundsX ?? 12) - r);
+    const maxZ = Math.max(0, (boundsZ ?? 12) - r);
+    px = Math.max(-maxX, Math.min(maxX, px));
+    pz = Math.max(-maxZ, Math.min(maxZ, pz));
+  }
+  return {x: px, z: pz};
+}

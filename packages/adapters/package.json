@@ -2,10 +2,22 @@
   "name": "@playable/adapters",
   "version": "0.1.0",
   "private": true,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moosama76/tora-engine.git",
+    "directory": "packages/adapters"
+  },
+  "funding": "https://github.com/sponsors/moosama76",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./applovin": "./src/applovin.ts",
+    "./google": "./src/google.ts",
+    "./ironsource": "./src/ironsource.ts",
+    "./meta": "./src/meta.ts",
+    "./mintegral": "./src/mintegral.ts",
+    "./tiktok": "./src/tiktok.ts",
     "./unity": "./src/unity.ts"
   }
 }

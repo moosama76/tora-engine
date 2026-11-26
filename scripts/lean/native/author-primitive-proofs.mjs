@@ -822,8 +822,8 @@ export async function authorProjectThroughService(service,kind,projectId){
  const created=await service.create({id:projectId,name:original.creativeBrief.goal.split(' — ')[0],androidUrl:original.base.storeUrl});
  const operations=[];
  for(const asset of assets){
-  const metadata=await registerSource(resolve(service.store.root,projectId),{id:asset.id,mime:asset.mime,data:asset.data,rights:asset.rights});
-  operations.push({kind:'registerAsset',asset:{...metadata,rights:asset.rights,provenance:asset.provenance}});
+  const metadata=await registerSource(resolve(service.store.root,projectId),{id:asset.id,mime:asset.mime,data:asset.data,rights:asset.rights}),record={...metadata};delete record.optimization;
+  operations.push({kind:'registerAsset',asset:{...record,rights:asset.rights,provenance:asset.provenance}});
  }
  const seen=new Set();
  for(const key of ['scenes','components','variables','gameplay','events','eventBindings']){

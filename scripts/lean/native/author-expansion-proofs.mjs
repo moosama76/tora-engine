@@ -129,9 +129,111 @@ export async function createFrostCleanProof(){
  const project=applyOperations(emptyProject({id:'frost-clean-proof',name:'Frost Harvest',androidUrl:'https://play.google.com/store/apps/details?id=com.tora.frostharvest'}),[...records.map(asset=>({kind:'registerAsset',asset})),...ops]).project;return {project,assets};
 }
 
+export async function createFpsArenaProof(){
+ const {assets,records}=await proofAssets([
+  ['fps.ambient','3xblast-pop-punk-chiptune','ambient.wav','arcade'],['fps.fire.art','kenney-interface-sounds','tap.wav','arcade'],['fps.hit.art','kenney-interface-sounds','match.wav','arcade'],['fps.win.art','kenney-music-jingles','win.wav','arcade'],
+ ]);
+ const mesh=(id,parentId,parameters,extra={})=>component(id,'native.mesh3d.v1',parameters,{parentId,...extra});
+ const boxWall=(id,x,z,sx,sy,sz,color='#476085')=>[
+  mesh(id,'fps.stage',{primitive:'box',x,y:sy/2,z,sx,sy,sz,color}),
+  mesh(id+'.cap','fps.stage',{primitive:'box',x,y:sy+.08,z,sx:sx+.08,sy:.16,sz:sz+.08,color:'#f2b544',unlit:true}),
+  behavior(id+'.phys',id,'physics-3d',{mode:'static',radius:.5,hx:sx/2,hz:sz/2,angle:0,friction:1,restitution:.5,maxSpeed:1,boundsX:12,boundsZ:12,ramp:false,restSpeed:.1,restDelaySeconds:.25}),
+ ];
+ const uiText=(id,value,x,y,width,height,fontSize=24,extra={})=>component(id,'native.text.v1',{text:value,width,height,fontSize,fontFamily:'sans-serif',fontWeight:'900',color:'#fff5d6',align:'center'},{transform:[1,0,0,1,x,y],...extra});
+ const ops=[
+  group('fps.stage.wrap',0,0,390,700,{order:-10}),layout('fps.stage.wrap',0,0,700/390,390/700),
+  component('fps.stage','native.stage3d.v1',{width:390,height:700,skyColor:'#182640',hemiSkyColor:'#dbeafe',hemiGroundColor:'#263854',hemiIntensity:1.7,sunColor:'#fff0cf',sunIntensity:2.1,sunX:-7,sunY:16,sunZ:9,cameraX:0,cameraY:1.6,cameraZ:6,cameraFov:80,landscapeCameraX:0,landscapeCameraY:1.6,landscapeCameraZ:6,landscapeCameraFov:52,lookAtX:0,lookAtY:1.5,lookAtZ:-4,introLift:0},{parentId:'fps.stage.wrap'}),
+  mesh('fps.floor','fps.stage',{primitive:'box',x:0,y:-.2,z:0,sx:24,sy:.4,sz:24,color:'#2a3c58'}),
+  mesh('fps.lane','fps.stage',{primitive:'box',x:0,y:.01,z:-1,sx:2.6,sy:.02,sz:18,color:'#385074',unlit:true}),
+  mesh('fps.wall.n','fps.stage',{primitive:'box',x:0,y:2.1,z:-11.8,sx:24,sy:4.2,sz:.6,color:'#20304a'}),
+  mesh('fps.wall.s','fps.stage',{primitive:'box',x:0,y:2.1,z:11.8,sx:24,sy:4.2,sz:.6,color:'#20304a'}),
+  mesh('fps.wall.w','fps.stage',{primitive:'box',x:-11.8,y:2.1,z:0,sx:.6,sy:4.2,sz:24,color:'#243552'}),
+  mesh('fps.wall.e','fps.stage',{primitive:'box',x:11.8,y:2.1,z:0,sx:.6,sy:4.2,sz:24,color:'#243552'}),
+  mesh('fps.trim.n','fps.stage',{primitive:'box',x:0,y:3.9,z:-11.45,sx:23,sy:.18,sz:.14,color:'#38bdf8',unlit:true}),
+  ...boxWall('fps.pillar.nw',-6.0,-2.6,1.5,3.2,1.5),
+  ...boxWall('fps.pillar.ne',6.0,-2.6,1.5,3.2,1.5),
+  ...boxWall('fps.pillar.sw',-6.4,2.4,1.5,2.4,1.5),
+  ...boxWall('fps.pillar.se',6.4,2.4,1.5,2.4,1.5),
+  // First-person 3D camera-mounted blaster
+  mesh('fps.gun','fps.stage',{primitive:'group',x:.19,y:-.21,z:-.58,rx:.04,ry:-.12,attachToCamera:true}),
+  mesh('fps.gun.body','fps.gun',{primitive:'box',x:0,y:0,z:0,sx:.12,sy:.13,sz:.46,color:'#28354a'}),
+  mesh('fps.gun.rail','fps.gun',{primitive:'box',x:0,y:.075,z:-.04,sx:.05,sy:.035,sz:.34,color:'#38bdf8',unlit:true}),
+  mesh('fps.gun.muzzle','fps.gun',{primitive:'cylinder',x:0,y:.01,z:-.28,rx:1.5708,sx:.16,sy:.14,sz:.16,radiusTop:.22,radiusBottom:.22,color:'#f2b544',unlit:true}),
+  // Enemy security drone 3D prototype
+  mesh('fps.drone','fps.stage',{primitive:'group',x:0,y:1.55,z:-3},{prototype:true}),
+  mesh('fps.drone.core','fps.drone',{primitive:'sphere',x:0,y:0,z:0,sx:1.15,sy:1.15,sz:1.15,radiusTop:.55,color:'#ef5b4c'}),
+  mesh('fps.drone.visor','fps.drone',{primitive:'box',x:0,y:.06,z:.46,sx:.68,sy:.24,sz:.22,color:'#172033'}),
+  mesh('fps.drone.eye','fps.drone',{primitive:'box',x:0,y:.06,z:.58,sx:.34,sy:.12,sz:.08,color:'#ffe66d',unlit:true}),
+  mesh('fps.drone.wing.l','fps.drone',{primitive:'box',x:-.78,y:0,z:0,sx:.36,sy:.16,sz:.64,color:'#3b4e6e'}),
+  mesh('fps.drone.wing.r','fps.drone',{primitive:'box',x:.78,y:0,z:0,sx:.36,sy:.16,sz:.64,color:'#3b4e6e'}),
+  behavior('fps.drone.state','fps.drone','instance-state',{hp:2,maxHp:2,value:1,tag:'drone',team:'enemy'}),
+  behavior('fps.drone.steer','fps.drone','steer-3d',{mode:'chase-camera',speed:.55,stopDistance:4.2,faceCamera:true,boundsX:10.5,boundsZ:10.5}),
+  // 2D HUD, crosshair, virtual aim joystick, and FIRE control
+  group('fps.hud',0,0,390,150),layout('fps.hud',155,0),
+  uiText('fps.title','CYBER ARENA',65,24,260,38,26,{parentId:'fps.hud'}),
+  uiText('fps.kills.label','{{fps.kills}} / 3',135,64,120,30,20,{parentId:'fps.hud'}),
+  group('fps.reticle',177,332,36,36),layout('fps.reticle',332,177),
+  component('fps.reticle.h','native.rectangle.v1',{width:24,height:3,fill:'#ffe66d',strokeWidth:0,radius:2},{parentId:'fps.reticle',transform:[1,0,0,1,6,16.5]}),
+  component('fps.reticle.v','native.rectangle.v1',{width:3,height:24,fill:'#ffe66d',strokeWidth:0,radius:2},{parentId:'fps.reticle',transform:[1,0,0,1,16.5,6]}),
+  group('fps.joy.wrap',18,504,152,152),layout('fps.joy.wrap',52,212),
+  component('fps.joy','native.group.v1',{width:152,height:152},{parentId:'fps.joy.wrap'}),
+  behavior('fps.joy.stick','fps.joy','virtual-joystick',{mode:'fixed',radiusPx:54,deadZone:0,drawControl:true,baseColor:'#ffffff38',knobColor:'#ffe66dee'}),
+  behavior('fps.controller','fps.stage','fps-controller-3d',{x:0,y:1.6,z:6,yaw:0,pitch:0,minYaw:-.85,maxYaw:.85,minPitch:-.42,maxPitch:.45,moveSpeed:0,lookSensitivity:.0055,playerRadius:.5,boundsX:11,boundsZ:11,aimJoystickBehaviorId:'fps.joy.stick',aimMode:'delta',lookMode:'drag',bobAmplitude:0}),
+  group('fps.fire.wrap',228,552,138,68),layout('fps.fire.wrap',520,256),
+  component('fps.fire','native.button.v1',{width:138,height:68,fill:'#f2b544',hoverFill:'#ffe66d',pressedFill:'#d88b32',stroke:'#182640',strokeWidth:4,radius:12,presentation:'shiny-cta'},{parentId:'fps.fire.wrap'}),
+  uiText('fps.fire.label','FIRE',8,12,122,44,24,{parentId:'fps.fire'}),
+  group('fps.audio',0,0,1,1,{parameters:{width:1,height:1,visible:false}}),
+  {kind:'putVariable',variable:{id:'fps.kills',label:'Kills',type:'number',initial:0}},
+  binding('fps.start',{kind:'sceneEnter',sceneId:'scene.play'},[
+   {kind:'spawnAt3d',prototypeId:'fps.drone',x:0,y:1.6,z:-2.2,count:1},
+   {kind:'spawnAt3d',prototypeId:'fps.drone',x:-3.8,y:2.1,z:-3.6,count:1},
+   {kind:'spawnAt3d',prototypeId:'fps.drone',x:3.8,y:1.3,z:-3.6,count:1},
+   {kind:'playAudio',behaviorId:'fps.ambient.sound'},
+  ]),
+  binding('fps.joy.audio',{kind:'joystickStart',componentId:'fps.joy'},[{kind:'playAudio',behaviorId:'fps.ambient.sound'}]),
+  binding('fps.shoot',{kind:'click',componentId:'fps.fire'},[
+   {kind:'raycast3d',stageId:'fps.stage',mode:'crosshair',maxDistance:60,targetTeam:'enemy'},
+   {kind:'cameraShake',intensity:3,seconds:.09},
+   {kind:'screenFlash',color:'#ffe66d',opacity:.12,seconds:.08},
+   {kind:'playAudio',behaviorId:'fps.fire.sound'},
+  ]),
+  binding('fps.hit',{kind:'raycastHit3d',componentId:'fps.drone'},[
+   {kind:'modifyInstanceState',target:'self',componentId:'fps.drone',field:'hp',op:'sub',value:1},
+   {kind:'floatingText',componentId:'fps.drone',text:'HIT!',color:'#ffe66d',fontSize:26,risePx:44,seconds:.45},
+   {kind:'playAudio',behaviorId:'fps.hit.sound'},
+  ]),
+  binding('fps.kill',{kind:'instanceDepleted',componentId:'fps.drone'},[
+   {kind:'add',variableId:'fps.kills',value:1},
+   {kind:'despawn',target:'self'},
+  ]),
+  binding('fps.win',{kind:'variableChange',variableId:'fps.kills'},[{kind:'changeScene',sceneId:'scene.win'}],{variableId:'fps.kills',op:'gte',value:3}),
+  // Victory end card with live 3D arena diorama
+  {kind:'createScene',scene:{id:'scene.win',label:'Arena cleared',role:'end-card'}},
+  group('fps.end.stage.wrap',0,0,390,700,{sceneId:'scene.win',order:-10}),layout('fps.end.stage.wrap',0,0,700/390,390/700),
+  component('fps.end.stage','native.stage3d.v1',{width:390,height:700,skyColor:'#182640',hemiSkyColor:'#dbeafe',hemiGroundColor:'#263854',hemiIntensity:1.8,sunColor:'#fff0cf',sunIntensity:2.2,sunX:-6,sunY:14,sunZ:8,cameraX:0,cameraY:3.4,cameraZ:8.4,cameraFov:52,landscapeCameraX:2.2,landscapeCameraY:3.0,landscapeCameraZ:7.8,landscapeCameraFov:38,lookAtX:0,lookAtY:.65,lookAtZ:0,introLift:0},{sceneId:'scene.win',parentId:'fps.end.stage.wrap'}),
+  mesh('fps.end.floor','fps.end.stage',{primitive:'box',x:0,y:-.2,z:0,sx:16,sy:.4,sz:16,color:'#2a3c58'},{sceneId:'scene.win'}),
+  mesh('fps.end.pedestal','fps.end.stage',{primitive:'cylinder',x:0,y:.35,z:0,sx:1.4,sy:.7,sz:1.4,radiusTop:.9,radiusBottom:1.05,color:'#385074'},{sceneId:'scene.win'}),
+  mesh('fps.end.trophy','fps.end.stage',{primitive:'sphere',x:0,y:1.95,z:0,sx:1.3,sy:1.3,sz:1.3,radiusTop:.65,color:'#f2b544'},{sceneId:'scene.win'}),
+  mesh('fps.end.visor','fps.end.stage',{primitive:'box',x:0,y:2.02,z:.68,sx:.72,sy:.24,sz:.2,color:'#182640'},{sceneId:'scene.win'}),
+  mesh('fps.end.eye','fps.end.stage',{primitive:'box',x:0,y:2.02,z:.80,sx:.36,sy:.12,sz:.08,color:'#38bdf8',unlit:true},{sceneId:'scene.win'}),
+  mesh('fps.end.ring','fps.end.stage',{primitive:'ring',x:0,y:.05,z:0,rx:-1.5708,innerRadius:1.4,radiusTop:1.75,color:'#38bdf8',unlit:true,doubleSide:true},{sceneId:'scene.win'}),
+  group('fps.end.ui',0,455,390,210,{sceneId:'scene.win'}),layout('fps.end.ui',310,105,.88),
+  uiText('fps.end.title','ARENA CLEARED',20,0,350,50,30,{parentId:'fps.end.ui',sceneId:'scene.win'}),
+  component('fps.end.cta','native.button.v1',{width:260,height:74,fill:'#f2b544',hoverFill:'#ffe66d',pressedFill:'#d88b32',stroke:'#182640',strokeWidth:4,radius:12,presentation:'shiny-cta'},{parentId:'fps.end.ui',sceneId:'scene.win',transform:[1,0,0,1,65,72]}),
+  uiText('fps.end.cta.label','DEPLOY NOW',10,8,240,56,26,{parentId:'fps.end.cta',sceneId:'scene.win'}),
+  behavior('fps.end.cta.float','fps.end.cta','animation',{property:'y',from:72,to:64,seconds:.8,loop:true,fromCurrent:false,delay:0,easing:'ease-in-out'}),
+  behavior('fps.end.confetti','fps.end.ui','emitter',{count:36,color:'#ffe66d',color2:'#38bdf8',color3:'#ef5b4c',speed:160,lifetime:.9,gravity:220,spread:360,shape:'confetti',coverage:'screen',origin:'center',direction:-90}),
+  binding('fps.end.enter',{kind:'sceneEnter',sceneId:'scene.win'},[{kind:'animate',behaviorId:'fps.end.cta.float'},{kind:'emit',behaviorId:'fps.end.confetti'},{kind:'playAudio',behaviorId:'fps.win.sound'}]),
+  binding('fps.end.store',{kind:'click',componentId:'fps.end.cta'},[{kind:'store'}]),
+ ];
+ for(const [id,assetId,role,bus,loop,volume] of [['ambient','fps.ambient','ambient','music',true,.12],['fire','fps.fire.art','tap','sfx',false,.3],['hit','fps.hit.art','match','sfx',false,.35],['win','fps.win.art','win','stinger',false,.45]])ops.push(component('fps.audio.'+id,'native.group.v1',{width:1,height:1,visible:false},{parentId:'fps.audio',assetSlots:[{slotId:'source',assetId}]}),audio('fps.'+id+'.sound','fps.audio.'+id,role,bus,loop,volume));
+ const project=applyOperations(emptyProject({id:'fps-arena-proof',name:'Cyber Arena 3D',androidUrl:'https://play.google.com/store/apps/details?id=com.tora.cyberarena'}),[...records.map(asset=>({kind:'registerAsset',asset})),...ops]).project;
+ return {project,assets};
+}
+
 async function main(){
- const kind=process.argv[2]??'farm',output=resolve(process.argv[3]??'reports/native-expansion/'+kind);if(!['farm','star','frost'].includes(kind))throw Error('Unknown proof '+kind);
- const {project,assets}=await (kind==='farm'?createFarmMergeProof():kind==='star'?createStarBastionProof():createFrostCleanProof());await mkdir(output,{recursive:true});
+ const kind=process.argv[2]??'farm',output=resolve(process.argv[3]??'reports/native-expansion/'+kind);if(!['farm','star','frost','fps'].includes(kind))throw Error('Unknown proof '+kind);
+ const {project,assets}=await (kind==='farm'?createFarmMergeProof():kind==='star'?createStarBastionProof():kind==='frost'?createFrostCleanProof():createFpsArenaProof());await mkdir(output,{recursive:true});
  for(const target of ['standalone-browser-draft','unity-ads-ua-playable','applovin-growth-playable']){const artifact=await compileNative(project,{assets,target}),file=target==='standalone-browser-draft'?resolve(output,'standalone.html'):resolve(output,target,'index.html');await mkdir(dirname(file),{recursive:true});await writeFile(file,artifact.html);await writeFile(file.replace(/\.html$/,'.manifest.json'),JSON.stringify(artifact.manifest,null,2));}
  await writeFile(resolve(output,'project.json'),JSON.stringify(project,null,2));globalThis.console.log(output);
 }

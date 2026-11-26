@@ -433,13 +433,24 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
  const browser=sharedBrowser??await chromium.launch({headless:true});
  const context=await browser.newContext({viewport:DEFAULT_VIEWPORTS[0]});
  const page=await context.newPage();
- let mraidHost;
+ let hostInit;
  const networkTarget=getNetworkTarget(network);
- if(networkTarget?.hostKind==='mraid'){
+ if(networkTarget&&networkTarget.hostKind!=='browser'){
   const {build}=await import('esbuild');
-  const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'});
-  mraidHost=host.outputFiles[0].text+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
-  await page.addInitScript(mraidHost);
+  if(networkTarget.hostKind==='mraid'){
+   const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'});
+   hostInit=host.outputFiles[0].text+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
+  }else{
+   const installer={dapi:'installIronSourceHost',meta:'installMetaHost','google-exitapi':'installGoogleExitApiHost',mintegral:'installMintegralHost',tiktok:'installTikTokHost'}[networkTarget.hostKind];
+   if(!installer)throw Error('E_NATIVE_UNSUPPORTED_TARGET');
+   const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'VendorHost',write:false,platform:'browser'});
+   hostInit=host.outputFiles[0].text+`;VendorHost.${installer}();`;
+  }
+  await page.addInitScript(hostInit);
+ }
+ if(networkTarget?.hostKind==='google-exitapi'||networkTarget?.hostKind==='tiktok'){
+  const scriptUrl=networkTarget.hostKind==='google-exitapi'?'https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js':'https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js';
+  await context.route(scriptUrl,route=>route.fulfill({status:200,contentType:'application/javascript',body:'/* declared vendor host supplied by the QA mock */'}));
  }
  const url=htmlPath?pathToFileURL(resolve(htmlPath)).href:undefined;
  let closed=false;
@@ -447,7 +458,7 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
   async setViewport(viewport){await page.setViewportSize(viewport);},
   async load(){
    await page.evaluate(()=>globalThis.toraRuntime?.destroy?.()).catch(()=>{});
-   if(url)await page.goto(url,{waitUntil:'load'});else{if(mraidHost)await page.evaluate(mraidHost);await page.setContent(html,{waitUntil:'load'});}
+   if(url)await page.goto(url,{waitUntil:'load'});else{if(hostInit)await page.evaluate(hostInit);await page.setContent(html,{waitUntil:'load'});}
    await page.waitForFunction(()=>globalThis.toraRuntime);
    await page.evaluate(async()=>{await globalThis.document.fonts?.ready;await new Promise(resolveFrame=>globalThis.requestAnimationFrame(()=>globalThis.requestAnimationFrame(resolveFrame)));});
   },
@@ -484,6 +495,7 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='drag'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'drag',componentId:behavior.componentId,parameters:behavior.parameters})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='drag'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'drag',componentId:behavior.componentId,parameters:behavior.parameters,fromInstance:true})).filter(entry=>{const c=byId.get(entry.componentId);return c.sceneId===current.base.startScene&&c.prototype&&c.parameters?.visible!==false&&liveInstances.some(instance=>instance.prototypeId===c.id);});
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='swipe-input'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'swipe',componentId:behavior.componentId})).filter(eligible);
+    if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='virtual-joystick'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'joystick',componentId:behavior.componentId})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='hold-charge'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'hold',componentId:behavior.componentId})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='draw-stroke'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'draw',componentId:behavior.componentId})).filter(eligible);
     if(!candidates.length&&!preferred)candidates=current.gameplay.filter(behavior=>behavior.kind==='erase-mask'&&byId.has(behavior.componentId)).map(behavior=>({id:behavior.id,kind:'erase',componentId:behavior.componentId})).filter(eligible);
@@ -531,6 +543,7 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
      return {componentId:component.id,interaction:'drag-drop',...start,endX:axis==='y'?start.x:start.x+60*scale,endY:axis==='y'?start.y+60*scale:start.y};
     }
     if(kind==='swipe')return {componentId:component.id,interaction:'swipe',...start,endX:start.x+60*scale,endY:start.y};
+    if(kind==='joystick')return {componentId:component.id,interaction:'drag-drop',...start,endX:start.x+42*scale,endY:start.y-24*scale};
     if(kind==='hold')return {componentId:component.id,interaction:'hold',...start};
     if(kind==='draw'||kind==='erase'){
      const from=screen({x:matrix[0]*width*.25+matrix[2]*height*.5+matrix[4],y:matrix[1]*width*.25+matrix[3]*height*.5+matrix[5]});
@@ -591,7 +604,7 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     const timeoutPage=await context.newPage();
     try{
      await timeoutPage.setViewportSize({width:16,height:16});
-     if(mraidHost)await timeoutPage.addInitScript(mraidHost);
+     if(hostInit)await timeoutPage.addInitScript(hostInit);
      await timeoutPage.addInitScript(phase=>{
       const orig=globalThis.requestAnimationFrame.bind(globalThis);
       let queued=null,now=0,manual=true;
@@ -758,7 +771,7 @@ export async function runBrowserQa(options={}){
     for(let current=component;current;current=byId.get(current.parentId))if(current.prototype)return false;
     return true;
    }).map(component=>component.id));
-   result=await session.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(event=>event.kind==='click'&&active.has(event.componentId)).map(event=>event.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
+   result=await session.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(event=>event.kind==='click'&&active.has(event.componentId)).map(event=>event.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','virtual-joystick','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
   }catch(error){
    blockers.push(issue('blocker','layout-audit-failed',null,'Repair the runtime layout audit so every key state can be inspected.',{viewport,detail:`${state}: ${error.message}`,metrics:{state}}));return;
   }
@@ -836,7 +849,7 @@ export async function runBrowserQa(options={}){
        const sceneId=(await targetSession.getState())?.scene??project?.base?.startScene;
        const components=project?.components??[],byId=new Map(components.map(c=>[c.id,c]));
        const active=new Set(components.filter(c=>{if(c.sceneId!==sceneId)return false;for(let cur=c;cur;cur=byId.get(cur.parentId))if(cur.prototype)return false;return true;}).map(c=>c.id));
-       const res=await targetSession.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(e=>e.kind==='click'&&active.has(e.componentId)).map(e=>e.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
+       const res=await targetSession.auditLayout({ids:[...active],interactiveIds:[...new Set([...(project?.events??[]).filter(e=>e.kind==='click'&&active.has(e.componentId)).map(e=>e.componentId),...(project?.gameplay??[]).filter(behavior=>['aim-launch','drag','swipe-input','hold-charge','virtual-joystick','draw-stroke','erase-mask'].includes(behavior.kind)&&active.has(behavior.componentId)).map(behavior=>behavior.componentId)])],network,minTouchPx:MIN_TOUCH_PX});
        addLayoutReport(res,viewport,'timeout',blockers,warnings);
       }
      }finally{await timedOut.close?.();}
@@ -860,7 +873,7 @@ export async function runCreativeQa(options={}){
  await writeCreativeQaReport(report,options.outputDir);return report;
 }
 
-const usage='Usage: node scripts/lean/native/creative-qa.mjs <artifact.html> --output <directory> [--project <project.json>] [--catalog <catalog.json>] [--state-hook <globalFunction>] [--network standalone|unity-ads-ua-playable] [--static]';
+const usage='Usage: node scripts/lean/native/creative-qa.mjs <artifact.html> --output <directory> [--project <project.json>] [--catalog <catalog.json>] [--state-hook <globalFunction>] [--network <standalone|seven-network-profile-id>] [--static]';
 function parseCli(argv){
  const result={};
  for(let index=0;index<argv.length;index++){

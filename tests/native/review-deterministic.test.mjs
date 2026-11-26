@@ -67,7 +67,8 @@ test('provider-disconnected literal copy and typed sound edits produce checked d
  const newHash=staged.assets.find(asset=>asset.id===newAssetId).hash;
  assert.equal(oldAssetId,'audio-complete');
  assert.notEqual(newHash,oldHash);
- assert.equal(newHash,'sha256:20c6d0a71e3aff1ff59abdaf8772d0cdf2ddcb2abffa2d4f6057683eaf6ca2ec');
+ const replacement=staged.assets.find(asset=>asset.id===newAssetId);assert.ok(replacement.bytes<=700000);
+ assert.equal(JSON.parse(replacement.provenance).sourceHash,'sha256:20c6d0a71e3aff1ff59abdaf8772d0cdf2ddcb2abffa2d4f6057683eaf6ca2ec');
  assert.ok(binding(staged,'harvest.deadline.cta').actions.some(action=>action.kind==='playAudio'&&action.behaviorId==='harvest.audio.complete.play'));
  assert.ok(binding(staged,'harvest.restore.3').actions.some(action=>action.kind==='playAudio'&&action.behaviorId==='harvest.restore.3.cue.play'));
  assert.equal(behavior(staged,'harvest.audio.complete.play').componentId,'harvest.audio.complete');
@@ -97,7 +98,7 @@ test('tap-collect uses local CTA and timing edits and supports interpreted timin
  tools.service.history.store=tools.service.store;
  const id='tap-deterministic';
  let {expected}=await tools.run({command:'compose',id,concept:nativeConcept('tap-collect')});
- const asset=await registerSource(resolve(tools.service.store.root,id),{id:'feedback.audio',mime:'audio/wav',data:(await readFile(new URL('../../assets/free-audio/casual-warm/audio/tap.wav',import.meta.url))).toString('base64'),rights:'Kenney Interface Sounds, CC0-1.0. https://kenney.nl/assets/interface-sounds'});
+ const asset=await registerSource(resolve(tools.service.store.root,id),{id:'feedback.audio',mime:'audio/wav',data:(await readFile(new URL('../../assets/free-audio/casual-warm/audio/tap.wav',import.meta.url))).toString('base64'),rights:'Kenney Interface Sounds, CC0-1.0. https://kenney.nl/assets/interface-sounds'});delete asset.optimization;
  const current=(await tools.service.read(id)).project;
  const sound=current.gameplay.find(behavior=>behavior.id==='feedback.sound');
  const setup=await tools.run({command:'edit',id,expected,scope:['feedback.audio','feedback.audio.source','feedback.sound'],operations:[

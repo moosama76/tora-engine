@@ -1,0 +1,27 @@
+{
+  "schemaVersion":"1.0.0",
+  "profileId":"tiktok-ads-playable",
+  "networkId":"tiktok",
+  "channelId":"ads-playable",
+  "rulesVersion":"2026-11-26-review-1",
+  "reviewedAt":"2026-11-26",
+  "sources":[
+    {"id":"specs","url":"https://ads.tiktok.com/business/help/article/playable-ads","title":"TikTok playable ads guidance","checkedAt":"2026-11-26","notes":"Profile uses a deterministic index.html + config.json ZIP, responsive orientation value 0 (both portrait and landscape), and the exact TikTok Playable SDK host script."},
+    {"id":"preview","url":"https://ads.tiktok.com/business/help/article/playable-ads","title":"TikTok playable preview guidance","checkedAt":"2026-11-26","notes":"Official Ads Manager preview and physical-device acceptance remain unexecuted external gates."}
+  ],
+  "rules":{
+    "uploadSize":{"status":"verified","value":{"limitBytes":5000000,"operator":"<=","byteBasis":"conservative-decimal-mb"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Conservative decimal 5 MB limit on the exact compressed upload."},
+    "packaging":{"status":"verified","value":{"kind":"zip","entryFile":"index.html","flatRoot":true,"requiredFiles":["config.json"],"nameMatchesArchive":false},"sources":["specs"],"basis":"public-documentation","notes":"Flat deterministic ZIP containing only index.html and config.json with Playable_orientation=0."},
+    "inline":{"status":"verified","value":{"requireInlineAssets":true,"externalRequests":"forbidden","requiredHostScripts":[{"src":"https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js","placement":"body-before-runtime","hostProvided":true}],"hostExceptions":[{"src":"https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js","placement":"body-before-runtime","hostProvided":true}]},"sources":["specs"],"basis":"public-documentation","notes":"Only the exact declared SDK URL is external; media and game code are inline."},
+    "mraid":{"status":"verified","value":null,"sources":["specs"],"basis":"public-documentation","notes":"TikTok uses its Playable SDK, not MRAID."},
+    "vendorHost":{"status":"verified","value":"tiktok-playable-sdk","sources":["specs"],"basis":"public-documentation","notes":"Deliberate CTA invokes window.openAppStore() or playableSDK.openAppStore()."},
+    "autoplay":{"status":"verified","value":{"audio":"muted-until-first-interaction","onHidden":"mute-and-pause","timerStart":"first-interaction"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Local runtime gates audio and timing on interaction and visibility."},
+    "firstClick":{"status":"verified","value":"distinct-cta-only","sources":["specs"],"basis":"public-documentation","notes":"No automatic redirect; only the authored CTA opens the app store."},
+    "viewability":{"status":"verified","value":{"policy":"ready-and-visible","requiredEvents":["visibilitychange"],"allowInitialStateQuery":true},"sources":["specs"],"basis":"conservative-local-policy","notes":"Document visibility is the local runtime/mock-host lifecycle contract."},
+    "orientations":{"status":"verified","value":"both","sources":["specs"],"basis":"public-documentation","notes":"config.json sets Playable_orientation=0 (both portrait and landscape), and Creative QA verifies all four viewports."},
+    "preview":{"status":"verified","value":{"url":"https://ads.tiktok.com/business/help/article/playable-ads","instructions":"Preview the exact ZIP in the official TikTok workflow and on physical devices. Verify SDK loading, portrait presentation, audio, background/resume, end card, and deliberate openAppStore CTA. No official result is implied."},"sources":["preview"],"basis":"public-documentation","notes":"Procedure reference only; not executed."},
+    "companionAssets":{"status":"verified","value":[],"sources":["specs"],"basis":"conservative-local-policy","notes":"Campaign assets and store configuration remain in Ads Manager."}
+  },
+  "additionalRules":[],
+  "unresolved":[]
+}

@@ -459,41 +459,75 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
             "E_NATIVE_REFERENCE",
         )?;
         if s(b, "kind") == "erase-mask" {
-            require(["native.image.v1", "native.rectangle.v1"].contains(&s(objects[s(b, "componentId")], "contract")), "E_NATIVE_PROPERTY")?;
-            if let Some(variable_id) = b["parameters"].get("progressVariableId").and_then(|value| value.as_str()) {
-                require(variables.get(variable_id).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?;
+            require(
+                ["native.image.v1", "native.rectangle.v1"]
+                    .contains(&s(objects[s(b, "componentId")], "contract")),
+                "E_NATIVE_PROPERTY",
+            )?;
+            if let Some(variable_id) = b["parameters"]
+                .get("progressVariableId")
+                .and_then(|value| value.as_str())
+            {
+                require(
+                    variables
+                        .get(variable_id)
+                        .is_some_and(|variable| variable["initial"].is_number()),
+                    "E_NATIVE_REFERENCE",
+                )?;
             }
         }
         if s(b, "kind") == "draw-stroke" {
-            require(s(objects[s(b, "componentId")], "contract") == "native.group.v1", "E_NATIVE_PROPERTY")?;
+            require(
+                s(objects[s(b, "componentId")], "contract") == "native.group.v1",
+                "E_NATIVE_PROPERTY",
+            )?;
             if s(&b["parameters"], "mode") == "path-trace" {
-                require(objects.contains_key(s(&b["parameters"], "followComponentId")) && b["parameters"].get("followSpeed").is_some(), "E_NATIVE_REFERENCE")?;
+                require(
+                    objects.contains_key(s(&b["parameters"], "followComponentId"))
+                        && b["parameters"].get("followSpeed").is_some(),
+                    "E_NATIVE_REFERENCE",
+                )?;
             }
-            if let Some(variable_id) = b["parameters"].get("inkVariableId").and_then(|value| value.as_str()) {
-                require(variables.get(variable_id).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?;
+            if let Some(variable_id) = b["parameters"]
+                .get("inkVariableId")
+                .and_then(|value| value.as_str())
+            {
+                require(
+                    variables
+                        .get(variable_id)
+                        .is_some_and(|variable| variable["initial"].is_number()),
+                    "E_NATIVE_REFERENCE",
+                )?;
             }
         }
         if s(b, "kind") == "physics-joint" {
             let owner = objects[s(b, "componentId")];
             let anchor = objects.get(s(&b["parameters"], "anchorComponentId"));
             require(
-                anchor.is_some_and(|a| s(a, "id") != s(owner, "id") && s(a, "sceneId") == s(owner, "sceneId"))
-                    && behaviors.values().any(|other| {
-                        s(other, "kind") == "physics-body"
-                            && s(other, "componentId") == s(b, "componentId")
-                            && s(&other["parameters"], "mode") == "dynamic"
-                    }),
+                anchor.is_some_and(|a| {
+                    s(a, "id") != s(owner, "id") && s(a, "sceneId") == s(owner, "sceneId")
+                }) && behaviors.values().any(|other| {
+                    s(other, "kind") == "physics-body"
+                        && s(other, "componentId") == s(b, "componentId")
+                        && s(&other["parameters"], "mode") == "dynamic"
+                }),
                 "E_NATIVE_PHYSICS",
             )?;
         }
         if s(b, "kind") == "instance-state" {
-            require(b["parameters"]["hp"].as_f64().unwrap() <= b["parameters"]["maxHp"].as_f64().unwrap(), "E_NATIVE_PROPERTY")?;
+            require(
+                b["parameters"]["hp"].as_f64().unwrap()
+                    <= b["parameters"]["maxHp"].as_f64().unwrap(),
+                "E_NATIVE_PROPERTY",
+            )?;
         }
         if s(b, "kind") == "steer" {
             let parameters = &b["parameters"];
             require(
-                (s(parameters, "targetMode") != "component" || objects.contains_key(s(parameters, "targetComponentId")))
-                    && (s(parameters, "targetMode") != "nearest-team" || parameters.get("team").is_some()),
+                (s(parameters, "targetMode") != "component"
+                    || objects.contains_key(s(parameters, "targetComponentId")))
+                    && (s(parameters, "targetMode") != "nearest-team"
+                        || parameters.get("team").is_some()),
                 "E_NATIVE_REFERENCE",
             )?;
         }
@@ -503,9 +537,17 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
                 "E_NATIVE_REFERENCE",
             )?;
             if b["parameters"].get("instanceField").is_some() {
-                require(b["parameters"].get("variableId").is_none(), "E_NATIVE_REFERENCE")?;
+                require(
+                    b["parameters"].get("variableId").is_none(),
+                    "E_NATIVE_REFERENCE",
+                )?;
             } else {
-                require(variables.get(s(&b["parameters"], "variableId")).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?;
+                require(
+                    variables
+                        .get(s(&b["parameters"], "variableId"))
+                        .is_some_and(|variable| variable["initial"].is_number()),
+                    "E_NATIVE_REFERENCE",
+                )?;
             }
         }
         if s(b, "kind") == "hold-charge" {
@@ -516,6 +558,100 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
                     && b["parameters"]["max"].as_f64().unwrap()
                         > b["parameters"]["min"].as_f64().unwrap(),
                 "E_NATIVE_REFERENCE",
+            )?;
+        }
+        if s(b, "kind") == "virtual-joystick" {
+            let owner = objects[s(b, "componentId")];
+            require(
+                !["native.stage3d.v1", "native.mesh3d.v1"].contains(&s(owner, "contract")),
+                "E_NATIVE_PROPERTY",
+            )?;
+            for key in [
+                "axisXVariableId",
+                "axisYVariableId",
+                "angleVariableId",
+                "magnitudeVariableId",
+            ] {
+                if let Some(var_id) = b["parameters"].get(key).and_then(|v| v.as_str()) {
+                    require(
+                        variables
+                            .get(var_id)
+                            .is_some_and(|v| v["initial"].is_number()),
+                        "E_NATIVE_REFERENCE",
+                    )?;
+                }
+            }
+            if let Some(move_id) = b["parameters"]
+                .get("moveComponentId")
+                .and_then(|v| v.as_str())
+            {
+                require(
+                    objects.get(move_id).is_some_and(|t| {
+                        s(t, "sceneId") == s(owner, "sceneId")
+                            && !["native.stage3d.v1", "native.mesh3d.v1"]
+                                .contains(&s(t, "contract"))
+                    }),
+                    "E_NATIVE_REFERENCE",
+                )?;
+            }
+        }
+        if s(b, "kind") == "fps-controller-3d" {
+            let owner = objects[s(b, "componentId")];
+            require(
+                s(owner, "contract") == "native.stage3d.v1"
+                    && behaviors
+                        .values()
+                        .filter(|other| {
+                            s(other, "kind") == "fps-controller-3d"
+                                && s(other, "componentId") == s(owner, "id")
+                        })
+                        .count()
+                        == 1,
+                "E_NATIVE_PHYSICS",
+            )?;
+            let min_p = b["parameters"]
+                .get("minPitch")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(-0.75);
+            let max_p = b["parameters"]
+                .get("maxPitch")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.75);
+            require(min_p <= max_p, "E_NATIVE_PROPERTY")?;
+            if let (Some(min_y), Some(max_y)) = (
+                b["parameters"].get("minYaw").and_then(|v| v.as_f64()),
+                b["parameters"].get("maxYaw").and_then(|v| v.as_f64()),
+            ) {
+                require(min_y <= max_y, "E_NATIVE_PROPERTY")?;
+            }
+            for joy_key in ["joystickBehaviorId", "aimJoystickBehaviorId"] {
+                if let Some(joy_id) = b["parameters"].get(joy_key).and_then(|v| v.as_str()) {
+                    require(
+                        behaviors.get(joy_id).is_some_and(|joy| {
+                            s(joy, "kind") == "virtual-joystick"
+                                && objects
+                                    .get(s(joy, "componentId"))
+                                    .is_some_and(|c| s(c, "sceneId") == s(owner, "sceneId"))
+                        }),
+                        "E_NATIVE_REFERENCE",
+                    )?;
+                }
+            }
+            for key in ["moveXVariableId", "moveYVariableId"] {
+                if let Some(var_id) = b["parameters"].get(key).and_then(|v| v.as_str()) {
+                    require(
+                        variables
+                            .get(var_id)
+                            .is_some_and(|v| v["initial"].is_number()),
+                        "E_NATIVE_REFERENCE",
+                    )?;
+                }
+            }
+        }
+        if s(b, "kind") == "steer-3d" {
+            require(
+                s(objects[s(b, "componentId")], "contract") == "native.mesh3d.v1",
+                "E_NATIVE_PHYSICS",
             )?;
         }
     }
@@ -633,16 +769,32 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
                 condition(item, variables, depth + 1)?;
             }
         } else if c.get("instanceField").is_some() {
-            require(["self", "other"].contains(&s(c, "instanceTarget")), "E_NATIVE_CONDITION")?;
+            require(
+                ["self", "other"].contains(&s(c, "instanceTarget")),
+                "E_NATIVE_CONDITION",
+            )?;
             let field = s(c, "instanceField");
-            require(["hp", "value", "tag"].contains(&field), "E_NATIVE_CONDITION")?;
+            require(
+                ["hp", "value", "tag"].contains(&field),
+                "E_NATIVE_CONDITION",
+            )?;
             let expected_string = field == "tag";
             if let Some(other_id) = c.get("compareVariableId").and_then(|v| v.as_str()) {
-                let other = variables.get(other_id).ok_or_else(|| fail("E_NATIVE_CONDITION", "instance compare variable"))?;
-                let ok = if expected_string { other["initial"].is_string() } else { other["initial"].is_number() };
+                let other = variables
+                    .get(other_id)
+                    .ok_or_else(|| fail("E_NATIVE_CONDITION", "instance compare variable"))?;
+                let ok = if expected_string {
+                    other["initial"].is_string()
+                } else {
+                    other["initial"].is_number()
+                };
                 require(ok, "E_NATIVE_CONDITION")?;
             } else {
-                let ok = if expected_string { c["value"].is_string() } else { c["value"].is_number() };
+                let ok = if expected_string {
+                    c["value"].is_string()
+                } else {
+                    c["value"].is_number()
+                };
                 require(ok, "E_NATIVE_CONDITION")?;
             }
             if expected_string {
@@ -696,7 +848,11 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
             )?;
         }
         if let Some(id) = e.get("behaviorId") {
-            let expected = if s(e, "kind") == "jointBreak" { "physics-joint" } else { "timer" };
+            let expected = if s(e, "kind") == "jointBreak" {
+                "physics-joint"
+            } else {
+                "timer"
+            };
             require(
                 behaviors
                     .get(id.as_str().unwrap())
@@ -771,14 +927,20 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
                     require(!descriptor.is_null(), "E_NATIVE_PROPERTY")?;
                     let validator =
                         jsonschema::validator_for(descriptor).expect("native parameter descriptor");
-                    if let Some(variable_id) = a.get("valueVariableId").and_then(|value| value.as_str()) {
+                    if let Some(variable_id) =
+                        a.get("valueVariableId").and_then(|value| value.as_str())
+                    {
                         require(a.get("value").is_none(), "E_NATIVE_PROPERTY")?;
-                        let variable = variables.get(variable_id).ok_or_else(|| fail("E_NATIVE_REFERENCE", "component value variable"))?;
+                        let variable = variables.get(variable_id).ok_or_else(|| {
+                            fail("E_NATIVE_REFERENCE", "component value variable")
+                        })?;
                         let type_ok = match descriptor.get("type").and_then(|t| t.as_str()) {
                             Some("number" | "integer") => variable["initial"].is_number(),
                             Some("boolean") => variable["initial"].is_boolean(),
                             Some("string") => variable["initial"].is_string(),
-                            None if descriptor.get("enum").is_some() => variable["initial"].is_string(),
+                            None if descriptor.get("enum").is_some() => {
+                                variable["initial"].is_string()
+                            }
                             _ => false,
                         };
                         require(type_ok, "E_NATIVE_PROPERTY")?;
@@ -820,92 +982,237 @@ fn native_semantics(v: &Value) -> Result<(), Error> {
                 require(scenes.contains_key(s(a, "sceneId")), "E_NATIVE_REFERENCE")?;
             }
             if ["moveToComponent", "returnToOrigin"].contains(&kind) {
-                require(objects.contains_key(s(a, "componentId")), "E_NATIVE_REFERENCE")?;
-                require(a["seconds"].as_f64().is_some_and(|seconds| (0.02..=2.0).contains(&seconds)), "E_NATIVE_ACTION")?;
+                require(
+                    objects.contains_key(s(a, "componentId")),
+                    "E_NATIVE_REFERENCE",
+                )?;
+                require(
+                    a["seconds"]
+                        .as_f64()
+                        .is_some_and(|seconds| (0.02..=2.0).contains(&seconds)),
+                    "E_NATIVE_ACTION",
+                )?;
                 if kind == "moveToComponent" {
-                    require(objects.contains_key(s(a, "targetComponentId")), "E_NATIVE_REFERENCE")?;
+                    require(
+                        objects.contains_key(s(a, "targetComponentId")),
+                        "E_NATIVE_REFERENCE",
+                    )?;
                 }
             }
             if kind == "spawnAt" {
                 require(
-                    objects.get(s(a, "prototypeId")).is_some_and(|object| object["prototype"] == true)
+                    objects
+                        .get(s(a, "prototypeId"))
+                        .is_some_and(|object| object["prototype"] == true)
                         && objects.contains_key(s(a, "targetComponentId")),
                     "E_NATIVE_REFERENCE",
                 )?;
             }
             if kind == "clearStrokes" {
-                require(behaviors.values().any(|behavior| s(behavior, "kind") == "draw-stroke" && s(behavior, "componentId") == s(a, "componentId")), "E_NATIVE_REFERENCE")?;
+                require(
+                    behaviors.values().any(|behavior| {
+                        s(behavior, "kind") == "draw-stroke"
+                            && s(behavior, "componentId") == s(a, "componentId")
+                    }),
+                    "E_NATIVE_REFERENCE",
+                )?;
             }
             if kind == "resetMask" {
-                require(behaviors.values().any(|behavior| s(behavior, "kind") == "erase-mask" && s(behavior, "componentId") == s(a, "componentId")), "E_NATIVE_REFERENCE")?;
+                require(
+                    behaviors.values().any(|behavior| {
+                        s(behavior, "kind") == "erase-mask"
+                            && s(behavior, "componentId") == s(a, "componentId")
+                    }),
+                    "E_NATIVE_REFERENCE",
+                )?;
+            }
+            if kind == "raycast3d" {
+                require(
+                    objects
+                        .get(s(a, "stageId"))
+                        .is_some_and(|stage| s(stage, "contract") == "native.stage3d.v1"),
+                    "E_NATIVE_PHYSICS",
+                )?;
+            }
+            if kind == "spawnAt3d" {
+                require(
+                    objects.get(s(a, "prototypeId")).is_some_and(|o| {
+                        o["prototype"] == true && s(o, "contract") == "native.mesh3d.v1"
+                    }),
+                    "E_NATIVE_PROTOTYPE",
+                )?;
             }
             if kind == "random" {
                 require(
-                    variables.get(s(a, "variableId")).is_some_and(|variable| variable["initial"].is_number())
-                        && a["min"].as_f64().zip(a["max"].as_f64()).is_some_and(|(min, max)| max >= min),
+                    variables
+                        .get(s(a, "variableId"))
+                        .is_some_and(|variable| variable["initial"].is_number())
+                        && a["min"]
+                            .as_f64()
+                            .zip(a["max"].as_f64())
+                            .is_some_and(|(min, max)| max >= min),
                     "E_NATIVE_VARIABLE",
                 )?;
             }
             if kind == "modifyInstanceState" {
                 let field = s(a, "field");
                 require(["hp", "value", "tag"].contains(&field), "E_NATIVE_ACTION")?;
-                require(["self", "other", "component"].contains(&s(a, "target")), "E_NATIVE_ACTION")?;
+                require(
+                    ["self", "other", "component"].contains(&s(a, "target")),
+                    "E_NATIVE_ACTION",
+                )?;
                 if s(a, "target") == "component" {
-                    require(behaviors.values().any(|behavior| s(behavior, "kind") == "instance-state" && s(behavior, "componentId") == s(a, "componentId")), "E_NATIVE_REFERENCE")?;
+                    require(
+                        behaviors.values().any(|behavior| {
+                            s(behavior, "kind") == "instance-state"
+                                && s(behavior, "componentId") == s(a, "componentId")
+                        }),
+                        "E_NATIVE_REFERENCE",
+                    )?;
                 }
-                require(a.get("value").is_some() != a.get("variableId").is_some(), "E_NATIVE_ACTION")?;
+                require(
+                    a.get("value").is_some() != a.get("variableId").is_some(),
+                    "E_NATIVE_ACTION",
+                )?;
                 if let Some(variable_id) = a.get("variableId").and_then(|value| value.as_str()) {
-                    let variable = variables.get(variable_id).ok_or_else(|| fail("E_NATIVE_REFERENCE", "instance value variable"))?;
-                    let ok = if field == "tag" { variable["initial"].is_string() } else { variable["initial"].is_number() };
+                    let variable = variables
+                        .get(variable_id)
+                        .ok_or_else(|| fail("E_NATIVE_REFERENCE", "instance value variable"))?;
+                    let ok = if field == "tag" {
+                        variable["initial"].is_string()
+                    } else {
+                        variable["initial"].is_number()
+                    };
                     require(ok, "E_NATIVE_VARIABLE")?;
                 } else {
-                    let ok = if field == "tag" { a["value"].as_str().is_some_and(|v| v.len() <= 32) } else { a["value"].is_number() };
+                    let ok = if field == "tag" {
+                        a["value"].as_str().is_some_and(|v| v.len() <= 32)
+                    } else {
+                        a["value"].is_number()
+                    };
                     require(ok, "E_NATIVE_ACTION")?;
                 }
                 require(field != "tag" || s(a, "op") == "set", "E_NATIVE_ACTION")?;
             }
             if kind == "launchToward" {
-                require(behaviors.values().any(|behavior| s(behavior, "kind") == "physics-body" && s(behavior, "componentId") == s(a, "componentId") && s(&behavior["parameters"], "mode") == "dynamic"), "E_NATIVE_PHYSICS")?;
+                require(
+                    behaviors.values().any(|behavior| {
+                        s(behavior, "kind") == "physics-body"
+                            && s(behavior, "componentId") == s(a, "componentId")
+                            && s(&behavior["parameters"], "mode") == "dynamic"
+                    }),
+                    "E_NATIVE_PHYSICS",
+                )?;
                 match s(a, "targetMode") {
-                    "component" => require(objects.contains_key(s(a, "targetComponentId")), "E_NATIVE_REFERENCE")?,
-                    "angle-variable" => require(variables.get(s(a, "angleVariableId")).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?,
-                    "nearest-team" => require(["neutral", "player", "enemy", "hazard", "pickup"].contains(&s(a, "team")), "E_NATIVE_REFERENCE")?,
+                    "component" => require(
+                        objects.contains_key(s(a, "targetComponentId")),
+                        "E_NATIVE_REFERENCE",
+                    )?,
+                    "angle-variable" => require(
+                        variables
+                            .get(s(a, "angleVariableId"))
+                            .is_some_and(|variable| variable["initial"].is_number()),
+                        "E_NATIVE_REFERENCE",
+                    )?,
+                    "nearest-team" => require(
+                        ["neutral", "player", "enemy", "hazard", "pickup"].contains(&s(a, "team")),
+                        "E_NATIVE_REFERENCE",
+                    )?,
                     _ => {}
                 }
-                require(a.get("speed").is_some() != a.get("speedVariableId").is_some(), "E_NATIVE_PHYSICS")?;
-                if let Some(variable_id) = a.get("speedVariableId").and_then(|value| value.as_str()) {
-                    require(variables.get(variable_id).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?;
+                require(
+                    a.get("speed").is_some() != a.get("speedVariableId").is_some(),
+                    "E_NATIVE_PHYSICS",
+                )?;
+                if let Some(variable_id) = a.get("speedVariableId").and_then(|value| value.as_str())
+                {
+                    require(
+                        variables
+                            .get(variable_id)
+                            .is_some_and(|variable| variable["initial"].is_number()),
+                        "E_NATIVE_REFERENCE",
+                    )?;
                 } else {
-                    require(a["speed"].as_f64().is_some_and(|speed| (1.0..=4000.0).contains(&speed)), "E_NATIVE_ACTION")?;
+                    require(
+                        a["speed"]
+                            .as_f64()
+                            .is_some_and(|speed| (1.0..=4000.0).contains(&speed)),
+                        "E_NATIVE_ACTION",
+                    )?;
                 }
             }
             if ["setVelocity", "applyImpulse", "setPosition"].contains(&kind) {
-                require(behaviors.values().any(|behavior| s(behavior, "componentId") == s(a, "componentId") && ["physics-body", "physics-3d"].contains(&s(behavior, "kind"))), "E_NATIVE_PHYSICS")?;
+                require(
+                    behaviors.values().any(|behavior| {
+                        s(behavior, "componentId") == s(a, "componentId")
+                            && ["physics-body", "physics-3d"].contains(&s(behavior, "kind"))
+                    }),
+                    "E_NATIVE_PHYSICS",
+                )?;
                 let pairs = match kind {
                     "setVelocity" => [("vx", "vxVariableId"), ("vy", "vyVariableId")],
                     "applyImpulse" => [("ix", "vxVariableId"), ("iy", "vyVariableId")],
                     _ => [("x", "xVariableId"), ("y", "yVariableId")],
                 };
                 for (lit, vid) in pairs {
-                    require(a.get(lit).is_some() != a.get(vid).is_some(), "E_NATIVE_ACTION")?;
+                    require(
+                        a.get(lit).is_some() != a.get(vid).is_some(),
+                        "E_NATIVE_ACTION",
+                    )?;
                 }
             }
             if kind == "compute" {
                 let op = s(a, "op");
-                require(variables.get(s(a, "variableId")).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_VARIABLE")?;
-                require(["floor", "ceil", "abs", "clamp"].contains(&op) || a.get("value").is_some() || a.get("operandVariableId").is_some(), "E_NATIVE_VARIABLE")?;
-                if let Some(other_id) = a.get("operandVariableId").and_then(|value| value.as_str()) {
-                    require(variables.get(other_id).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_VARIABLE")?;
+                require(
+                    variables
+                        .get(s(a, "variableId"))
+                        .is_some_and(|variable| variable["initial"].is_number()),
+                    "E_NATIVE_VARIABLE",
+                )?;
+                require(
+                    ["floor", "ceil", "abs", "clamp"].contains(&op)
+                        || a.get("value").is_some()
+                        || a.get("operandVariableId").is_some(),
+                    "E_NATIVE_VARIABLE",
+                )?;
+                if let Some(other_id) = a.get("operandVariableId").and_then(|value| value.as_str())
+                {
+                    require(
+                        variables
+                            .get(other_id)
+                            .is_some_and(|variable| variable["initial"].is_number()),
+                        "E_NATIVE_VARIABLE",
+                    )?;
                 } else if ["div", "mod"].contains(&op) {
-                    require(a["value"].as_f64().is_some_and(|v| v != 0.0), "E_NATIVE_VARIABLE")?;
+                    require(
+                        a["value"].as_f64().is_some_and(|v| v != 0.0),
+                        "E_NATIVE_VARIABLE",
+                    )?;
                 }
                 if op == "clamp" {
-                    require(a["min"].as_f64().zip(a["max"].as_f64()).is_some_and(|(min, max)| max >= min), "E_NATIVE_VARIABLE")?;
+                    require(
+                        a["min"]
+                            .as_f64()
+                            .zip(a["max"].as_f64())
+                            .is_some_and(|(min, max)| max >= min),
+                        "E_NATIVE_VARIABLE",
+                    )?;
                 }
             }
-            for key in ["vxVariableId", "vyVariableId", "xVariableId", "yVariableId", "countVariableId"] {
+            for key in [
+                "vxVariableId",
+                "vyVariableId",
+                "xVariableId",
+                "yVariableId",
+                "countVariableId",
+            ] {
                 if let Some(variable_id) = a.get(key).and_then(|value| value.as_str()) {
-                    require(variables.get(variable_id).is_some_and(|variable| variable["initial"].is_number()), "E_NATIVE_REFERENCE")?;
+                    require(
+                        variables
+                            .get(variable_id)
+                            .is_some_and(|variable| variable["initial"].is_number()),
+                        "E_NATIVE_REFERENCE",
+                    )?;
                 }
             }
             if kind == "spawn" {
@@ -1093,7 +1400,12 @@ mod tests {
             let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../../fixtures/native/conformance.json");
             let rows: Value = serde_json::from_slice(&std::fs::read(root).unwrap()).unwrap();
-            rows.as_array().unwrap().iter().find(|row| row["valid"] == true).unwrap()["document"].clone()
+            rows.as_array()
+                .unwrap()
+                .iter()
+                .find(|row| row["valid"] == true)
+                .unwrap()["document"]
+                .clone()
         }
         fn accept(document: &Value) {
             assert!(parse_project(&serde_json::to_vec(document).unwrap()).is_ok());
@@ -1133,16 +1445,39 @@ mod tests {
         accept(&canvas);
 
         let mut invalid = gestures.clone();
-        invalid["gameplay"].as_array_mut().unwrap().last_mut().unwrap()["parameters"]["variableId"] = "missing".into();
+        invalid["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .last_mut()
+            .unwrap()["parameters"]["variableId"] = "missing".into();
         let error = parse_project(&serde_json::to_vec(&invalid).unwrap()).unwrap_err();
         assert_eq!(error.code, "E_NATIVE_REFERENCE", "{}", error.message);
         let mut invalid_joint = canvas.clone();
-        invalid_joint["gameplay"].as_array_mut().unwrap().last_mut().unwrap()["parameters"]["anchorComponentId"] = "missing".into();
-        assert_eq!(parse_project(&serde_json::to_vec(&invalid_joint).unwrap()).unwrap_err().code, "E_NATIVE_PHYSICS");
+        invalid_joint["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .last_mut()
+            .unwrap()["parameters"]["anchorComponentId"] = "missing".into();
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&invalid_joint).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_PHYSICS"
+        );
 
         let mut static_joint = canvas.clone();
-        static_joint["gameplay"].as_array_mut().unwrap().iter_mut().find(|b| b["id"] == "canvas.body").unwrap()["parameters"]["mode"] = "static".into();
-        assert_eq!(parse_project(&serde_json::to_vec(&static_joint).unwrap()).unwrap_err().code, "E_NATIVE_PHYSICS");
+        static_joint["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|b| b["id"] == "canvas.body")
+            .unwrap()["parameters"]["mode"] = "static".into();
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&static_joint).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_PHYSICS"
+        );
 
         let mut clamp_ok = entities.clone();
         clamp_ok["eventBindings"].as_array_mut().unwrap().push(serde_json::json!({"id":"entity.clamp","eventId":"entity.depleted","actions":[{"kind":"compute","variableId":"score","op":"clamp","min":0,"max":10}]}));
@@ -1150,11 +1485,79 @@ mod tests {
 
         let mut bad_mod = entities.clone();
         bad_mod["eventBindings"].as_array_mut().unwrap().push(serde_json::json!({"id":"entity.badmod","eventId":"entity.depleted","actions":[{"kind":"modifyInstanceState","target":"component","componentId":"tap.background","field":"hp","op":"sub"}]}));
-        assert_eq!(parse_project(&serde_json::to_vec(&bad_mod).unwrap()).unwrap_err().code, "E_NATIVE_ACTION");
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&bad_mod).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_ACTION"
+        );
 
         let mut bad_meter = entities.clone();
         bad_meter["gameplay"].as_array_mut().unwrap().push(serde_json::json!({"id":"entity.meter","componentId":"tap.background","kind":"value-meter","parameters":{"variableId":"score","min":10,"max":5,"axis":"x","direction":"positive","smoothingSeconds":0.1}}));
-        assert_eq!(parse_project(&serde_json::to_vec(&bad_meter).unwrap()).unwrap_err().code, "E_NATIVE_REFERENCE");
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&bad_meter).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_REFERENCE"
+        );
+
+        let mut fps = document();
+        fps["components"].as_array_mut().unwrap().extend([
+            serde_json::json!({"id":"fps.stage","label":"Stage","contract":"native.stage3d.v1","sceneId":"scene.play","order":1,"transform":[1,0,0,1,0,0],"parameters":{"width":390,"height":700,"visible":true,"opacity":1,"skyColor":"#182640","hemiSkyColor":"#dbeafe","hemiGroundColor":"#263854","hemiIntensity":1.7,"sunColor":"#fff0cf","sunIntensity":2.1,"sunX":-7,"sunY":16,"sunZ":9,"cameraX":0,"cameraY":1.6,"cameraZ":6,"cameraFov":66,"landscapeCameraX":0,"landscapeCameraY":1.6,"landscapeCameraZ":6,"landscapeCameraFov":52,"lookAtX":0,"lookAtY":1.5,"lookAtZ":-4},"assetSlots":[],"prototype":false}),
+            serde_json::json!({"id":"fps.drone","label":"Drone","contract":"native.mesh3d.v1","parentId":"fps.stage","sceneId":"scene.play","order":2,"transform":[1,0,0,1,0,0],"parameters":{"width":80,"height":80,"visible":true,"opacity":1,"primitive":"box","x":0,"y":1.5,"z":-4,"rx":0,"ry":0,"rz":0,"sx":1,"sy":1,"sz":1,"color":"#ef5b4c","useTexture":false},"assetSlots":[],"prototype":true}),
+            serde_json::json!({"id":"fps.joy","label":"Joy","contract":"native.group.v1","sceneId":"scene.play","order":3,"transform":[1,0,0,1,20,520],"parameters":{"width":130,"height":130,"visible":true,"opacity":1,"clip":false},"assetSlots":[],"prototype":false}),
+        ]);
+        fps["gameplay"].as_array_mut().unwrap().extend([
+            serde_json::json!({"id":"fps.joy.stick","componentId":"fps.joy","kind":"virtual-joystick","parameters":{"mode":"fixed","radiusPx":50,"deadZone":0.12}}),
+            serde_json::json!({"id":"fps.ctrl","componentId":"fps.stage","kind":"fps-controller-3d","parameters":{"x":0,"y":1.6,"z":6,"yaw":0,"pitch":0,"moveSpeed":5.5,"lookSensitivity":0.006,"joystickBehaviorId":"fps.joy.stick"}}),
+            serde_json::json!({"id":"fps.steer","componentId":"fps.drone","kind":"steer-3d","parameters":{"mode":"chase-camera","speed":1.5}}),
+        ]);
+        fps["events"].as_array_mut().unwrap().extend([
+            serde_json::json!({"id":"fps.hit","kind":"raycastHit3d","componentId":"fps.drone","otherId":"fps.stage"}),
+            serde_json::json!({"id":"fps.jstart","kind":"joystickStart","componentId":"fps.joy"}),
+        ]);
+        fps["eventBindings"].as_array_mut().unwrap().push(serde_json::json!({"id":"fps.bind","eventId":"fps.jstart","actions":[{"kind":"spawnAt3d","prototypeId":"fps.drone","x":0,"y":1.5,"z":-4},{"kind":"raycast3d","stageId":"fps.stage","mode":"crosshair","targetTeam":"enemy"}]}));
+        accept(&fps);
+
+        let mut bad_fps = fps.clone();
+        bad_fps["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|b| b["id"] == "fps.ctrl")
+            .unwrap()["componentId"] = "fps.joy".into();
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&bad_fps).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_PHYSICS"
+        );
+
+        let mut aim_fps = fps.clone();
+        let ctrl = aim_fps["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|b| b["id"] == "fps.ctrl")
+            .unwrap();
+        ctrl["parameters"]["moveSpeed"] = 0.into();
+        ctrl["parameters"]["aimJoystickBehaviorId"] = "fps.joy.stick".into();
+        ctrl["parameters"]["aimTurnSpeed"] = 1.8.into();
+        accept(&aim_fps);
+
+        let mut bad_aim_joy = aim_fps.clone();
+        bad_aim_joy["gameplay"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|b| b["id"] == "fps.ctrl")
+            .unwrap()["parameters"]["aimJoystickBehaviorId"] = "missing".into();
+        assert_eq!(
+            parse_project(&serde_json::to_vec(&bad_aim_joy).unwrap())
+                .unwrap_err()
+                .code,
+            "E_NATIVE_REFERENCE"
+        );
     }
 
     #[test]

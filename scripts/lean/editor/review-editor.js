@@ -1,4 +1,4 @@
-/* global document,window,fetch,navigator,btoa,crypto,ResizeObserver,Blob,URL,Image,OfflineAudioContext,setTimeout,clearTimeout,setInterval */
+/* global document,window,fetch,navigator,btoa,atob,crypto,ResizeObserver,Blob,URL,Image,OfflineAudioContext,setTimeout,clearTimeout,setInterval */
 
 
 export const errorLabels = {
@@ -41,8 +41,8 @@ export const errorLabels = {
   E_INTAKE_HARVEST_MEDIA: 'Attach at least 5 distinct PNG/JPEG game sprites plus a WAV sound (or switch audio to a Free CC0 pack).',
   E_INTAKE_SALVAGE_MEDIA: 'Attach at least 4 distinct PNG/JPEG game sprites plus a WAV sound (or switch audio to a Free CC0 pack).',
   E_NATIVE_ASSET_DECODE: 'One of those files could not be decoded as a valid PNG, JPEG, or PCM WAV.',
-  E_NATIVE_ASSET_SIZE: 'Each game asset must be 700 KB or smaller.',
-  E_INTAKE_ASSET_SIZE: 'Each uploaded file must be 700 KB or smaller.',
+  E_NATIVE_ASSET_SIZE: 'Upload raw media up to 8 MB; the optimized delivery asset must fit 700 KB. Try auto mode or a shorter/smaller source.',
+  E_INTAKE_ASSET_SIZE: 'Upload raw media up to 8 MB; Tora will optimize it for delivery.',
   E_INTAKE_MEDIA_REQUIRED: 'Attach your game art or audio files first, or slide to Free assets only.',
   E_BYOK_NOT_CONFIGURED: 'Connect a verified API key (Gemini, OpenAI, or Claude) to build directly from Send.',
   E_BUILD_CANCELLED: 'Build cancelled.',
@@ -170,12 +170,22 @@ async function encodeCanvasJpeg(source, maxDimension, quality = 0.78) {
   return {mime: 'image/jpeg', data: dataUrl.split(',')[1], previewUrl: dataUrl};
 }
 
-export async function prepareImageFile(file, {asReference = false, maxBytes = 700000} = {}) {
+export async function prepareImageFile(file, {asReference = false, maxBytes = 8000000} = {}) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   const directMime = {png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg'}[ext];
+  if (file.size > maxBytes) throw Error(file.name + ' exceeds the 8 MB raw-upload limit.');
   if (!asReference) {
-    if (!directMime) throw Error(file.name + ': supply PNG or JPEG files for game sprites.');
-    if (file.size > maxBytes) throw Error(file.name + ' exceeds the 700 KB game-asset limit.');
+    if (!directMime && ext !== 'webp') throw Error(file.name + ': supply PNG, JPEG, or WebP files for game sprites.');
+    if (ext === 'webp') {
+      const url = URL.createObjectURL(file);
+      try {
+        const image = await loadImageElement(url), canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+        canvas.getContext('2d').drawImage(image, 0, 0);
+        const previewUrl = canvas.toDataURL('image/png'), data = previewUrl.split(',')[1];
+        return {kind: 'asset', name: file.name.replace(/\.[^.]+$/, '') + '.png', mime: 'image/png', data, bytes: Math.floor(data.length * 0.75), previewUrl};
+      } finally { URL.revokeObjectURL(url); }
+    }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const data = bytesToBase64(bytes);
     return {
@@ -235,14 +245,15 @@ function encodeMonoPcmWav(samples, sampleRate) {
   return new Uint8Array(buffer);
 }
 
-export async function prepareAudioFile(file, {maxBytes = 700000} = {}) {
+export async function prepareAudioFile(file, {maxBytes = 8000000} = {}) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   const rawBytes = new Uint8Array(await file.arrayBuffer());
-  if (ext === 'wav' && rawBytes.length > 0 && rawBytes.length <= maxBytes) {
+  if (rawBytes.length > maxBytes) throw Error(file.name + ' exceeds the 8 MB raw-upload limit.');
+  if (['wav', 'mp3'].includes(ext) && rawBytes.length > 0) {
     return {
       kind: 'asset',
       name: file.name,
-      mime: 'audio/wav',
+      mime: ext === 'wav' ? 'audio/wav' : 'audio/mpeg',
       data: bytesToBase64(rawBytes),
       bytes: rawBytes.length,
       converted: false,
@@ -250,7 +261,7 @@ export async function prepareAudioFile(file, {maxBytes = 700000} = {}) {
   }
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx || !window.OfflineAudioContext) {
-    throw Error(file.name + ': supply a PCM WAV file up to 700 KB.');
+    throw Error(file.name + ': supply WAV, MP3, OGG, M4A, or AAC audio up to 8 MB.');
   }
   const ctx = new AudioCtx();
   let decoded;
@@ -262,7 +273,7 @@ export async function prepareAudioFile(file, {maxBytes = 700000} = {}) {
     await ctx.close().catch(() => {});
   }
   const targetRate = 22050;
-  const maxSeconds = Math.min(decoded.duration, Math.floor((maxBytes - 44) / (targetRate * 2)));
+  const maxSeconds = Math.min(decoded.duration, 120);
   const frameCount = Math.max(1, Math.floor(maxSeconds * targetRate));
   const offline = new OfflineAudioContext(1, frameCount, targetRate);
   const source = offline.createBufferSource();
@@ -1165,7 +1176,8 @@ export async function openReview(projectId, initialMetadata) {
   const renderExportTargets = () => {
     const previous = exportTargetSelect.value;
     exportTargetSelect.replaceChildren(...exportTargets.map(target => {
-      const option = reviewElement('option', target.mraidVersion ? `${target.label} (MRAID ${target.mraidVersion})` : target.label);
+      const packageLabel = target.packaging === 'zip' ? 'ZIP' : 'HTML', limit = target.maxBytes ? ` · ${target.sizeComparator === '<' ? '<' : '≤'} ${target.maxBytes / 1000000} MB` : '';
+      const option = reviewElement('option', `${target.label}${target.mraidVersion ? ` (MRAID ${target.mraidVersion})` : ''} · ${packageLabel}${limit}`);
       option.value = target.id;
       return option;
     }));
@@ -1174,10 +1186,12 @@ export async function openReview(projectId, initialMetadata) {
   const updateExportButton = () => {
     const target = selectedExportTarget();
     $('review-export').textContent = metadata.accepted ? `Export for ${target.label}` : `Approve & export for ${target.label}`;
+    $('review-store-url').required = Boolean(target.requiresStoreUrl);
+    const requirement = document.querySelector('#review-store .tora-optional-tag'); if (requirement) requirement.textContent = target.requiresStoreUrl ? '(required)' : '(dashboard configured)';
     const note = $('review-export-verification');
     if (note) {
       note.replaceChildren();
-      note.append(document.createTextNode('Static structure & mock-host checks only — not official network acceptance. Test this exact HTML in '));
+      note.append(document.createTextNode(`Static structure & mock-host checks only — not official network acceptance. Test this exact ${target.packaging === 'zip' ? 'ZIP' : 'HTML'} in `));
       if (target.officialPreviewUrl) {
         const link = reviewElement('a', target.officialPreviewLabel ?? `${target.label} preview tool`);
         link.href = target.officialPreviewUrl;
@@ -1887,7 +1901,7 @@ export async function openReview(projectId, initialMetadata) {
     const baseId = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^[^a-z]+/, 'asset-').slice(0, 60);
     const assetId = `${baseId || 'asset'}-${Date.now().toString(36).slice(-4)}`;
     feedbackStatus.textContent = `Uploading ${prepared.name}…`;
-    await api('/assets', {
+    const uploaded = await api('/assets', {
       expected: metadata.expected,
       asset: {
         id: assetId,
@@ -1898,9 +1912,25 @@ export async function openReview(projectId, initialMetadata) {
     });
     feedbackStatus.textContent = '';
     const log = reviewElement('div', '', 'tora-bubble tora-bubble-assistant');
-    const meta = reviewElement('div', '', 'tora-bubble-meta');
+    const meta = reviewElement('div', '', 'tora-bubble-meta'), receipt = uploaded.asset.optimization;
     meta.append(reviewElement('strong', 'Tora'), reviewElement('span', 'Asset added', 'tora-status-badge'));
-    log.append(meta, reviewElement('p', `Added "${prepared.name}" (${formatBytes(prepared.bytes)}) as asset "${assetId}". Tell me in chat where you'd like to use it!`));
+    const savings = receipt ? ` · ${receipt.mode}-optimized from ${formatBytes(receipt.originalBytes)} (${receipt.savedPercent >= 0 ? '-' : '+'}${Math.abs(receipt.savedPercent)}%)` : '';
+    log.append(meta, reviewElement('p', `Added "${prepared.name}" (${formatBytes(uploaded.asset.bytes)}${savings}) as asset "${assetId}". Tell me in chat where you'd like to use it!`));
+    if (receipt && receipt.originalBytes <= 700000 && receipt.originalHash !== uploaded.asset.hash) {
+      const lossless = reviewElement('button', 'Use lossless', 'review-button'); lossless.type = 'button';
+      lossless.onclick = handle(async () => {
+        lossless.disabled = true;
+        try {
+          const restored = await api('/assets', {expected: metadata.expected, asset: {id: assetId, mime: receipt.originalMime, sourceHash: receipt.originalHash, optimize: 'lossless', rights: uploaded.asset.rights}});
+          log.append(reviewElement('p', `Lossless delivery restored (${formatBytes(restored.asset.bytes)}).`));
+          await updateMetadata();
+        } catch (error) {
+          lossless.disabled = false;
+          throw error;
+        }
+      });
+      log.append(lossless);
+    }
     $('review-local-log').append(log);
     await updateMetadata();
     scrollThread();
@@ -2086,7 +2116,7 @@ export async function openReview(projectId, initialMetadata) {
 
   async function syncOptionalStoreUrl() {
     const entered = $('review-store-url').value.trim();
-    if (!entered || entered === metadata.storeUrl) return;
+    if (entered === metadata.storeUrl || (!entered && selectedExportTarget().requiresStoreUrl)) return;
     await api('/review', {action: 'store', expected: metadata.expected, url: entered});
     metadata = await api('/review');
     if (candidateId) await closeCandidate();
@@ -2109,14 +2139,17 @@ export async function openReview(projectId, initialMetadata) {
     if (candidateId) throw Error('Choose Use this version or Discard before exporting.');
     const target = selectedExportTarget();
     await syncOptionalStoreUrl();
-    if (target.requiresStoreUrl && /id=com\.(?:example|yourcompany|yourapp|demo|test)\./i.test(metadata.storeUrl ?? '')) {
+    if (target.requiresStoreUrl && (!metadata.storeUrl || /id=com\.(?:example|yourcompany|yourapp|demo|test)\./i.test(metadata.storeUrl))) {
       $('review-store-url').focus();
-      throw Error('E_ARTIFACT_PLACEHOLDER');
+      throw Error(metadata.storeUrl ? 'E_ARTIFACT_PLACEHOLDER' : 'E_NATIVE_STORE');
     }
     const {revisionId, contentHash} = metadata.expected;
-    const {html} = await api('/export', {revisionId, target: target.id});
+    const artifact = await api('/export', {revisionId, target: target.id});
     if (!metadata.accepted) await api('/accept', {revisionId, contentHash});
-    download(projectId + '-' + target.filenameSuffix + '.html', html, 'text/html');
+    if (artifact.archiveBase64) {
+      const bytes = Uint8Array.from(atob(artifact.archiveBase64), character => character.charCodeAt(0));
+      download(artifact.archiveFilename ?? projectId + '-' + target.filenameSuffix + '.zip', bytes, 'application/zip');
+    } else download(projectId + '-' + target.filenameSuffix + '.html', artifact.html, 'text/html');
     const draftHint = metadata.storeUrl === 'https://play.google.com/store/apps/details?id=com.playablelab.draft' ? ' Replace the draft Store URL before uploading to a live campaign.' : '';
     feedbackStatus.textContent = `Approved revision downloaded for ${target.label}. Static and mock-host checks passed; official preview and device verification are still required.${draftHint}`;
     await updateMetadata();

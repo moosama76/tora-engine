@@ -1,3 +1,3 @@
 // Generated native schema identity
 pub const NATIVE_SCHEMA_SHA256: &str =
-    "537a4850898b7005076f5c28ed79c3e6f02872173958e82168f4d16daaf14899";
+    "a084c8023043500bda1825afbafcd95dee5b64510a7eb37359e780a3b9ab4b82";

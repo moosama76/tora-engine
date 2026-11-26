@@ -13,8 +13,8 @@ import {musicAsset} from '../../scripts/lean/native/author-games.mjs';
 const revision=()=> 'rev-00000000-0000-4000-8000-000000000000';
 test('native builds deduplicate and preserve bytes while keys isolate content and runtime',async t=>{
  const root=await mkdtemp(resolve(tmpdir(),'tora-build-cache-'));t.after(()=>rm(root,{recursive:true,force:true}));
- const music=musicAsset(),registered=await registerSource(resolve(root,'cache-proof'),music),project=emptyProject({id:'cache-proof',name:'Cache proof'});
- project.assets=[registered];project.revisionId=revision();
+ const music=musicAsset(),registered=await registerSource(resolve(root,'cache-proof'),music),delivery={...registered},project=emptyProject({id:'cache-proof',name:'Cache proof'});delete delivery.optimization;
+ project.assets=[delivery];project.revisionId=revision();
  const service=new NativeService({root},{});
  const cold=await service.build('cache-proof',project),warm=await service.build('cache-proof',project);
  assert.equal(cold.cacheHit,false);assert.equal(warm.cacheHit,true);assert.equal(warm.html,cold.html);assert.deepEqual(warm.manifest,cold.manifest);

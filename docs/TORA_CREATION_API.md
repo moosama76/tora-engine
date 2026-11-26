@@ -5,8 +5,8 @@ local editor use the same `NativeService`, `ProjectStore`, `EditorState` commit
 lock, atomic history-pointer writer, validator, asset lowering, and compiler.
 Manual authoring and the supplied clients make zero model calls.
 
-Run `cargo build -p asset-pipeline --example inspect_native` once to build the
-existing bounded PNG/JPEG decoder entry point. Start `npm run dev:editor` and open
+Run `npm run setup` to build the bounded PNG/JPEG decoder and optimizer entry points
+(`inspect_native` and `optimize_native`). Start `npm run dev:editor` and open
 <http://127.0.0.1:8001/?project=tiny-harvest-win-cta>. The default store is
 `.tora/native-projects`. `EDITOR_PORT`, `EDITOR_STORE`, and
 `EDITOR_PROJECT` override the defaults. The project URL opens its playable preview and review workspace.
@@ -14,8 +14,10 @@ existing bounded PNG/JPEG decoder entry point. Start `npm run dev:editor` and op
 The supplied projects are unaccepted drafts with an example Google Play URL.
 Configure the intended store destination before creative approval or campaign use.
 Standalone export is not network qualification. The native compiler also supports
-`unity-ads-ua-playable` and `applovin-growth-playable`; their output is `ASSEMBLED_UNVERIFIED` until the exact file
-passes static inspection. Official network preview and device acceptance remain
+`unity-ads-ua-playable`, `applovin-growth-playable`, `meta-audience-playable`,
+`google-ads-app-playable`, `ironsource-levelplay-playable`, `mintegral-appgrowth-zip`,
+and `tiktok-ads-playable`; their output is `ASSEMBLED_UNVERIFIED` until the exact HTML
+or ZIP passes static inspection. Official network preview and device acceptance remain
 separate gates. Unsupported network exports fail explicitly.
 
 ## Asset sourcing
@@ -53,7 +55,8 @@ the creator's connected key.
 ## HTTP boundary
 
 Mutations require the exact local Origin and Host, `Content-Type: application/json`,
-and a body no larger than 1 MiB. IDs are local identifiers, never filesystem paths.
+and a body no larger than 1 MiB, except project/intake asset uploads, which allow
+12 MiB to carry an 8 MiB raw file in base64 JSON. IDs are local identifiers, never filesystem paths.
 Project IDs use lowercase letters, digits, and hyphens, start with a letter, and
 contain 2–48 characters. Object/record IDs permit lowercase letters, digits,
 underscores, dots, and hyphens, start with a letter, and contain at most 96 characters.
@@ -72,11 +75,11 @@ underscores, dots, and hyphens, start with a letter, and contain at most 96 char
 | `POST /api/projects/:id/transactions` | Build and atomically commit the exact previewed transaction |
 | `POST /api/projects/:id/history` | `{expected:{revisionId,contentHash},action:"save"\|"undo"\|"redo"}` |
 | `POST /api/projects/:id/accept` | Explicit `{revisionId,contentHash}` approval; no automatic acceptance |
-| `POST /api/projects/:id/export` | Explicit `{revisionId,target:"standalone-browser-draft"\|"unity-ads-ua-playable"\|"applovin-growth-playable"}` → HTML and manifest |
+| `POST /api/projects/:id/export` | Explicit `{revisionId,target}` for standalone or any of the seven network profiles → HTML and manifest, plus `archiveBase64`/`archiveFilename` for ZIP targets |
 | `POST /api/review-intakes/:id/submit` | `{}` or `{mode:"auto"\|"byok"\|"mcp"}`. A verified Gemini/OpenAI/Anthropic connection starts an asynchronous BYOK build; otherwise the existing `$0` MCP handoff is queued. |
 | `POST /api/review-intakes/:id/cancel` | `{}` aborts the active BYOK build and preserves its uploads and partial draft. |
 | `POST /api/review-intakes/:id/retry` | `{}` resumes a failed/cancelled BYOK build without re-uploading assets. |
-| `POST /api/projects/:id/assets` | `{expected,asset:{id,mime,data,rights}}`; base64 upload, real decode validation, then one revision |
+| `POST /api/projects/:id/assets` | `{expected,asset:{id,mime,data,rights,optimize?,preserveResolution?}}`; raw base64 up to 8 MiB, non-destructive optimization, real delivery decode validation, then one revision. A retained `sourceHash` may replace `data` when re-optimizing an existing asset |
 | `GET /api/projects/:id/assets/:assetId` | Asset hash, MIME, byte count, rights declaration, and provenance |
 | `GET /api/projects/:id/render?revision=ID` | Verified, lowered asset bytes and artifact identity for editor rendering |
 
@@ -194,7 +197,7 @@ or intentionally shared sources.
   `reorderComponent`, `reparentComponent`, `group`, `ungroup`.
 - Gameplay: `putVariable`, `deleteVariable`, `putBehavior`, `deleteBehavior`,
   `putEvent`, `deleteEvent`, `putBinding`, `deleteBinding`.
-- Assets/store: `registerAsset`, `replaceAsset`, `setStore`.
+- Assets/store: `registerAsset`, `updateAsset` (replace the record for the same asset ID), `replaceAsset` (rewire a component), `setStore`.
 
 Read the capabilities response for the current contract/property vocabulary.
 Registered contracts are group, rectangle, ellipse, bounded vector path, image,
@@ -242,7 +245,8 @@ the existing `.tora/editor-state` service, not a rescue-specific save directory.
 | Physics bodies / adaptive substeps | 64 / 16 |
 | Path nodes / edges / agents per network document | 64 / 128 / 64 |
 | Processed events / actions per frame | 256 / 1,024 |
-| Individual asset upload | 700,000 bytes |
+| Raw image/audio upload / optimized delivery asset | 8,000,000 / 700,000 bytes |
+| Other individual assets (including Tora meshes) | 700,000 bytes |
 
 The simulation uses a 1/60-second fixed step and at most five catch-up steps per
 animation frame. Pause/visibility changes reset accumulated time. Replay resets
@@ -288,32 +292,50 @@ interaction; store actions additionally require a current trusted interaction.
 Store opening requires a trusted pointer release over the original target.
 Store destinations are HTTPS Google Play/App Store URLs.
 
-Network exports use host-injected MRAID: Unity Ads requires MRAID 3.0 and AppLovin
-requires MRAID 2.0. No MRAID script tag or navigation fallback is embedded.
-Simulation starts only after host readiness,
-visibility, and the first trusted interaction. Hidden/closed hosts cancel input and
-suspend or stop audio. Only a deliberate CTA action calls `mraid.open`. Network builds
-use the pinned `crates/packer/trusted/native.js` bundle and fail if it is stale.
+Network exports bind the exact host adapter: Unity Ads requires MRAID 3.0, AppLovin
+requires MRAID 2.0, Meta calls `FbPlayableAd.onCTAClick()`, Google Ads calls
+`ExitApi.exit()`, ironSource uses DAPI, Mintegral uses its gameReady/gameStart/install
+lifecycle, and TikTok calls `openAppStore()`. Only the declared Google ExitApi and
+TikTok SDK script URLs are embedded; all other hosts are injected and no navigation
+fallback exists. Simulation starts only after host readiness, visibility, and the
+first trusted interaction. Hidden/closed hosts cancel input and suspend or stop audio.
+Only a deliberate CTA invokes the vendor store method. Network builds use the pinned
+`crates/packer/trusted/native.js` or `native-3d.js` bundle and fail if it is stale.
+Google/Mintegral/TikTok produce deterministic ZIPs with fixed timestamps, sorted paths,
+CRC32 checks, and exact profile-specific layouts.
 
 Check the exact exported `index.html` before review:
 
 ```sh
 cargo run -p playable-cli -- artifact check index.html \
   --network unity-ads-ua-playable --confirm-reviewed 2026-11-20 --json
-cargo run -p playable-cli -- artifact check applovin.html \
+cargo run -p playable-cli -- artifact check index.html \
   --network applovin-growth-playable --confirm-reviewed 2026-11-24 --json
+cargo run -p playable-cli -- artifact check my-game-tiktok.zip \
+  --network tiktok-ads-playable --confirm-reviewed 2026-11-26 --json
 ```
+
+Use each profile's current `reviewedAt` date for confirmation. Mintegral requires
+`project-id.zip` containing `project-id/project-id.html`; TikTok ZIPs contain root
+`index.html` and `config.json`; Google ZIPs contain root `index.html`.
 
 `STATIC_PASS` covers the reviewed rules, fixed shell/runtime, schema, inline assets,
 hashes, size, responsive orientation, and destination. It does not establish human
 creative approval, physical-device behavior, official network acceptance, or campaign
 effectiveness.
 
-PNG/JPEG uploads use the existing Rust bounded image decoder. WAV uploads support
-bounded PCM mono/stereo, 8/16-bit samples, and 8–48 kHz rates. SVG/HTML uploads are
-rejected. Decode staging is removed on failure. Source bytes and verified metadata
-are content-addressed under the project; authored asset records hold rights and
-provenance. Preview and export lower the same verified bytes. Object deletion does
+PNG/JPEG uploads use a separate bounded Rust optimizer that accepts benign color
+metadata and normalizes uploaded pixels without weakening strict artifact inspection.
+Auto mode searches exact PNG encodings, selects JPEG for suitable opaque photo-like
+images, quantizes when needed, and uses bounded proportional downscaling only to meet
+limits. Lossless mode never quantizes or resizes; `none` retains exact bytes only when
+they already fit delivery constraints. WAV/MP3 optimization uses local GStreamer or
+FFmpeg when available and otherwise falls back to deterministic PCM WAV downsampling.
+SVG/HTML uploads are rejected. Decode staging is removed on failure. Untouched original
+uploads are content-addressed under `sources/assets/originals/`; delivery bytes and
+optimization receipts live under `sources/assets/`. Authored asset records retain the
+same six schema fields, rights, and provenance. Preview and export lower the same
+verified delivery bytes. Object deletion does
 not remove shared source assets. No automatic unreferenced-asset cleanup runs.
 
 ## Reproduce and verify
@@ -341,7 +363,7 @@ official network acceptance, or advertising-effectiveness evidence.
 
 `npm run verify:native` checks only the native SaaS stack, including the Creative QA
 unit gate, trusted runtime parity, native browser tests, and the relevant Rust crates.
-Native composition and native browser tests use the native asset decoder.
+Native composition and native browser tests use the native asset decoder and optimizer.
 
 ## Legacy compatibility
 

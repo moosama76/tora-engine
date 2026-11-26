@@ -1,0 +1,28 @@
+{
+  "schemaVersion":"1.0.0",
+  "profileId":"mintegral-appgrowth-zip",
+  "networkId":"mintegral",
+  "channelId":"appgrowth-zip",
+  "rulesVersion":"2026-11-26-review-1",
+  "reviewedAt":"2026-11-26",
+  "sources":[
+    {"id":"assets","url":"https://helpcenter.mintegral.com/en/docs/asset-specs","title":"Mintegral AppGrowth asset specifications","checkedAt":"2026-11-26","notes":"The decimal 5 MB upload ceiling is applied to the final ZIP payload."},
+    {"id":"contract","url":"https://www.playturbo.com/_nuxt/doc/en-doc.86decc5.pdf","title":"Playturbo playable host contract","checkedAt":"2026-11-26","notes":"Documents install/gameReady/gameEnd/gameRetry host calls, gameStart/gameClose callbacks, and matching archive/folder/HTML names."},
+    {"id":"tester","url":"https://www.playturbo.com/review","title":"Playturbo official playable tester","checkedAt":"2026-11-26","notes":"This separate ZIP target does not alter the legacy unverified single-HTML profile. No successful official test is claimed."}
+  ],
+  "rules":{
+    "uploadSize":{"status":"verified","value":{"limitBytes":5000000,"operator":"<=","byteBasis":"conservative-decimal-mb"},"sources":["assets"],"basis":"conservative-local-policy","notes":"Exact final ZIP bytes use an inclusive decimal 5 MB limit."},
+    "packaging":{"status":"verified","value":{"kind":"zip","entryFile":"playable.html","flatRoot":false,"requiredFiles":[],"nameMatchesArchive":true},"sources":["contract","tester"],"basis":"public-documentation","notes":"Name.zip contains exactly Name/Name.html; entryFile is a safe placeholder basename for this typed naming rule, not an emitted path."},
+    "inline":{"status":"verified","value":{"requireInlineAssets":true,"externalRequests":"forbidden","requiredHostScripts":[],"hostExceptions":[]},"sources":["contract"],"basis":"conservative-local-policy","notes":"All game resources are inline and the host supplies global lifecycle functions."},
+    "mraid":{"status":"verified","value":null,"sources":["contract"],"basis":"public-documentation","notes":"The typed Mintegral global contract replaces the inapplicable MRAID field."},
+    "vendorHost":{"status":"verified","value":"mintegral-global","sources":["contract"],"basis":"public-documentation","notes":"Creative calls gameReady/install/gameEnd/gameRetry; host invokes gameStart/gameClose."},
+    "autoplay":{"status":"verified","value":{"audio":"muted-until-first-interaction","onHidden":"mute-and-pause","timerStart":"first-interaction"},"sources":["contract"],"basis":"conservative-local-policy","notes":"gameStart gates readiness; gameClose closes, cancels input, and stops audio."},
+    "firstClick":{"status":"verified","value":"distinct-cta-only","sources":["contract"],"basis":"public-documentation","notes":"Only a deliberate CTA invokes window.install()."},
+    "viewability":{"status":"verified","value":{"policy":"ready-and-visible","requiredEvents":["gameStart","gameClose"],"allowInitialStateQuery":false},"sources":["contract"],"basis":"public-documentation","notes":"The runtime waits for gameStart and treats gameClose as terminal."},
+    "orientations":{"status":"verified","value":"both","sources":["contract"],"basis":"public-documentation","notes":"Both orientations are locally tested; physical rotation remains separate."},
+    "preview":{"status":"verified","value":{"url":"https://www.playturbo.com/review","instructions":"Upload Name.zip containing Name/Name.html to the official tester. Play to an end card, exercise install and replay, rotate, and retain complete Test Success evidence. This rule review and local mock host do not claim official acceptance."},"sources":["tester","contract"],"basis":"public-documentation","notes":"Official tester remains an unexecuted external gate."},
+    "companionAssets":{"status":"verified","value":[],"sources":["assets"],"basis":"conservative-local-policy","notes":"Campaign companion artwork and offer configuration are separate from this artifact."}
+  },
+  "additionalRules":[],
+  "unresolved":[]
+}

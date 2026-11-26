@@ -16,6 +16,7 @@ globalThis.console.log(`    Node ${tools.node}, npm ${tools.npm}, Rust ${tools.r
 
 globalThis.console.log('2/5 Building native asset decoder & playable-cli...');
 run('cargo',['build','--locked','-p','asset-pipeline','--example','inspect_native']);
+run('cargo',['build','--locked','-p','asset-pipeline','--example','optimize_native']);
 run('cargo',['build','--locked','-p','playable-cli']);
 
 globalThis.console.log('3/5 Checking Playwright Chromium...');

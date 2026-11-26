@@ -35,3 +35,11 @@ export function createGestureTweens(){
  const active=new Map();
  return {to(id,from,to,seconds=.18,onDone){active.set(id,{from:{...from},to:{...to},seconds:Math.max(.02,seconds),elapsed:0,onDone});},cancel(id){active.delete(id);},clear(){active.clear();},tick(dt,apply){for(const [id,tween]of active){tween.elapsed+=dt;const t=Math.min(1,tween.elapsed/tween.seconds),eased=1-(1-t)**3;apply(id,{x:tween.from.x+(tween.to.x-tween.from.x)*eased,y:tween.from.y+(tween.to.y-tween.from.y)*eased});if(t===1){active.delete(id);tween.onDone?.();}}}};
 }
+
+export function computeJoystickVector(origin,current,radiusPx=56,deadZone=.12){
+ const radius=Math.max(1,radiusPx),dx=current.x-origin.x,dy=current.y-origin.y,distance=Math.hypot(dx,dy),clamped=Math.min(distance,radius),raw=clamped/radius;
+ const ux=distance>1e-6?dx/distance:0,uy=distance>1e-6?dy/distance:0,knobX=origin.x+ux*clamped,knobY=origin.y+uy*clamped;
+ if(raw<=deadZone)return {nx:0,ny:0,magnitude:0,angle:0,knobX,knobY};
+ const scaled=(raw-deadZone)/Math.max(1e-6,1-deadZone);
+ return {nx:ux*scaled,ny:uy*scaled,magnitude:scaled,angle:Math.atan2(uy,ux)*180/Math.PI,knobX,knobY};
+}

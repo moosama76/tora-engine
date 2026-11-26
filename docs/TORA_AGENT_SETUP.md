@@ -1,6 +1,6 @@
 # Tora Agent & MCP Setup
 
-Connect Tora once via local MCP, then describe the playable ad you want using your existing AI coding subscription (**Claude Code**, **Cursor**, **OpenAI Codex**, or **Gemini CLI**) at **$0 extra API cost**. The integration supplies Tora's production briefs, deterministic authoring tools, 4-viewport Creative QA, and Unity Ads / AppLovin exporters; it does not generate AI artwork or replace visual review.
+Connect Tora once via local MCP, then describe the playable ad you want using your existing AI coding subscription (**Claude Code**, **Cursor**, **OpenAI Codex**, or **Gemini CLI**) at **$0 extra API cost**. The integration supplies Tora's production briefs, deterministic authoring tools, non-destructive asset optimization, 4-viewport Creative QA, and seven free ad-network exporters; it does not generate AI artwork or replace visual review.
 
 ## 1. One-Command Local Setup
 
@@ -11,7 +11,7 @@ npm install
 npm run setup
 ```
 
-`npm run setup` checks Node (>= 22) and Rust, builds `inspect_native` and `playable-cli`, ensures Playwright Chromium is available for Creative QA, builds the local editor UI, verifies the trusted packer bundles, and prints a ready-to-paste MCP configuration with your exact local paths.
+`npm run setup` checks Node (>= 22) and Rust, builds `inspect_native`, `optimize_native`, and `playable-cli`, ensures Playwright Chromium is available for Creative QA, builds the local editor UI, verifies the trusted packer bundles, and prints a ready-to-paste MCP configuration with your exact local paths.
 
 ## 2. Connect Tora to Your AI Coding Client
 
@@ -74,10 +74,10 @@ The connected client discovers exact argument schemas via MCP `tools/list`.
 | `tora_compose` | Compile a structured creative concept and prepared assets into an editable playable |
 | `tora_inspect` | Read project state, records, dependencies, and revision identity |
 | `tora_edit` | Preview and atomically commit scoped operations against the expected revision |
-| `tora_upload_asset` | Register verified PNG/JPEG, PCM WAV, MP3, or `model/tora-mesh` bytes with rights metadata |
+| `tora_upload_asset` | Upload raw PNG/JPEG/WAV/MP3 up to 8 MiB with rights metadata and automatic non-destructive optimization, or register a Tora mesh. Supports base64, workspace `filePath`, retained `sourceHash`, `auto`/`lossless`/`none`, and `preserveResolution` |
 | `tora_render` | Write an editable HTML scene preview artifact for visual inspection |
 | `tora_qa` | Run static, acoustic, 4-viewport layout, and primary-interaction Creative QA |
-| `tora_export` | Write standalone HTML, Unity Ads (MRAID 3.0), AppLovin (MRAID 2.0), or `.tora.json` project bundle |
+| `tora_export` | Write standalone HTML, Unity, AppLovin, Meta, Google Ads, ironSource, Mintegral, or TikTok artifacts, or a `.tora.json` project bundle. Google/Mintegral/TikTok write deterministic ZIPs |
 | `tora_history` | Save, undo, or redo project revisions |
 | `tora_review_*` / `tora_intake_*` | Claim and resolve visual review notes or studio intake briefs from the local editor |
 
@@ -96,10 +96,10 @@ npm run dev:editor
 Open `http://127.0.0.1:8001/?view=new` (configurable via `EDITOR_PORT`) to:
 - Inspect and play built-in demos (*Tiny Harvest*, *Traffic Tycoon*, *Mini Golf 3D*).
 - Drop in assets and create `$0` MCP handoff briefs, or optionally connect a verified BYOK API key (Google Gemini, OpenAI, or Anthropic Claude) for in-browser builds and visual revision notes.
-- Export standalone drafts, Unity Ads (MRAID 3.0), and AppLovin (MRAID 2.0) builds.
+- Export standalone drafts plus Unity Ads, AppLovin, Meta, Google Ads, ironSource / LevelPlay, Mintegral, and TikTok builds.
 
 For direct HTTP automation, see [`docs/TORA_CREATION_API.md`](TORA_CREATION_API.md) and [`docs/NATIVE_AGENT_TOOLS.md`](NATIVE_AGENT_TOOLS.md).
 
 ## 5. Verification Boundaries
 
-Automated checks and `tora_qa` establish engineering quality only. Always open and inspect real exported screenshots and gameplay footage before shipping, and treat human visual sign-off, physical-device testing, and official Unity Ads / AppLovin network testing as separate acceptance gates.
+Automated checks and `tora_qa` establish engineering quality only. Always open and inspect real exported screenshots and gameplay footage before shipping, and treat human visual sign-off, physical-device testing, and every ad network's official preview/acceptance as separate gates.

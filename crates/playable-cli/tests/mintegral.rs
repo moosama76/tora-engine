@@ -33,10 +33,8 @@ fn mintegral_status_remains_blocked_and_aliases_are_rejected() {
             .iter()
             .any(|f| f["code"] == "B_RULE_UNSUPPORTED" && f["path"] == "/additionalRules/0")
     );
-    for alias in ["mintegral", "mintegral-appgrowth-zip"] {
-        let result = invoke(&["rules", "status", "--network", alias, "--json"]);
-        assert_eq!(result.status.code(), Some(6));
-        let report: Value = serde_json::from_slice(&result.stdout).unwrap();
-        assert_eq!(report["findings"][0]["code"], "E_RULE_PROFILE_UNKNOWN");
-    }
+    let result = invoke(&["rules", "status", "--network", "mintegral", "--json"]);
+    assert_eq!(result.status.code(), Some(6));
+    let report: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(report["findings"][0]["code"], "E_RULE_PROFILE_UNKNOWN");
 }

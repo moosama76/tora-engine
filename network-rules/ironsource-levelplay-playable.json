@@ -1,0 +1,27 @@
+{
+  "schemaVersion":"1.0.0",
+  "profileId":"ironsource-levelplay-playable",
+  "networkId":"ironsource",
+  "channelId":"levelplay-playable",
+  "rulesVersion":"2026-11-26-review-1",
+  "reviewedAt":"2026-11-26",
+  "sources":[
+    {"id":"specs","url":"https://developers.is.com/ironsource-mobile/general/playable-ads/","title":"ironSource / Unity LevelPlay playable ads","checkedAt":"2026-11-26","notes":"DAPI readiness, visibility, volume, resize and openStoreUrl host contract selected for the compiled adapter. Public documentation review is not an official test result."},
+    {"id":"preview","url":"https://developers.is.com/ironsource-mobile/general/playable-ads/","title":"LevelPlay playable testing guidance","checkedAt":"2026-11-26","notes":"Official tool and physical-device runs remain separate acceptance gates."}
+  ],
+  "rules":{
+    "uploadSize":{"status":"verified","value":{"limitBytes":5000000,"operator":"<=","byteBasis":"conservative-decimal-mb"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Conservative decimal 5 MB ceiling on the exact HTML upload."},
+    "packaging":{"status":"verified","value":{"kind":"single-html","entryFile":"index.html","minified":true},"sources":["specs"],"basis":"public-documentation","notes":"One self-contained HTML entry with inline assets."},
+    "inline":{"status":"verified","value":{"requireInlineAssets":true,"externalRequests":"forbidden","requiredHostScripts":[],"hostExceptions":[]},"sources":["specs"],"basis":"conservative-local-policy","notes":"DAPI is host-injected; no external script or navigation fallback is embedded."},
+    "mraid":{"status":"verified","value":null,"sources":["specs"],"basis":"public-documentation","notes":"This target uses DAPI, not MRAID."},
+    "vendorHost":{"status":"verified","value":"dapi","sources":["specs"],"basis":"public-documentation","notes":"Ready/viewableChange/audioVolumeChange/adResized subscriptions and dapi.openStoreUrl on deliberate CTA."},
+    "autoplay":{"status":"verified","value":{"audio":"muted-until-first-interaction","onHidden":"mute-and-pause","timerStart":"first-interaction"},"sources":["specs"],"basis":"conservative-local-policy","notes":"Local lifecycle safety policy; DAPI volume events scale the active mix."},
+    "firstClick":{"status":"verified","value":"distinct-cta-only","sources":["specs"],"basis":"public-documentation","notes":"Only a deliberate CTA invokes the host store method."},
+    "viewability":{"status":"verified","value":{"policy":"ready-and-visible","requiredEvents":["viewableChange"],"allowInitialStateQuery":true},"sources":["specs"],"basis":"public-documentation","notes":"The adapter queries initial viewability after readiness and subscribes to viewableChange."},
+    "orientations":{"status":"verified","value":"both","sources":["specs"],"basis":"conservative-local-policy","notes":"Both orientations are tested by local Creative QA."},
+    "preview":{"status":"verified","value":{"url":"https://developers.is.com/ironsource-mobile/general/playable-ads/","instructions":"Run the exact HTML through the current official LevelPlay/ironSource test workflow and on physical iOS/Android devices. Verify ready, viewability, volume, rotation, background/resume, end card, and one deliberate CTA. No official run is implied."},"sources":["preview"],"basis":"public-documentation","notes":"Procedure reference only; not executed."},
+    "companionAssets":{"status":"verified","value":[],"sources":["specs"],"basis":"conservative-local-policy","notes":"Campaign assets and dashboard configuration are outside this artifact."}
+  },
+  "additionalRules":[],
+  "unresolved":[]
+}
