@@ -1,7 +1,8 @@
 import process from 'node:process';
 import {Buffer} from 'node:buffer';
 import {parseAuthoringJson} from '../../../packages/creative-project/src/strict-json.ts';
-import {capabilities,limits} from './contracts.mjs';
+import {capabilities,capabilitiesForPacks,capabilitySummary,compactCapabilities,limits} from './contracts.mjs';
+import {buildInspectTree,NativeAgentTools} from './agent-tools.mjs';
 import {check,exact} from './document.mjs';
 import {NativeReview} from './review.mjs';
 import {ReviewConnection} from './review-connection.mjs';
@@ -119,7 +120,7 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
   json(200,candidate?await review.candidate(match[1],candidate):url.searchParams.get('bundle')==='1'?await review.bundle(match[1]):await review.read(match[1]));
   return true;
  }
- if(req.method==='GET'){if(url.pathname==='/api/open'){const id=url.searchParams.get('project'),opened=await service.store.open(id);if(opened.project.base.kind!=='native-scene')return false;const result=await service.read(id);json(200,{...result,projectId:id,inputKind:'native-scene-document'});return true;}if(url.pathname==='/api/creation/capabilities')json(200,capabilities());else if(url.pathname==='/api/projects'){const projects=await service.store.list();for(const p of projects)if(p.kind==='native-scene'){const r=await service.read(p.id);p.workingRevision=r.revisionId;}json(200,{projects});}else if(match?.[2]==='render')json(200,await service.render(match[1],url.searchParams.get('revision')));else if(match?.[2]?.startsWith('assets/')){const r=await service.read(match[1]),asset=r.project.assets.find(a=>a.id===match[2].slice(7));check(asset,'E_NATIVE_NOT_FOUND');json(200,asset);}else if(match&&!match[2])json(200,await service.read(match[1],url.searchParams.get('revision')??undefined));else check(false,'E_NATIVE_METHOD');return true;}
+ if(req.method==='GET'){if(url.pathname==='/api/open'){const id=url.searchParams.get('project'),opened=await service.store.open(id);if(opened.project.base.kind!=='native-scene')return false;const result=await service.read(id);json(200,{...result,projectId:id,inputKind:'native-scene-document'});return true;}if(url.pathname==='/api/creation/capabilities'){const summary=url.searchParams.get('summary'),format=url.searchParams.get('format'),packsParam=url.searchParams.get('packs'),namesParam=url.searchParams.get('names');if(summary==='1'||summary==='true'){json(200,capabilitySummary());return true;}check(format===null||format==='full'||format==='compact','E_NATIVE_ARGUMENT');const packs=packsParam?packsParam.split(',').filter(Boolean):undefined,names=namesParam?namesParam.split(',').filter(Boolean):undefined;if(format==='compact'){json(200,compactCapabilities({packs,names}));return true;}if(names){const tools=new NativeAgentTools(service);json(200,await tools.run({command:'contracts',packs,names}));return true;}json(200,packs?capabilitiesForPacks(packs):capabilities());return true;}else if(url.pathname==='/api/projects'){const projects=await service.store.list();for(const p of projects)if(p.kind==='native-scene'){const r=await service.read(p.id);p.workingRevision=r.revisionId;}json(200,{projects});}else if(match?.[2]==='render')json(200,await service.render(match[1],url.searchParams.get('revision')));else if(match?.[2]?.startsWith('assets/')){const r=await service.read(match[1]),asset=r.project.assets.find(a=>a.id===match[2].slice(7));check(asset,'E_NATIVE_NOT_FOUND');json(200,asset);}else if(match&&!match[2]){const current=await service.read(match[1],url.searchParams.get('revision')??undefined);const tree=url.searchParams.get('tree');json(200,tree==='1'||tree==='true'?buildInspectTree(match[1],current,url.searchParams.get('sceneId')??undefined):current);}else check(false,'E_NATIVE_METHOD');return true;}
  check(req.method==='POST','E_NATIVE_METHOD');check(req.headers.origin==='http://127.0.0.1:'+port,'E_NATIVE_ORIGIN');check(req.headers['content-type']==='application/json','E_NATIVE_CONTENT_TYPE');req.setTimeout(10000,()=>req.destroy());let bytes=0;const chunks=[];const assetUpload=match?.[2]==='assets'||intake?.[2]==='assets',maxBytes=connectionRoute?8192:assetUpload?12*1024*1024:limits.transactionBytes;for await(const chunk of req){bytes+=chunk.length;check(bytes<=maxBytes,'E_NATIVE_SIZE');chunks.push(chunk);}req.setTimeout(0);const body=parseAuthoringJson(Buffer.concat(chunks).toString(),{bytes:maxBytes,nodes:limits.nodes,depth:limits.depth,allowNull:match?.[2]==='review'});
  if(connectionRoute){
   if(body.action==='disconnect'){
@@ -163,7 +164,8 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
   return true;
  }
  if(url.pathname==='/api/projects'){check(body.kind===undefined||body.kind==='native-scene','E_NATIVE_KIND');json(201,await service.create(body));return true;}
- check(match,'E_NATIVE_NOT_FOUND');const [,id,route]=match;const fields={history:['expected','action'],accept:['revisionId','contentHash'],export:['revisionId','target'],assets:['expected','asset']}[route];if(fields)check(exact(body,fields)&&fields.every(key=>Object.hasOwn(body,key)),'E_NATIVE_ARGUMENT');
+ check(match,'E_NATIVE_NOT_FOUND');const [,id,route]=match;const fields={history:['expected','action'],accept:['revisionId','contentHash'],export:['revisionId','target']}[route];if(fields)check(exact(body,fields)&&fields.every(key=>Object.hasOwn(body,key)),'E_NATIVE_ARGUMENT');
+ if(route==='assets')check((exact(body,['expected','asset'])&&Object.hasOwn(body,'expected')&&Object.hasOwn(body,'asset'))||(exact(body,['expected','assets'])&&Object.hasOwn(body,'expected')&&Object.hasOwn(body,'assets')),'E_NATIVE_ARGUMENT');
  if(route==='review'){
   const review=await reviewForConnection();
   const saved=await review.post(id,body);
@@ -173,7 +175,7 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
  }
  else if(route==='transactions/preview'){const {project,...preview}=await service.preview(id,body);void project;json(200,preview);}
  else if(route==='transactions')json(201,await service.transact(id,body));
- else if(route==='assets')json(201,await service.upload(id,body));
+ else if(route==='assets')json(201,Array.isArray(body.assets)?await service.uploadBatch(id,body):await service.upload(id,body));
  else if(route==='history')json(200,await service.navigate(id,body));
  else if(route==='accept')json(200,await service.accept(id,body));
  else if(route==='export')json(200,await service.export(id,body));

@@ -67,3 +67,78 @@ export function capabilitiesForPacks(packNames){
 }
 export const capabilitySummary=()=>({format:'tora-capability-summary-1',packs:availablePacks.map(pack=>({id:pack.id,members:[...new Set([...pack.contracts??[],...pack.behaviors??[],...pack.events??[],...pack.actions??[]])]}))});
 export const capabilities=()=>({...commonCapabilities(),contracts,behaviors,events,actions});
+const unitAbbrev={pixels:'px',seconds:'s',degrees:'deg',Hz:'Hz',normalized:'0..1','pixels / second':'px/s','pixels / second²':'px/s²','frames / second':'fps',frames:'frames',columns:'cols',count:'count',scalar:''};
+const formatCompactNum=n=>Number.isInteger(n)?String(n):String(Number(n.toFixed(4)));
+function encodeDescriptor(d){
+ const opt=d.optional?'?':'';
+ if(d.type==='number'){
+  const kind=d.integer?'int':'num',unit=unitAbbrev[d.units]??d.units??'';
+  return `${kind}${opt}=${formatCompactNum(d.default)} [${formatCompactNum(d.min)}..${formatCompactNum(d.max)}]${unit?' '+unit:''}`;
+ }
+ if(d.type==='boolean')return `bool${opt}=${d.default}`;
+ if(d.type==='text')return `str${opt}='${d.default}'${d.maxLength!==undefined?` [max:${d.maxLength}]`:''}`;
+ if(d.type==='color')return `color${opt}='${d.default}'`;
+ if(d.type==='enum')return `enum(${d.options.join('|')})${opt}='${d.default}'`;
+ if(d.type==='path')return `path${opt}`;
+ const arrType=({'string-list':'str[]','node-list':'node[]','edge-list':'edge[]'})[d.type]??d.type;
+ return `${arrType}${opt} [${d.minItems}..${d.maxItems}]`;
+}
+const compactProps=descriptors=>Object.fromEntries(Object.entries(descriptors).map(([k,d])=>[k,encodeDescriptor(d)]));
+const commonKeys=Object.keys(common);
+const commonContractProps=compactProps(Object.fromEntries(commonKeys.map(k=>[k,contracts['native.group.v1'].properties[k]])));
+const contractStructure=['create','duplicate','delete','reorder','reparent'];
+const compactContract=c=>({kind:c.kind,parents:c.parents,props:compactProps(Object.fromEntries(Object.entries(c.properties).filter(([k])=>!commonKeys.includes(k))))});
+const compactNetworkTargets=networkTargets.map(t=>({id:t.id,packaging:t.packaging,maxBytes:t.maxBytes,...(t.sizeComparator?{cmp:t.sizeComparator}:{}),host:t.hostKind,...(t.mraidVersion?{mraid:t.mraidVersion}:{}),...(t.requiresStoreUrl?{storeUrl:true}:{})}));
+export function compactCapabilities({packs,names}={}){
+ const cap=commonCapabilities();
+ const hasPacks=Array.isArray(packs)&&packs.length>0,hasNames=Array.isArray(names)&&names.length>0;
+ if(packs!==undefined&&!hasPacks)throw Error('E_CAPABILITY_PACK_UNKNOWN');
+ if(!hasPacks&&hasNames){
+  const result={format:'tora-creation-capabilities-compact-1'};
+  const selContracts={},selBehaviors={};
+  for(const name of names){
+   if(Object.hasOwn(contracts,name))selContracts[name]=compactContract(contracts[name]);
+   else if(Object.hasOwn(behaviors,name))selBehaviors[name]=compactProps(behaviors[name]);
+   else if(name==='operations')result.operations=operations;
+   else if(name==='actions')result.actions=actions;
+   else if(name==='events')result.events=events;
+   else if(name==='limits')result.limits=limits;
+   else throw Error('E_AGENT_UNKNOWN_CONTRACT');
+  }
+  if(Object.keys(selContracts).length){result.commonContractProps=commonContractProps;result.contractStructure=contractStructure;result.contracts=selContracts;}
+  if(Object.keys(selBehaviors).length)result.behaviors=selBehaviors;
+  return result;
+ }
+ const base=hasPacks?capabilitiesForPacks(packs):capabilities();
+ const selContracts={...base.contracts},selBehaviors={...base.behaviors};
+ const extras={};
+ for(const name of names??[]){
+  if(Object.hasOwn(contracts,name))selContracts[name]=contracts[name];
+  else if(Object.hasOwn(behaviors,name))selBehaviors[name]=behaviors[name];
+  else if(name==='operations')extras.operations=operations;
+  else if(name==='actions')extras.actions=actions;
+  else if(name==='events')extras.events=events;
+  else if(name==='limits')extras.limits=limits;
+  else throw Error('E_AGENT_UNKNOWN_CONTRACT');
+ }
+ return {
+  format:'tora-creation-capabilities-compact-1',
+  schemaVersions:cap.schemaVersions,
+  runtime:`${cap.runtime.id}@${cap.runtime.version}`,
+  ...(hasPacks?{packs:base.packs}:{}),
+  conditions:cap.conditions,
+  variables:cap.variables.types,
+  operations,
+  limits,
+  targets,
+  networkTargets:compactNetworkTargets,
+  availablePacks:availablePacks.map(({id,description})=>({id,description})),
+  commonContractProps,
+  contractStructure,
+  contracts:Object.fromEntries(Object.entries(selContracts).map(([id,c])=>[id,compactContract(c)])),
+  behaviors:Object.fromEntries(Object.entries(selBehaviors).map(([id,b])=>[id,compactProps(b)])),
+  events:base.events,
+  actions:base.actions,
+  ...extras,
+ };
+}

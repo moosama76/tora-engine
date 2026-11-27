@@ -1,6 +1,7 @@
 /** Local MCP stdio adapter, legacy protocol 2025-11-25. stdout is protocol only. */
 import process from 'node:process';
 import {Buffer} from 'node:buffer';
+import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {homedir} from 'node:os';
 import {resolve,dirname} from 'node:path';
@@ -9,30 +10,34 @@ import {ProjectStore} from '../project-store.mjs';
 import {EditorState} from '../editor-state.mjs';
 import {NativeService} from './service.mjs';
 import {NativeAgentTools} from './agent-tools.mjs';
-import {availablePacks,capabilities,capabilitiesForPacks,capabilitySummary} from './contracts.mjs';
+import {availablePacks,capabilities,capabilitiesForPacks,capabilitySummary,compactCapabilities} from './contracts.mjs';
 import {NativeReview} from './review.mjs';
 import {reviewRoutingFlags} from './review-resolver.mjs';
 import {ReviewIntake} from './review-intake.mjs';
 import {targets} from './network-targets.mjs';
 import {readOriginal,readUploadFile} from './assets.mjs';
+import {mapWithConcurrency} from './concurrency.mjs';
+import {closeSharedBrowser,getSharedBrowser} from './browser-pool.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../../..');
 const store=new ProjectStore(resolve(process.env.TORA_PROJECT_STORE??resolve(root,'.tora/native-projects')));
-const service=new NativeService(store,new EditorState(store)),agent=new NativeAgentTools(service);
+const service=new NativeService(store,new EditorState(store),{browserProvider:getSharedBrowser}),agent=new NativeAgentTools(service);
 const review=new NativeReview(service,{deterministic:reviewRoutingFlags().deterministic}),intakes=new ReviewIntake(service);
 const string={type:'string'},boolean={type:'boolean'},strings={type:'array',items:string};
 const expected={type:'object',properties:{revisionId:string,contentHash:string},required:['revisionId','contentHash'],additionalProperties:false};
+const assetSchema={type:'object',properties:{id:string,mime:{type:'string',enum:['image/png','image/jpeg','audio/wav','audio/mpeg','model/tora-mesh']},data:string,sourceHash:string,rights:string,optimize:{type:'string',enum:['auto','lossless','none']},preserveResolution:boolean},required:['id','mime','rights'],additionalProperties:false};
 const tools=[];
 function define(name,description,properties={},required=[],readOnly=false){tools.push({name:'tora_'+name,description,inputSchema:{type:'object',properties,required,additionalProperties:false},annotations:{readOnlyHint:readOnly,destructiveHint:!readOnly,openWorldHint:false}});}
-define('brief','Read current production instructions and core authoring documentation. Load domain guides with packs or legacy full references with full:true.',{packs:strings,full:boolean},[],true);
-define('capabilities','Discover supported contracts. Use packs for domains, names for exact descriptors, summary for the pack index, or omit all for the full registry.',{names:strings,packs:strings,summary:boolean},[],true);
+define('brief','Read current production instructions and core authoring documentation. Load domain guides with packs or legacy full references with full:true. Pass alreadyRead:[{name,sha256}] on re-reads to omit unchanged docs.',{packs:strings,full:boolean,alreadyRead:{type:'array',items:{type:'object',properties:{name:string,sha256:string},required:['name','sha256'],additionalProperties:false}}},[],true);
+define('capabilities','Discover supported contracts. Use packs for domains, names for exact descriptors, summary for the pack index, format:"compact" for concise schema with units, or omit all for the full registry.',{names:strings,packs:strings,summary:boolean,format:{type:'string',enum:['full','compact']}},[],true);
 define('compose','Compose an editable playable from a structured creative concept and prepared artwork. Read tora_brief and discover creative-concept capabilities first. Returns creative review status and requirement trace.',{id:string,name:string,concept:{type:'object'}},['id','concept']);
 define('create','Create an empty editable native project. Read tora_brief first.',{id:string,name:string,androidUrl:string},['id','name']);
-define('inspect','Inspect current state and revision identity. Narrow with ids/search; full explicitly returns the complete project.',{id:string,revisionId:string,ids:strings,fields:strings,search:string,full:boolean},['id'],true);
-define('edit','Preview and commit native operations against expected revision. Scope lists every intended changed ID. Outside-scope changes return PREVIEW without committing.',{id:string,expected,operations:{type:'array',items:{type:'object'}},scope:strings,previewOnly:boolean,previewDigest:string},['id','expected','operations','scope']);
-define('upload_asset','Upload and optimize PNG/JPEG/WAV/MP3 up to 8 MiB, or register a Tora mesh. Supply base64 data, a workspace filePath, or sourceHash from a retained original. Auto is default; lossless/none and preserveResolution are optional.',{id:string,expected,filePath:string,asset:{type:'object',properties:{id:string,mime:{type:'string',enum:['image/png','image/jpeg','audio/wav','audio/mpeg','model/tora-mesh']},data:string,sourceHash:string,rights:string,optimize:{type:'string',enum:['auto','lossless','none']},preserveResolution:boolean},required:['id','mime','rights'],additionalProperties:false}},['id','expected','asset']);
+define('inspect','Inspect current state and revision identity. Use tree:true for a compact scene outline, narrow with ids/search, or full:true for the complete project.',{id:string,revisionId:string,ids:strings,fields:strings,search:string,full:boolean,tree:boolean,sceneId:string},['id'],true);
+define('edit','Preview and commit native operations against expected revision. Supply operations or commitPreviewDigest (not both). Scope lists intended changed IDs; scopeCreates:true auto-allows brand-new records whose pre-existing targets are in scope.',{id:string,expected,operations:{type:'array',items:{type:'object'}},scope:strings,previewOnly:boolean,previewDigest:string,commitPreviewDigest:string,scopeCreates:boolean},['id','expected','scope']);
+define('upload_asset','Upload and optimize PNG/JPEG/WAV/MP3 up to 8 MiB, or register a Tora mesh. Supply base64 data, a workspace filePath, or sourceHash from a retained original. Auto is default; lossless/none and preserveResolution are optional.',{id:string,expected,filePath:string,asset:assetSchema},['id','expected','asset']);
+define('upload_assets','Batch upload and optimize up to 32 PNG/JPEG/WAV/MP3/mesh assets in one atomic revision. Prefer workspace filePath (avoids the 12 MiB MCP frame limit) or supply base64 data / retained sourceHash.',{id:string,expected,items:{type:'array',items:{type:'object',properties:{filePath:string,asset:assetSchema},required:['asset'],additionalProperties:false}}},['id','expected','items']);
 define('render','Write an HTML scene preview to output. Open it in a browser for visual inspection; this tool does not capture screenshots.',{id:string,revisionId:string,sceneId:string,output:string},['id','output']);
-define('qa','Run deterministic static, acoustic, four-viewport layout and primary-interaction QA on a native revision. Returns exact defects and writes labeled screenshots. A pass is engineering verification, not creative, device, or network acceptance.',{id:string,revisionId:string,output:string,target:{type:'string',enum:[...targets]}},['id']);
-define('export','Write standalone HTML, any of seven ad-network HTML/ZIP artifacts, or an editable project bundle. Network exports must pass Creative QA; project format exports the current working head. Passing QA is not visual, device, or network approval.',{id:string,revisionId:string,output:string,format:{type:'string',enum:['project']},target:{type:'string',enum:[...targets]}},['id','output']);
+define('qa','Run deterministic static, acoustic, four-viewport layout and primary-interaction QA on a native revision. Returns exact defects and writes labeled screenshots plus triage-only contact sheets. A pass is engineering verification, not creative, device, or network acceptance.',{id:string,revisionId:string,output:string,target:{type:'string',enum:[...targets]}},['id']);
+define('export','Write standalone HTML, any of seven ad-network HTML/ZIP artifacts, a batch of targets to outputDir, or an editable project bundle. Network exports must pass Creative QA; project format exports the current working head. Passing QA is not visual, device, or network approval.',{id:string,revisionId:string,output:string,format:{type:'string',enum:['project']},target:{type:'string',enum:[...targets]},targets:{type:'array',items:{type:'string',enum:[...targets]}},outputDir:string},['id']);
 define('history','Save, undo or redo against expected revision.',{id:string,expected,action:{type:'string',enum:['save','undo','redo']}},['id','expected','action']);
 define('review_claim','Claim an editor review request and read its authorized fields. Inspect the baseline and follow the selected scope.',{id:string,requestId:string},['id','requestId']);
 define('review_propose','Submit one creative revision against the claimed review request. For a note list, key changes by scoped note ID and then by authorized field ID. For older single-note requests, key changes directly by field ID. Each unique proposalId (UUID) counts as one pass. Wait for creator review before another proposal.',{id:string,requestId:string,proposalId:string,changes:{type:'object'},summary:string},['id','requestId','proposalId','changes','summary']);
@@ -72,15 +77,27 @@ async function call(name,args){
    ...domainPacks.map(id=>['pack:'+id,resolve(root,`docs/reference/packs/${id}.md`)]),
    ...(args.full?[['fullAuthoring',resolve(root,'docs/TORA_CREATION_API.md')],['agentTools',resolve(root,'docs/NATIVE_AGENT_TOOLS.md')]]:[]),
   ];
-  let documents;
+  let rawDocuments;
   try{
    const [playable,...rest]=await Promise.all([resolvePlayableBrief(),...files.map(async([docName,path])=>({name:docName,path,text:await readFile(path,'utf8')}))]);
-   documents=[rest[0],playable,...rest.slice(1)];
+   rawDocuments=[rest[0],playable,...rest.slice(1)];
   }catch{throw Error('E_MCP_BRIEF_UNAVAILABLE');}
-  briefRead=true;return {documents,availablePacks:availablePacks.map(({id,description})=>({id,description})),store:store.root,instructions:'Apply these briefs. Establish one coherent visual style and an asset plan before implementation. Use the retained, authorized studio assets for studio intake. For sourced packs use free third-party libraries with verified commercial-use license evidence, author, source URL, and source hashes. Keep visual assets within one style family; audio may use a separate compatible pack. Asset creation and image generation are outside this authoring workflow. Inspect packaged screenshots and footage; tests do not establish visual quality. Use connected browser tools to inspect actual exported output.'};
+  const known=new Map((args.alreadyRead??[]).map(entry=>[entry.name,entry.sha256]));
+  const digests={};
+  const documents=rawDocuments.map(doc=>{
+   const sha256='sha256:'+createHash('sha256').update(doc.text,'utf8').digest('hex');
+   digests[doc.name]=sha256;
+   if(known.get(doc.name)===sha256)return {name:doc.name,path:doc.path,sha256,omitted:true};
+   return doc;
+  });
+  briefRead=true;return {documents,digests,availablePacks:availablePacks.map(({id,description})=>({id,description})),store:store.root,instructions:'Apply these briefs. Establish one coherent visual style and an asset plan before implementation. Use the retained, authorized studio assets for studio intake. For sourced packs use free third-party libraries with verified commercial-use license evidence, author, source URL, and source hashes. Keep visual assets within one style family; audio may use a separate compatible pack. Asset creation and image generation are outside this authoring workflow. Inspect packaged screenshots and footage; tests do not establish visual quality. Use connected browser tools to inspect actual exported output.'};
  }
  if(name==='tora_capabilities'){
   if(args.summary)return capabilitySummary();
+  if(args.format==='compact'){
+   if(args.names)return agent.run({command:'contracts',names:args.names,packs:args.packs,format:'compact'});
+   return compactCapabilities({packs:args.packs});
+  }
   if(args.packs){const scoped=capabilitiesForPacks(args.packs);if(!args.names)return scoped;}
   return args.names||args.packs?agent.run({command:'contracts',names:args.names,packs:args.packs}):capabilities();
  }
@@ -103,7 +120,27 @@ async function call(name,args){
   if(asset.sourceHash){asset.data=(await readOriginal(resolve(store.root,args.id),asset.sourceHash)).toString('base64');delete asset.sourceHash;}
   const r=await service.upload(args.id,{...args,asset});return {status:'UPLOADED',asset:r.asset,expected:{revisionId:r.revisionId,contentHash:r.contentHash}};
  }
+ if(name==='tora_upload_assets'){
+  if(!Array.isArray(args.items)||args.items.length<1||args.items.length>32)throw Error('E_MCP_ARGUMENT');
+  const current=await service.read(args.id);if(current.revisionId!==args.expected.revisionId||current.contentHash!==args.expected.contentHash)throw Error('E_NATIVE_STALE');
+  for(const item of args.items){
+   const sources=[Boolean(item.filePath),Boolean(item.asset?.data),Boolean(item.asset?.sourceHash)];
+   if(sources.filter(Boolean).length!==1)throw Error('E_MCP_ARGUMENT');
+  }
+  const assets=await mapWithConcurrency(args.items,4,async item=>{
+   const asset={...item.asset};
+   if(item.filePath)asset.data=(await readUploadFile(root,item.filePath)).toString('base64');
+   return asset;
+  });
+  const r=await service.uploadBatch(args.id,{expected:args.expected,assets});
+  return {status:'UPLOADED',assets:r.assets,expected:{revisionId:r.revisionId,contentHash:r.contentHash}};
+ }
  if(name==='tora_export'&&args.format==='project'&&args.revisionId)throw Error('E_MCP_PROJECT_EXPORT_HEAD_ONLY');
+ if(name==='tora_export'){
+  const isBatch=args.targets!==undefined;
+  if(isBatch&&(args.output||args.target||args.format||!args.outputDir))throw Error('E_MCP_ARGUMENT');
+  if(!isBatch&&(!args.output||args.outputDir))throw Error('E_MCP_ARGUMENT');
+ }
  return agent.run({...args,command:name.slice(5)});
 }
 const error=(id,code,message)=>({jsonrpc:'2.0',id,error:{code,message}});
@@ -137,10 +174,17 @@ export async function dispatch(request){
 }
 async function main(){
  // Bound each newline-delimited message before decoding; process serially to preserve writes.
+ const shutdown=()=>{void closeSharedBrowser().finally(()=>process.exit(0));};
+ process.once('SIGINT',shutdown);
+ process.once('SIGTERM',shutdown);
  let pending=Buffer.alloc(0);
- for await(const chunk of process.stdin){pending=Buffer.concat([pending,chunk]);let newline;
-  while((newline=pending.indexOf(10))!==-1){const line=pending.subarray(0,newline);pending=pending.subarray(newline+1);if(line.length>12582912)throw Error('E_MCP_INPUT_LIMIT');if(!line.length)continue;let request,response;try{request=JSON.parse(line.toString('utf8'));}catch{response=error(null,-32700,'Parse error');}response??=await dispatch(request);if(response)process.stdout.write(JSON.stringify(response)+'\n');}
-  if(pending.length>12582912)throw Error('E_MCP_INPUT_LIMIT');
+ try{
+  for await(const chunk of process.stdin){pending=Buffer.concat([pending,chunk]);let newline;
+   while((newline=pending.indexOf(10))!==-1){const line=pending.subarray(0,newline);pending=pending.subarray(newline+1);if(line.length>12582912)throw Error('E_MCP_INPUT_LIMIT');if(!line.length)continue;let request,response;try{request=JSON.parse(line.toString('utf8'));}catch{response=error(null,-32700,'Parse error');}response??=await dispatch(request);if(response)process.stdout.write(JSON.stringify(response)+'\n');}
+   if(pending.length>12582912)throw Error('E_MCP_INPUT_LIMIT');
+  }
+ }finally{
+  await closeSharedBrowser();
  }
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))await main().catch(()=>{process.stderr.write('Tora MCP transport failed\n');process.exitCode=1;});

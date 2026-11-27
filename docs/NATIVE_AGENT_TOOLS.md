@@ -22,8 +22,10 @@ Low-level requests follow.
 ```json
 {"command":"create","id":"my-game","name":"My game"}
 {"command":"inspect","id":"my-game"}
+{"command":"inspect","id":"my-game","tree":true}
 {"command":"inspect","id":"my-game","search":"title"}
 {"command":"inspect","id":"my-game","ids":["title"],"fields":["parameters.text"]}
+{"command":"contracts","packs":["core"],"format":"compact"}
 {"command":"contracts","names":["native.text.v1"]}
 ```
 
@@ -32,23 +34,30 @@ return `creativeStatus:"PROTOTYPE"` and unmet requirements. The response binds e
 composition to `conceptHash`. Concept and project approval remain explicit.
 
 Inspection returns `expected: {revisionId,contentHash}` for the edit you reviewed.
-Scoped inspection includes relevant ancestors, referenced records and reverse
-references; parameter inspection includes the selected property descriptors.
-Overview/search responses have an 8 KiB limit and scoped responses a 24 KiB limit.
-An oversized response returns `E_AGENT_NARROW_SCOPE` instead of truncating. Use
+Use `tree:true` (with optional `sceneId`) for a deterministic compact scene outline
+(bounded to 16 KiB) containing `base`, `assets`, `variables`, indented scene hierarchy
+nodes, and compact `bindings`. Scoped inspection includes relevant ancestors, referenced
+records and reverse references; parameter inspection includes the selected property
+descriptors. Overview/search responses have an 8 KiB limit and scoped responses a 24 KiB
+limit. An oversized response returns `E_AGENT_NARROW_SCOPE` instead of truncating. Use
 `full:true` explicitly to retrieve the complete project document.
 
-Submit an edit with `command:"edit"`, `id`, `expected`, existing native
-`operations`, and `scope`, an array of every intended changed record ID, including
-new records. Use the reserved scope ID `$project.base` for project settings changes
+Submit an edit with `command:"edit"`, `id`, `expected`, either `operations` or a cached
+`commitPreviewDigest` (never both), and `scope`, an array of intended changed record IDs.
+Pass `scopeCreates:true` to auto-allow brand-new records in the transaction whenever every
+pre-existing component, behavior, event, binding, or variable they reference is explicitly
+listed in `scope` (existing records and `$project.base` still always require explicit
+`scope`). Use the reserved scope ID `$project.base` for project settings changes
 (`setStore` and `setStartScene`). Their changed ID is reported even when no scene
 or component record changes. Tombstones are automatic deletion bookkeeping, not
 a separate authorable scope. Preview and commit happen within that call. If validation finds any
 changed records outside scope, the result is `status:"PREVIEW"` with
-`outsideScope`, changed IDs and a digest; no mutation occurs. Review those effects
-and resubmit with the intended scope and optional `previewDigest`. `previewOnly`
-requests inspection without committing. A stale revision fails without rebasing.
-Successful edit responses fit within 4 KiB; oversized responses fail before commit.
+`outsideScope`, changed IDs and a `previewDigest`; no mutation occurs. Review those effects
+and either resubmit with the intended `scope` plus `commitPreviewDigest` (committing the
+cached preview without regenerating `operations`, still enforcing `scope` and revision
+checks) or rebuild the operations. `previewOnly` requests inspection without committing.
+A stale revision fails without rebasing. Successful edit responses fit within 4 KiB;
+oversized responses fail before commit.
 
 Other commands:
 
@@ -58,13 +67,20 @@ Other commands:
   Open the artifact in a browser to capture screenshots or inspect it.
 - `export`: `id`, optional `revisionId`, `output`, and optional
   `target:"standalone-browser-draft"|"unity-ads-ua-playable"|"applovin-growth-playable"|"meta-audience-playable"|"google-ads-app-playable"|"ironsource-levelplay-playable"|"mintegral-appgrowth-zip"|"tiktok-ads-playable"` (standalone is the default). ZIP targets require a `.zip` output; Mintegral requires the basename `<projectId>.zip`.
+- `export` batch: `id`, optional `revisionId`, `targets:[...]` (1–8 unique targets), and
+  `outputDir`. Compiles targets in parallel, reuses verified QA receipts when valid, and
+  runs Creative QA serially to prevent 150 ms timing contention.
 - `export` with `format:"project"`: `id` and `output` for the current editable bundle.
 - `import`: `file` and optional `copy:true`; validates and imports an editable bundle.
   Project collision handling and asset validation use the shared bundle adapter.
 
 Contract requests accept registered component contracts, behavior names, or
-`operations`, `events`, `actions`, and `limits`. The registry is returned only when
-explicitly requested; it is not attached to every mutation response.
+`operations`, `events`, `actions`, and `limits`, plus optional `format:"compact"` (emitting
+`tora-creation-capabilities-compact-1` with hoisted common contract properties and short
+units on all unit-bearing fields). The registry is returned only when explicitly requested;
+it is not attached to every mutation response. HTTP parity is available via
+`GET /api/creation/capabilities?format=compact&packs=...`, `GET /api/projects/:id?tree=1`,
+and `POST /api/projects/:id/assets` accepting `{expected, assets:[...]}` for atomic batch uploads.
 
 Standalone HTML remains a browser draft. Every network output starts as
 `ASSEMBLED_UNVERIFIED`: Unity/AppLovin use MRAID, Meta uses FbPlayableAd, Google
@@ -77,15 +93,24 @@ visual, physical-device, official ad-network, or campaign acceptance.
 
 `tora_qa` and CLI `{"command":"qa","id":"my-game"}` run static/acoustic preflight and
 Playwright checks at 320×568, 390×844, 768×1024, and 844×390. They write a
-`tora-creative-qa-1` report and labeled opening/after-input PNGs under the project
-QA directory unless `output` is supplied. Checks cover WAV clipping/silence,
-catalog role and valence, distinct win/loss bytes, mix hierarchy, unsupported pixel
-glyphs, stage/parent clipping, text fit, 44 CSS-pixel touch targets, interactive
-overlap, SDK safe zones, and a primary-input response within 150 ms.
+`tora-creative-qa-1` report, labeled individual viewport PNGs, and triage-only contact
+sheets (`screenshots/sheet-<state>.png` and `screenshots/contact-sheet.png`, marked
+`triageOnly: true`) under the project QA directory unless `output` is supplied. Contact
+sheets speed up mid-build visual triage, but individual full-size viewport PNGs (and
+gameplay footage for motion) remain mandatory to inspect before final delivery. Checks
+cover WAV clipping/silence, catalog role and valence, distinct win/loss bytes, mix
+hierarchy, unsupported pixel glyphs, stage/parent clipping, text fit, 44 CSS-pixel touch
+targets, interactive overlap, SDK safe zones, and a primary-input response within 150 ms.
 
-Standalone and Unity HTML exports run the same gate. Blockers reject export with
-`E_CREATIVE_QA` and the structured report; successful manifests identify the QA
-evidence. Review agents can call their `qa` tool on a preview digest, and candidates
+Standalone and Unity HTML exports run the same gate. Passing QA receipts are cached
+across MCP, HTTP, and intake services by artifact hash, QA/host-script checker version,
+Playwright/Chromium version, and target (verifying referenced screenshot hashes on disk
+before returning a hit). Because the 150 ms interaction check is timing-sensitive, a
+borderline passing result remains cached until the artifact, checker, Playwright/Chromium
+version, or stored screenshot artifacts change. Blockers reject export with `E_CREATIVE_QA`
+and the structured report; batch exports run QA for every target before writing any output
+files so partial failure leaves no orphaned exports on disk. Successful manifests identify
+the QA evidence. Review agents can call their `qa` tool on a preview digest, and candidates
 with blockers are not staged. Editable project-bundle export remains available for
 repair and is not represented as a playable-quality pass.
 

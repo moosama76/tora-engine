@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {createRequire} from 'node:module';
 import {readFile,mkdir,writeFile,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL,URL} from 'node:url';
@@ -44,7 +45,46 @@ const canonical=value=>{
  return value;
 };
 const hash=value=>'sha256:'+createHash('sha256').update(value).digest('hex');
-export const CREATIVE_QA_CHECKER_VERSION='tora-creative-qa-1:'+hash(await readFile(new URL(import.meta.url)));
+const [qaSourceBytes,mraidHostBytes,vendorHostBytes]=await Promise.all([
+ readFile(new URL(import.meta.url)),
+ readFile(new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url)),
+ readFile(new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url)),
+]);
+export const CREATIVE_QA_CHECKER_VERSION='tora-creative-qa-1:'+hash(Buffer.concat([qaSourceBytes,mraidHostBytes,vendorHostBytes]));
+let cachedBrowserVersionPromise=null;
+export function getPlaywrightBrowserVersion(){
+ if(!cachedBrowserVersionPromise){
+  cachedBrowserVersionPromise=(async()=>{
+   let pwVersion='unknown',execId='unknown';
+   try{pwVersion=createRequire(import.meta.url)('playwright/package.json').version??'unknown';}catch{/* ignore */}
+   try{
+    const {chromium}=await import('playwright');
+    const execPath=chromium.executablePath?.()??'';
+    execId=execPath.match(/chromium-\d+/)?.[0]??(execPath?hash(execPath):'unknown');
+   }catch{/* ignore */}
+   return `playwright@${pwVersion}:${execId}`;
+  })();
+ }
+ return cachedBrowserVersionPromise;
+}
+const hostInitCache=new Map();
+async function getHostInit(networkTarget){
+ const key=`${networkTarget.hostKind}:${networkTarget.mraidVersion??''}`;
+ if(hostInitCache.has(key))return hostInitCache.get(key);
+ const {build}=await import('esbuild');
+ let script;
+ if(networkTarget.hostKind==='mraid'){
+  const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'});
+  script=host.outputFiles[0].text+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
+ }else{
+  const installer={dapi:'installIronSourceHost',meta:'installMetaHost','google-exitapi':'installGoogleExitApiHost',mintegral:'installMintegralHost',tiktok:'installTikTokHost'}[networkTarget.hostKind];
+  if(!installer)throw Error('E_NATIVE_UNSUPPORTED_TARGET');
+  const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'VendorHost',write:false,platform:'browser'});
+  script=host.outputFiles[0].text+`;VendorHost.${installer}();`;
+ }
+ hostInitCache.set(key,script);
+ return script;
+}
 const delay=ms=>new Promise(resolveDelay=>setTimeout(resolveDelay,ms));
 const sortedViewport=(a,b)=>a.width-b.width||a.height-b.height;
 const viewportKey=viewport=>viewport?`${viewport.width}x${viewport.height}`:'';
@@ -67,17 +107,19 @@ function summarize(states,screenshots,blockers,warnings){
  const skippedStates=[...new Set(states.filter(row=>row.status!=='checked').map(row=>row.state))].sort((a,b)=>stateOrder.indexOf(a)-stateOrder.indexOf(b));
  return {blockers:blockers.length,warnings:warnings.length,viewports,checkedStates,skippedStates};
 }
-export function formatCreativeQaReport({scope='static',blockers=[],warnings=[],checks={},interactions=[],states=[],screenshots=[]}={}){
+export function formatCreativeQaReport({scope='static',blockers=[],warnings=[],checks={},interactions=[],states=[],screenshots=[],contactSheets=[]}={}){
  const normalizedBlockers=blockers.map(row=>({...row,componentId:row.componentId??null,viewport:normalizeViewport(row.viewport)})).sort(issueSort);
  const normalizedWarnings=warnings.map(row=>({...row,componentId:row.componentId??null,viewport:normalizeViewport(row.viewport)})).sort(issueSort);
  const normalizedStates=states.map(row=>({...row,viewport:normalizeViewport(row.viewport)})).sort((a,b)=>viewportKey(a.viewport).localeCompare(viewportKey(b.viewport))||stateOrder.indexOf(a.state)-stateOrder.indexOf(b.state));
  const normalizedScreenshots=screenshots.map(row=>({...row,viewport:normalizeViewport(row.viewport)})).sort(artifactSort);
+ const normalizedSheets=contactSheets.map(row=>({...row,viewports:(row.viewports??[]).map(normalizeViewport),triageOnly:true}));
  return canonical({
   format:CREATIVE_QA_FORMAT,ok:normalizedBlockers.length===0,scope,
   summary:summarize(normalizedStates,normalizedScreenshots,normalizedBlockers,normalizedWarnings),
   blockers:normalizedBlockers,warnings:normalizedWarnings,checks,
   interactions:[...interactions].sort((a,b)=>viewportKey(a.viewport).localeCompare(viewportKey(b.viewport))),
   states:normalizedStates,screenshots:normalizedScreenshots,
+  ...(normalizedSheets.length?{contactSheets:normalizedSheets}:{}),
  });
 }
 export const formatQaReport=formatCreativeQaReport;
@@ -436,16 +478,7 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
  let hostInit;
  const networkTarget=getNetworkTarget(network);
  if(networkTarget&&networkTarget.hostKind!=='browser'){
-  const {build}=await import('esbuild');
-  if(networkTarget.hostKind==='mraid'){
-   const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'});
-   hostInit=host.outputFiles[0].text+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
-  }else{
-   const installer={dapi:'installIronSourceHost',meta:'installMetaHost','google-exitapi':'installGoogleExitApiHost',mintegral:'installMintegralHost',tiktok:'installTikTokHost'}[networkTarget.hostKind];
-   if(!installer)throw Error('E_NATIVE_UNSUPPORTED_TARGET');
-   const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'VendorHost',write:false,platform:'browser'});
-   hostInit=host.outputFiles[0].text+`;VendorHost.${installer}();`;
-  }
+  hostInit=await getHostInit(networkTarget);
   await page.addInitScript(hostInit);
  }
  if(networkTarget?.hostKind==='google-exitapi'||networkTarget?.hostKind==='tiktok'){
@@ -665,6 +698,90 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     return result!==false&&result?.available!==false&&result?.supported!==false;
    },{name:stateHook,moment:state});
   },
+  async composeContactSheets({screenshotDir,screenshots}){
+   const byState=new Map();
+   for(const state of stateOrder){
+    const rows=screenshots.filter(row=>row.state===state);
+    if(rows.length)byState.set(state,rows);
+   }
+   if(!byState.size)return [];
+   const sheetPage=await context.newPage();
+   try{
+    await sheetPage.goto('about:blank');
+    const strips=[],results=[];
+    for(const [state,rows]of byState.entries()){
+     const ordered=[...rows].sort((a,b)=>{
+      const ai=DEFAULT_VIEWPORTS.findIndex(v=>v.width===a.viewport.width&&v.height===a.viewport.height);
+      const bi=DEFAULT_VIEWPORTS.findIndex(v=>v.width===b.viewport.width&&v.height===b.viewport.height);
+      return (ai<0?99:ai)-(bi<0?99:bi);
+     });
+     const tiles=await Promise.all(ordered.map(async row=>{
+      const bytes=await readFile(resolve(screenshotDir,row.path.replace(/^screenshots\//,'')));
+      return {label:`${row.viewport.width}×${row.viewport.height}`,viewport:row.viewport,dataUrl:`data:image/png;base64,${bytes.toString('base64')}`};
+     }));
+     const rendered=await sheetPage.evaluate(async({stateName,tileInputs})=>{
+      const loadImg=src=>new Promise((res,rej)=>{const img=new globalThis.Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});
+      const loaded=await Promise.all(tileInputs.map(async t=>({...t,img:await loadImg(t.dataUrl)})));
+      const pad=14,gap=12,headerH=36,cardPad=8,labelH=22,maxTileH=420,maxTileW=560;
+      const sized=loaded.map(t=>{
+       const scale=Math.min(maxTileH/t.img.naturalHeight,maxTileW/t.img.naturalWidth,1);
+       const drawW=Math.max(1,Math.round(t.img.naturalWidth*scale)),drawH=Math.max(1,Math.round(t.img.naturalHeight*scale));
+       return {...t,drawW,drawH,cardW:drawW+cardPad*2,cardH:maxTileH+labelH+cardPad*2};
+      });
+      const totalW=Math.max(640,pad*2+sized.reduce((s,t)=>s+t.cardW,0)+gap*Math.max(0,sized.length-1));
+      const totalH=pad+headerH+maxTileH+labelH+cardPad*2+pad;
+      const canvas=globalThis.document.createElement('canvas');
+      canvas.width=totalW;canvas.height=totalH;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#12151c';ctx.fillRect(0,0,totalW,totalH);
+      ctx.fillStyle='#eef2f7';ctx.font='700 15px system-ui, -apple-system, sans-serif';ctx.textBaseline='middle';
+      ctx.fillText(stateName.toUpperCase(),pad,pad+headerH/2-2);
+      const badge='TRIAGE ONLY — INSPECT FULL PNGS BEFORE DELIVERY';
+      ctx.font='600 11px system-ui, -apple-system, sans-serif';
+      const badgeW=ctx.measureText(badge).width+16;
+      ctx.fillStyle='#2a2417';ctx.fillRect(totalW-pad-badgeW,pad+5,badgeW,22);
+      ctx.strokeStyle='#8c6a27';ctx.lineWidth=1;ctx.strokeRect(totalW-pad-badgeW+.5,pad+5.5,badgeW-1,21);
+      ctx.fillStyle='#f6d482';ctx.fillText(badge,totalW-pad-badgeW+8,pad+16);
+      let x=pad;const top=pad+headerH;
+      for(const t of sized){
+       ctx.fillStyle='#1b202b';ctx.fillRect(x,top,t.cardW,t.cardH);
+       ctx.strokeStyle='#2f384a';ctx.lineWidth=1;ctx.strokeRect(x+.5,top+.5,t.cardW-1,t.cardH-1);
+       ctx.fillStyle='#cbd5e1';ctx.font='700 12px system-ui, -apple-system, sans-serif';
+       ctx.fillText(t.label,x+cardPad,top+cardPad+labelH/2-1);
+       const imgX=x+cardPad,imgY=top+cardPad+labelH+Math.floor((maxTileH-t.drawH)/2);
+       ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+       ctx.drawImage(t.img,imgX,imgY,t.drawW,t.drawH);
+       x+=t.cardW+gap;
+      }
+      return {width:totalW,height:totalH,dataUrl:canvas.toDataURL('image/png')};
+     },{stateName:state,tileInputs:tiles});
+     const png=Buffer.from(rendered.dataUrl.slice('data:image/png;base64,'.length),'base64');
+     const filename=`sheet-${state}.png`;
+     await writeFile(resolve(screenshotDir,filename),png);
+     strips.push({state,width:rendered.width,height:rendered.height,dataUrl:rendered.dataUrl});
+     results.push({state,path:`screenshots/${filename}`,width:rendered.width,height:rendered.height,sha256:hash(png),viewports:ordered.map(r=>normalizeViewport(r.viewport)),triageOnly:true});
+    }
+    if(strips.length){
+     const combined=await sheetPage.evaluate(async stripInputs=>{
+      const loadImg=src=>new Promise((res,rej)=>{const img=new globalThis.Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});
+      const imgs=await Promise.all(stripInputs.map(async s=>({...s,img:await loadImg(s.dataUrl)})));
+      const gap=10,width=Math.max(...imgs.map(s=>s.width)),height=imgs.reduce((sum,s)=>sum+s.height,0)+gap*Math.max(0,imgs.length-1);
+      const canvas=globalThis.document.createElement('canvas');
+      canvas.width=width;canvas.height=height;
+      const ctx=canvas.getContext('2d');
+      ctx.fillStyle='#0c0f14';ctx.fillRect(0,0,width,height);
+      let y=0;
+      for(const s of imgs){ctx.drawImage(s.img,0,y);y+=s.height+gap;}
+      return {width,height,dataUrl:canvas.toDataURL('image/png')};
+     },strips);
+     const allPng=Buffer.from(combined.dataUrl.slice('data:image/png;base64,'.length),'base64');
+     await writeFile(resolve(screenshotDir,'contact-sheet.png'),allPng);
+     const allViewports=[...new Map(screenshots.map(r=>[viewportKey(r.viewport),normalizeViewport(r.viewport)])).values()].sort(sortedViewport);
+     results.push({state:'all',path:'screenshots/contact-sheet.png',width:combined.width,height:combined.height,sha256:hash(allPng),viewports:allViewports,triageOnly:true});
+    }
+    return results;
+   }finally{await sheetPage.close().catch(()=>{});}
+  },
   async close(){if(closed)return;closed=true;await context.close();if(!sharedBrowser)await browser.close();},
  };
 }
@@ -752,8 +869,9 @@ export async function runBrowserQa(options={}){
  if(!htmlPath&&typeof options.html!=='string'&&typeof options.htmlString!=='string')throw Error('Supply an HTML artifact path or HTML string');
  const html=typeof options.html==='string'?options.html:typeof options.htmlString==='string'?options.htmlString:await readFile(htmlPath,'utf8');
  const project=options.project??projectFromHtml(html),blockers=[],warnings=[],interactions=[],states=[],screenshots=[];
+ let contactSheets=[];
  const screenshotDir=resolve(outputDir,'screenshots');await mkdir(screenshotDir,{recursive:true});
- await Promise.all(DEFAULT_VIEWPORTS.flatMap(viewport=>stateOrder.map(state=>rm(resolve(screenshotDir,`${viewport.width}x${viewport.height}-${state}.png`),{force:true}))));
+ await Promise.all([...DEFAULT_VIEWPORTS.flatMap(viewport=>stateOrder.map(state=>rm(resolve(screenshotDir,`${viewport.width}x${viewport.height}-${state}.png`),{force:true}))),...stateOrder.map(state=>rm(resolve(screenshotDir,`sheet-${state}.png`),{force:true})),rm(resolve(screenshotDir,'contact-sheet.png'),{force:true})]);
  const session=await createSession(browserAdapter,{html,htmlPath,project,network,primaryComponentId,stateHook,browser:options.browser});
  const capture=async(viewport,state)=>{
   const bytes=await session.screenshot(),filename=`${viewport.width}x${viewport.height}-${state}.png`;
@@ -856,8 +974,16 @@ export async function runBrowserQa(options={}){
     }
    }
   }
+  if(screenshots.length&&typeof session.composeContactSheets==='function'){
+   try{
+    contactSheets=await session.composeContactSheets({screenshotDir,screenshots});
+   }catch(error){
+    contactSheets=[];
+    warnings.push(issue('warning','contact-sheet-failed',null,'Inspect individual full-size viewport PNGs directly; triage contact-sheet generation failed.',{detail:error?.message??String(error)}));
+   }
+  }
  }finally{await session.close?.();}
- const report=formatCreativeQaReport({scope:'browser',blockers,warnings,interactions,states,screenshots,checks:{viewports:DEFAULT_VIEWPORTS,browserContexts:1,primaryInteraction:'project-click-events',interactionLimitMs:INTERACTION_LIMIT_MS,minTouchPx:MIN_TOUCH_PX,stateHook:stateHook?typeof stateHook:'not-supplied'}});
+ const report=formatCreativeQaReport({scope:'browser',blockers,warnings,interactions,states,screenshots,contactSheets,checks:{viewports:DEFAULT_VIEWPORTS,browserContexts:1,primaryInteraction:'project-click-events',interactionLimitMs:INTERACTION_LIMIT_MS,minTouchPx:MIN_TOUCH_PX,stateHook:stateHook?typeof stateHook:'not-supplied'}});
  await writeCreativeQaReport(report,outputDir);return report;
 }
 export const runBrowserAudit=runBrowserQa;
@@ -869,7 +995,7 @@ export async function runCreativeQa(options={}){
  const project=options.project??(html?projectFromHtml(html):undefined);
  const staticReport=project?await runStaticPreflight(project,options):formatCreativeQaReport({scope:'static',warnings:[issue('warning','static-preflight-unavailable',null,'Supply the native project or embed it in the HTML artifact to enable static preflight.')],checks:{project:false}});
  const browserReport=await runBrowserQa({...options,html,project});
- const report=formatCreativeQaReport({scope:'static+browser',blockers:[...staticReport.blockers,...browserReport.blockers],warnings:[...staticReport.warnings,...browserReport.warnings],interactions:browserReport.interactions,states:browserReport.states,screenshots:browserReport.screenshots,checks:{static:staticReport.checks,browser:browserReport.checks}});
+ const report=formatCreativeQaReport({scope:'static+browser',blockers:[...staticReport.blockers,...browserReport.blockers],warnings:[...staticReport.warnings,...browserReport.warnings],interactions:browserReport.interactions,states:browserReport.states,screenshots:browserReport.screenshots,contactSheets:browserReport.contactSheets??[],checks:{static:staticReport.checks,browser:browserReport.checks}});
  await writeCreativeQaReport(report,options.outputDir);return report;
 }
 

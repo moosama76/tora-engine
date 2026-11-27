@@ -6,6 +6,7 @@ import {AssetCatalog,assertAssetSourceAllowed,inspectMedia} from './asset-catalo
 import {NativeAgentTools} from './agent-tools.mjs';
 import {check,exact} from './document.mjs';
 import {RemoteCc0Fetcher} from './remote-cc0-fetcher.mjs';
+import {mapWithConcurrency} from './concurrency.mjs';
 
 const identity=value=>({revisionId:value.revisionId,contentHash:value.contentHash});
 const compactAsset=asset=>({id:asset.id,name:asset.name,mime:asset.mime,kind:asset.kind??(asset.mime.startsWith('image/')?'sprite':'audio'),bytes:asset.bytes,width:asset.width,height:asset.height,durationSec:asset.durationSec,styleFamily:asset.styleFamily,license:asset.license??'creator-declared',source:asset.source??'studio',sourceUrl:asset.sourceUrl,author:asset.author});
@@ -13,11 +14,11 @@ function bounded(value,limit=24_000){
  const text=JSON.stringify(value);if(Buffer.byteLength(text)>limit)throw Error('E_CREATOR_TOOL_RESPONSE_LIMIT');return value;
 }
 export const creatorToolDefinitions=[
- {name:'discover_contracts',description:'Discover exact Tora contracts before authoring. Use packs for complete domains, names for individual descriptors, or both.',parameters:{type:'object',properties:{names:{type:'array',items:{type:'string'},maxItems:16},packs:{type:'array',items:{type:'string'},maxItems:7}},additionalProperties:false}},
+ {name:'discover_contracts',description:'Discover exact Tora contracts before authoring. Use packs for complete domains, names for individual descriptors, or both. Use format:"compact" for concise schema with units.',parameters:{type:'object',properties:{names:{type:'array',items:{type:'string'},maxItems:16},packs:{type:'array',items:{type:'string'},maxItems:7},format:{type:'string',enum:['full','compact']}},additionalProperties:false}},
  {name:'list_assets',description:'List creator uploads and verified local CC0 media with dimensions and provenance. Optionally search allowlisted live CC0 providers.',parameters:{type:'object',properties:{query:{type:'string'},kind:{type:'string',enum:['sprite','audio','mesh']},styleFamily:{type:'string'},includeRemote:{type:'boolean'}},additionalProperties:false}},
  {name:'fetch_remote_pack',description:'Fetch and verify one allowlisted Kenney or OpenGameArt CC0 pack. Returns cached normalized media and license receipts.',parameters:{type:'object',properties:{sourceUrl:{type:'string'},packId:{type:'string'},fileFilter:{type:'string'}},required:['sourceUrl'],additionalProperties:false}},
- {name:'stage_assets',description:'Stage verified uploaded, local catalog, or fetched remote assets into the draft. Asset-source slider and one visual style family are enforced.',parameters:{type:'object',properties:{intakeAssetIds:{type:'array',items:{type:'string'}},catalogAssetIds:{type:'array',items:{type:'string'}},remoteAssetIds:{type:'array',items:{type:'string'}}},additionalProperties:false}},
- {name:'inspect_draft',description:'Inspect draft revision, records, and dependencies with bounded results.',parameters:{type:'object',properties:{ids:{type:'array',items:{type:'string'}},search:{type:'string'}},additionalProperties:false}},
+ {name:'stage_assets',description:'Stage verified uploaded, local catalog, or fetched remote assets into the draft in one atomic revision. Asset-source slider and one visual style family are enforced.',parameters:{type:'object',properties:{intakeAssetIds:{type:'array',items:{type:'string'}},catalogAssetIds:{type:'array',items:{type:'string'}},remoteAssetIds:{type:'array',items:{type:'string'}}},additionalProperties:false}},
+ {name:'inspect_draft',description:'Inspect draft revision, records, and dependencies with bounded results. Use tree:true for a compact scene outline.',parameters:{type:'object',properties:{ids:{type:'array',items:{type:'string'}},search:{type:'string'},tree:{type:'boolean'},sceneId:{type:'string'}},additionalProperties:false}},
  {name:'apply_operations',description:'Preview and atomically commit a tora-transaction-1 operation batch. Register assets only through stage_assets.',parameters:{type:'object',properties:{operations:{type:'array',items:{type:'object'}},summary:{type:'string'}},required:['operations','summary'],additionalProperties:false}},
  {name:'run_qa',description:'Compile and run static, acoustic, four-viewport, and interaction Creative QA. Returned screenshots must be visually inspected before finishing.',parameters:{type:'object',properties:{target:{type:'string',enum:['standalone-browser-draft','unity-ads-ua-playable','applovin-growth-playable']}},additionalProperties:false}},
  {name:'finish_build',description:'Finish only after real interaction, an end-card Store CTA, staged media, and a clean QA run. Returns the editor-ready project and provenance summary.',parameters:{type:'object',properties:{title:{type:'string'},summary:{type:'string'}},required:['title','summary'],additionalProperties:false}},
@@ -34,8 +35,8 @@ export class IntakeCreatorTools{
   return this[method](args);
  }
  async discoverContracts(args){
-  check(exact(args,['names','packs'])&&(Array.isArray(args.names)||Array.isArray(args.packs)), 'E_CREATOR_TOOL_ARGUMENT');
-  return bounded(await this.agent.run({command:'contracts',names:args.names,packs:args.packs}),args.packs?65536:24000);
+  check(exact(args,['names','packs','format'])&&(Array.isArray(args.names)||Array.isArray(args.packs)),'E_CREATOR_TOOL_ARGUMENT');
+  return bounded(await this.agent.run({command:'contracts',names:args.names,packs:args.packs,...(args.format?{format:args.format}:{})}),args.packs?65536:24000);
  }
  async studioAssets(){
   const output=[];
@@ -76,37 +77,59 @@ export class IntakeCreatorTools{
    await this.onProgress({draftProjectId:this.intake.projectId});return created;
   }
  }
- async stageOne({id,mime,bytes,rights,provenance,source,styleFamily}){
-  assertAssetSourceAllowed(this.intake.assetSource??'studio-assets',source);const current=await this.ensureDraft(),existing=current.project.assets.find(asset=>asset.id===id);
-  if(existing){check(existing.hash===provenance.sourceHash,'E_ASSET_DUPLICATE_ID');return existing;}
-  if(mime.startsWith('image/')){
-   const families=new Set(current.project.assets.filter(asset=>asset.mime.startsWith('image/')).map(asset=>{
-    try{return JSON.parse(asset.provenance).styleFamily;}catch{return asset.provenance?.styleFamily;}
-   }).filter(Boolean));if(styleFamily)families.add(styleFamily);check(families.size<=1,'E_ASSET_STYLE_FAMILY');
-  }
-  const root=resolve(this.service.store.root,this.intake.projectId),metadata=await registerSource(root,{id,mime,data:bytes.toString('base64'),rights}),record={...metadata};delete record.optimization;const asset={...record,provenance:JSON.stringify(provenance)};
-  const envelope={format:'tora-transaction-1',expected:identity(current),operations:[{kind:'registerAsset',asset}]},preview=await this.service.preview(this.intake.projectId,envelope);
-  await this.service.transact(this.intake.projectId,{...envelope,previewDigest:preview.previewDigest});this.lastQa=null;return asset;
- }
  async stageAssets(args){
-  check(exact(args,['intakeAssetIds','catalogAssetIds','remoteAssetIds']),'E_CREATOR_TOOL_ARGUMENT');await this.catalog.load();await this.ensureDraft();
-  const staged=[],ids=new Set([...(args.intakeAssetIds??[]),...(args.catalogAssetIds??[]),...(args.remoteAssetIds??[])]);check(ids.size<=64,'E_ASSET_LIMIT');
+  check(exact(args,['intakeAssetIds','catalogAssetIds','remoteAssetIds']),'E_CREATOR_TOOL_ARGUMENT');await this.catalog.load();
+  const current=await this.ensureDraft();
+  const ids=new Set([...(args.intakeAssetIds??[]),...(args.catalogAssetIds??[]),...(args.remoteAssetIds??[])]);check(ids.size<=64,'E_ASSET_LIMIT');
+  const candidates=[];
   for(const id of args.intakeAssetIds??[]){
    const asset=this.intake.assets.find(entry=>entry.id===id);check(asset,'E_ASSET_NOT_FOUND');const {bytes,mime}=await this.intakes.sourceAsset(this.intake.id,asset);
-   staged.push(await this.stageOne({id,mime,bytes,rights:this.intake.rights,source:'studio',styleFamily:this.intake.projectId,provenance:{origin:'studio-original',studio:this.intake.studio,sourceFile:asset.name,sourceHash:asset.hash,intakeId:this.intake.id,styleFamily:this.intake.projectId}}));
+   candidates.push({id,mime,bytes,rights:this.intake.rights,source:'studio',styleFamily:this.intake.projectId,provenance:{origin:'studio-original',studio:this.intake.studio,sourceFile:asset.name,sourceHash:asset.hash,intakeId:this.intake.id,styleFamily:this.intake.projectId}});
   }
   for(const entry of this.catalog.get(args.catalogAssetIds??[])){
-   const bytes=await this.catalog.bytes(entry.id);staged.push(await this.stageOne({...entry,bytes,source:'local'}));
+   const bytes=await this.catalog.bytes(entry.id);candidates.push({...entry,bytes,source:'local'});
   }
   for(const id of args.remoteAssetIds??[]){
    const remote=this.remote.get(id);check(remote,'E_ASSET_NOT_FOUND');const {file,receipt}=remote,bytes=await safeFile(resolve(this.fetcher.cacheRoot,receipt.cacheKey,file.storedPath));
    const provenance={origin:'remote-cc0',sourceId:receipt.sourceId,sourceFile:file.path,sourceHash:file.sha256,author:receipt.author,license:'CC0-1.0',licenseEvidence:receipt.licenseEvidence,sourceUrl:receipt.sourceUrl,archiveSha256:receipt.archiveSha256,styleFamily:file.styleFamily};
-   staged.push(await this.stageOne({id:file.id,mime:file.mime,bytes,rights:`${receipt.author}, CC0-1.0. ${receipt.sourceUrl}`,source:'remote',styleFamily:file.styleFamily,provenance}));
+   candidates.push({id:file.id,mime:file.mime,bytes,rights:`${receipt.author}, CC0-1.0. ${receipt.sourceUrl}`,source:'remote',styleFamily:file.styleFamily,provenance});
   }
+  const existingById=new Map(current.project.assets.map(asset=>[asset.id,asset]));
+  const families=new Set(current.project.assets.filter(asset=>asset.mime.startsWith('image/')).map(asset=>{
+   try{return JSON.parse(asset.provenance).styleFamily;}catch{return asset.provenance?.styleFamily;}
+  }).filter(Boolean));
+  const pendingById=new Map(),plan=[];
+  for(const item of candidates){
+   assertAssetSourceAllowed(this.intake.assetSource??'studio-assets',item.source);
+   const existing=existingById.get(item.id);
+   if(existing){check(existing.hash===item.provenance.sourceHash,'E_ASSET_DUPLICATE_ID');plan.push({existing});continue;}
+   if(pendingById.has(item.id)){
+    const prior=pendingById.get(item.id);
+    check(prior.provenance.sourceHash===item.provenance.sourceHash,'E_ASSET_DUPLICATE_ID');
+    plan.push({duplicateOf:item.id});continue;
+   }
+   if(item.mime.startsWith('image/')&&item.styleFamily)families.add(item.styleFamily);
+   pendingById.set(item.id,item);plan.push({item});
+  }
+  check(families.size<=1,'E_ASSET_STYLE_FAMILY');
+  const toRegister=[...pendingById.values()],projectRoot=resolve(this.service.store.root,this.intake.projectId);
+  const registeredList=await mapWithConcurrency(toRegister,4,async item=>{
+   const metadata=await registerSource(projectRoot,{id:item.id,mime:item.mime,data:item.bytes.toString('base64'),rights:item.rights});
+   const record={...metadata};delete record.optimization;
+   return {...record,provenance:JSON.stringify(item.provenance)};
+  });
+  const registeredById=new Map(registeredList.map(asset=>[asset.id,asset]));
+  if(registeredList.length){
+   const envelope={format:'tora-transaction-1',expected:identity(current),operations:registeredList.map(asset=>({kind:'registerAsset',asset}))};
+   const preview=await this.service.preview(this.intake.projectId,envelope);
+   await this.service.transact(this.intake.projectId,{...envelope,previewDigest:preview.previewDigest});
+   this.lastQa=null;
+  }
+  const staged=plan.map(entry=>entry.existing??registeredById.get(entry.duplicateOf??entry.item.id));
   const summary=await this.assetsSummary();await this.onProgress({phase:'assets',stepLabel:'Licensed assets staged',assetsSummary:summary});return bounded({staged:staged.map(asset=>({id:asset.id,hash:asset.hash,mime:asset.mime})),assetsSummary:summary});
  }
  async inspectDraft(args){
-  check(exact(args,['ids','search']),'E_CREATOR_TOOL_ARGUMENT');await this.ensureDraft();return bounded(await this.agent.run({command:'inspect',id:this.intake.projectId,...args}));
+  check(exact(args,['ids','search','tree','sceneId']),'E_CREATOR_TOOL_ARGUMENT');await this.ensureDraft();return bounded(await this.agent.run({command:'inspect',id:this.intake.projectId,...args}));
  }
  async applyOperations(args){
   check(exact(args,['operations','summary'])&&Array.isArray(args.operations)&&typeof args.summary==='string'&&args.summary.length<=500,'E_CREATOR_TOOL_ARGUMENT');
@@ -117,7 +140,9 @@ export class IntakeCreatorTools{
  }
  async runQa(args){
   check(exact(args,['target']),'E_CREATOR_TOOL_ARGUMENT');const target=args.target??'standalone-browser-draft',current=await this.ensureDraft(),outputDir=resolve(this.intakes.folder(this.intake.id),'qa-'+String(++this.qaCount));
-  await this.onProgress({phase:'qa',stepLabel:'Testing 4 screen sizes & audio'});const artifact=await this.service.build(this.intake.projectId,current.project,target),{runCreativeQa}=await import('./creative-qa.mjs'),report=await runCreativeQa({html:artifact.html,outputDir,network:target});
+  await this.onProgress({phase:'qa',stepLabel:'Testing 4 screen sizes & audio'});
+  const artifact=await this.service.build(this.intake.projectId,current.project,target);
+  const report=await this.service.runQa(this.intake.projectId,{revisionId:current.revisionId,target,outputDir});
   const selected=report.screenshots.filter(row=>row.state==='opening'&&(row.viewport.width===390||row.viewport.width===844)).slice(0,2),endCard=report.screenshots.find(row=>row.state==='end-card');if(endCard)selected.push(endCard);
   const screenshots=[];for(const row of selected.slice(0,4)){const bytes=await readFile(resolve(outputDir,row.path));if(bytes.length<=2_500_000)screenshots.push({mimeType:'image/png',data:bytes.toString('base64'),label:`${row.state} ${row.viewport.width}x${row.viewport.height}`});}
   this.lastQa={target,revisionId:current.revisionId,report,bytes:artifact.manifest.bytes,outputDir,screenshots};
