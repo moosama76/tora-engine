@@ -14,6 +14,7 @@ import {CREATIVE_QA_FORMAT,formatCreativeQaReport,runBrowserQa,runCreativeQa} fr
 const sha256=bytes=>'sha256:'+createHash('sha256').update(bytes).digest('hex');
 
 async function buildAnimatedPlayable(t){
+ await mkdir(resolve('reports'),{recursive:true});
  const root=await mkdtemp(resolve('reports/motion-qa-'));
  t.after(()=>rm(root,{recursive:true,force:true}));
  const store=new ProjectStore(resolve(root,'store'));
@@ -111,6 +112,7 @@ test('runCreativeQa captures 8-frame interaction & 4-frame real-play end-card mo
 });
 
 test('QA receipt cache does not poison retries after video/filmstrip failure and isolates alternating video vs default runs',async t=>{
+ await mkdir(resolve('reports'),{recursive:true});
  const root=await mkdtemp(resolve('reports/motion-cache-'));
  t.after(()=>rm(root,{recursive:true,force:true}));
  const store=new ProjectStore(resolve(root,'store'));
@@ -205,6 +207,7 @@ test('QA receipt cache does not poison retries after video/filmstrip failure and
 });
 
 test('failing captureMotionFilmstrip downgrades to warning without blocking runBrowserQa',async t=>{
+ await mkdir(resolve('reports'),{recursive:true});
  const root=await mkdtemp(resolve('reports/motion-warn-'));
  t.after(()=>rm(root,{recursive:true,force:true}));
  let tick=0;

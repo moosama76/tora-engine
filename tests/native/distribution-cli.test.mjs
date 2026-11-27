@@ -72,6 +72,7 @@ function startJsonRpcProcess(command,args,{cwd,env}){
 }
 
 test('native-bin resolves explicit env, cache, and verifies SHA-256 on prebuilt download',async t=>{
+ await mkdir(resolve('reports'),{recursive:true});
  const tmp=await mkdtemp(resolve('reports/native-bin-'));
  t.after(()=>rm(tmp,{recursive:true,force:true}));
  const info=platformTarget();
