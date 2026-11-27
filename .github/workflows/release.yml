@@ -139,10 +139,14 @@ jobs:
             --title "Tora ${GITHUB_REF_NAME}" \
             --generate-notes
       - name: Publish npm packages
-        if: (startsWith(github.ref, 'refs/tags/v') || inputs.publish_npm == true) && secrets.NPM_TOKEN != ''
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish_npm == true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NPM_TOKEN secret is not set; skipping npm publish."
+            exit 0
+          fi
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           for dir in dist/packages/native-*; do
             npm publish "$dir" --access public
