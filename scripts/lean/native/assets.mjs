@@ -9,6 +9,7 @@ import {hash} from './compiler.mjs';
 import {validateMp3,validateToraMesh} from './media-validate.mjs';
 import {optimizeAudio,validateWav} from './audio-optimize.mjs';
 import {mapWithConcurrency} from './concurrency.mjs';
+import {requireNativeTool} from './native-bin.mjs';
 const run=promisify(execFile);
 const examples=resolve(import.meta.dirname,'../../../target/debug/examples');
 export const nativeDecoderPath=resolve(examples,process.platform==='win32'?'inspect_native.exe':'inspect_native');
@@ -22,7 +23,7 @@ export async function readUploadFile(root,path){
 }
 export async function readOriginal(root,digest){check(/^sha256:[a-f0-9]{64}$/.test(digest),'E_NATIVE_ASSET_PATH');return safeFile(resolve(root,'sources/assets/originals',digest.slice(7)));}
 async function writeContent(path,bytes){try{await writeFile(path,bytes,{flag:'wx'});}catch(e){if(e.code!=='EEXIST')throw e;check(hash(await safeFile(path))===hash(bytes),'E_NATIVE_ASSET_HASH');}}
-async function inspectImage(stage,file,mime){let decoded;try{decoded=JSON.parse((await run(nativeDecoderPath,[stage,file],{timeout:10000,maxBuffer:16384})).stdout)[0];}catch{throw Error('E_NATIVE_ASSET_DECODE');}check(decoded?.source_mime===mime,'E_NATIVE_ASSET_MIME');return decoded;}
+async function inspectImage(stage,file,mime){let decoded;try{const tool=requireNativeTool('inspect');decoded=JSON.parse((await run(tool.command,[...tool.prefixArgs,stage,file],{timeout:10000,maxBuffer:16384})).stdout)[0];}catch{throw Error('E_NATIVE_ASSET_DECODE');}check(decoded?.source_mime===mime,'E_NATIVE_ASSET_MIME');return decoded;}
 const PNG_SIG=[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a];
 const isPngBytes=b=>b.length>=24&&PNG_SIG.every((v,i)=>b[i]===v);
 const isJpegBytes=b=>b.length>=4&&b[0]===0xff&&b[1]===0xd8&&b[2]===0xff;
@@ -59,8 +60,10 @@ export function verifyImageSignature(bytes,mime){
  }
  throw Error('E_NATIVE_ASSET_DECODE');
 }
-export async function registerSource(root,input){
+export async function registerSource(root,input,options={}){
  check(exact(input,['id','mime','data','rights','optimize','preserveResolution'])&&identifier(input.id)&&typeof input.rights==='string'&&input.rights.trim().length>0&&input.rights.length<=2048,'E_NATIVE_ASSET');
+ const provenanceText=options.provenance!==undefined?options.provenance:'Public API upload; content hash and decoded media verified by Tora.';
+ check(typeof provenanceText==='string'&&provenanceText.length>0&&provenanceText.length<=2048,'E_NATIVE_ASSET');
  const optimize=input.optimize??'auto',preserveResolution=input.preserveResolution??false;
  check(['auto','lossless','none'].includes(optimize)&&typeof preserveResolution==='boolean','E_NATIVE_ASSET');
  check(typeof input.data==='string'&&input.data.length<=11184812&&/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input.data),'E_NATIVE_ASSET');
@@ -78,7 +81,7 @@ export async function registerSource(root,input){
    }else{
     const sourceFile=originalHash.slice(7),outputFile='optimized';await writeFile(resolve(stage,sourceFile),original,{flag:'wx'});
     let result;
-    try{result=JSON.parse((await run(nativeOptimizerPath,[stage,sourceFile,outputFile,JSON.stringify({mode:optimize,preserveResolution})],{timeout:60000,maxBuffer:1048576})).stdout);}catch(error){const code=error.stderr?.match(/E_[A-Z_]+/)?.[0],normalized=code==='E_NATIVE_ASSET_SIZE'||code==='E_ASSET_TOO_LARGE'?'E_NATIVE_ASSET_SIZE':'E_NATIVE_ASSET_DECODE';throw Error(normalized,{cause:error});}
+    try{const tool=requireNativeTool('optimize');result=JSON.parse((await run(tool.command,[...tool.prefixArgs,stage,sourceFile,outputFile,JSON.stringify({mode:optimize,preserveResolution})],{timeout:60000,maxBuffer:1048576})).stdout);}catch(error){const code=error.stderr?.match(/E_[A-Z_]+/)?.[0],normalized=code==='E_NATIVE_ASSET_SIZE'||code==='E_ASSET_TOO_LARGE'?'E_NATIVE_ASSET_SIZE':'E_NATIVE_ASSET_DECODE';throw Error(normalized,{cause:error});}
     bytes=await readFile(resolve(stage,outputFile));mime=result.mime;
     check(typeof mime==='string'&&result.originalWidth>0&&result.originalHeight>0,'E_NATIVE_ASSET_DECODE');
     if(optimize!=='none')imageOptimized=true;
@@ -100,7 +103,7 @@ export async function registerSource(root,input){
   await writeContent(resolve(folder,file),bytes);
   const metadata={mime,bytes:bytes.length,...(optimization?{optimization}:{})},path=resolve(folder,file+'.json');
   try{await writeFile(path,JSON.stringify(metadata),{flag:'wx'});}catch(e){if(e.code!=='EEXIST')throw e;const existing=JSON.parse((await safeFile(path)).toString());check(existing.mime===metadata.mime&&existing.bytes===metadata.bytes,'E_NATIVE_ASSET_METADATA');}
-  return {id:input.id,hash:digest,mime,bytes:bytes.length,rights:input.rights,provenance:'Public API upload; content hash and decoded media verified by Tora.',...(optimization?{optimization}:{})};
+  return {id:input.id,hash:digest,mime,bytes:bytes.length,rights:input.rights,provenance:provenanceText,...(optimization?{optimization}:{})};
  }finally{await rm(stage,{recursive:true,force:true});}
 }
 export async function lowerAssets(root,assets){

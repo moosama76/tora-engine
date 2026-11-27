@@ -213,7 +213,7 @@ export class NativeAgentTools{
  }
  if(command==='history'){check(input.expected,'E_AGENT_EXPECTED');const r=await this.service.navigate(id,{expected:input.expected,action:input.action});return {status:'SAVED',expected:identity(r)};}
  if(command==='export'||command==='render'||command==='qa'){
-  if(command==='qa'){const output=resolve(input.output??resolve(this.service.store.root,id,'qa','manual',current.revisionId));return bounded(await this.service.runQa(id,{revisionId:current.revisionId,target:input.target??'standalone-browser-draft',outputDir:output}),65536);}
+  if(command==='qa'){const output=input.output!==undefined?resolve(input.output):undefined;return bounded(await this.service.runQa(id,{revisionId:current.revisionId,target:input.target??'standalone-browser-draft',...(output?{outputDir:output}:{}),...(input.motionFilmstrip!==undefined?{motionFilmstrip:input.motionFilmstrip}:{}),...(input.recordVideo!==undefined?{recordVideo:input.recordVideo}:{})}),65536);}
   if(command==='export'&&input.targets!==undefined){
    check(input.format===undefined&&input.output===undefined&&input.target===undefined,'E_AGENT_ARGUMENT');
    check(typeof input.outputDir==='string'&&input.outputDir.length>0,'E_AGENT_OUTPUT');

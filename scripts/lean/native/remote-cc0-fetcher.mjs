@@ -2,19 +2,20 @@
 import {Buffer} from 'node:buffer';
 import {execFile} from 'node:child_process';
 import {createHash,randomUUID} from 'node:crypto';
-import {mkdir,mkdtemp,readFile,rename,rm,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,readdir,readFile,rename,rm,writeFile} from 'node:fs/promises';
 import {lookup as dnsLookup} from 'node:dns/promises';
 import {isIP} from 'node:net';
 import {resolve,extname} from 'node:path';
-import {fileURLToPath,URL} from 'node:url';
+import {URL} from 'node:url';
 import {setTimeout,clearTimeout} from 'node:timers';
 import {promisify} from 'node:util';
 import {inflateRawSync} from 'node:zlib';
 import {registerSource,safeFile} from './assets.mjs';
 import {AssetCatalog,inspectMedia} from './asset-catalog.mjs';
+import {assertStorePath} from './store-path.mjs';
+import {PACKAGE_ROOT,resolveRemoteCacheRoot} from '../runtime-paths.mjs';
 
 const run=promisify(execFile);
-const workspaceRoot=fileURLToPath(new URL('../../../',import.meta.url));
 const maxZipBytes=25_000_000,maxSingleBytes=2_000_000,maxUncompressedBytes=64_000_000;
 const mediaExtensions=new Map([['.png','image/png'],['.jpg','image/jpeg'],['.jpeg','image/jpeg'],['.wav','audio/wav'],['.mp3','audio/mpeg'],['.ogg','audio/ogg']]);
 const crcTable=Array.from({length:256},(_,n)=>{
@@ -23,7 +24,11 @@ const crcTable=Array.from({length:256},(_,n)=>{
 function crc32(bytes){
  let crc=0xffffffff;for(const byte of bytes)crc=crcTable[(crc^byte)&0xff]^(crc>>>8);return (crc^0xffffffff)>>>0;
 }
-function remoteId(value){return 'remote-'+createHash('sha256').update(value).digest('hex').slice(0,32);}
+function sha256Hex(value){return createHash('sha256').update(value).digest('hex');}
+function sha256Prefixed(value){return 'sha256:'+sha256Hex(value);}
+function remoteId(value){return 'remote-'+sha256Hex(value).slice(0,32);}
+function computePackKey(sourceHref){return sha256Hex(sourceHref);}
+function computeCacheKey(sourceHref,packId,fileFilter){return sha256Hex(sourceHref+'\0'+(packId??'')+'\0'+JSON.stringify(fileFilter??''));}
 function cleanPath(name){
  if(!name||name.length>512||name.includes('\0')||name.includes('\\')||name.startsWith('/')||/^[a-z]:/i.test(name))throw Error('E_REMOTE_ASSET_ARCHIVE');
  const parts=name.split('/');if(parts.some(part=>part==='..'||part===''))throw Error('E_REMOTE_ASSET_ARCHIVE');
@@ -94,10 +99,15 @@ function mimeFor(path){return mediaExtensions.get(extname(path).toLowerCase());}
 function fileMatches(path,filter){
  if(!filter)return true;const values=Array.isArray(filter)?filter:[filter];return values.some(value=>path.toLowerCase().includes(String(value).toLowerCase().slice(0,128)));
 }
+function deriveAuthor(provider,pageHtml){
+ return provider==='kenney'?'Kenney':htmlText(pageHtml,/(?:submitted by|author)[\s\S]{0,200}?>([A-Za-z0-9 _.-]{2,80})</i)??'OpenGameArt contributor';
+}
 
 export class RemoteCc0Fetcher{
- constructor({root=workspaceRoot,cacheRoot=resolve(root,'.tora/remote-asset-cache'),fetchImpl=globalThis.fetch,lookup=async host=>dnsLookup(host,{all:true,verbatim:true}),catalog=new AssetCatalog({root})}={}){
-  this.cacheRoot=cacheRoot;this.fetchImpl=fetchImpl;this.lookup=lookup;this.catalog=catalog;
+ constructor({root,workspaceRoot,cacheRoot,fetchImpl=globalThis.fetch,lookup=async host=>dnsLookup(host,{all:true,verbatim:true}),catalog}={}){
+  const catalogRoot=root??PACKAGE_ROOT;
+  this.cacheRoot=resolve(cacheRoot??(root?resolve(root,'.tora/remote-asset-cache'):resolveRemoteCacheRoot(workspaceRoot)));
+  this.fetchImpl=fetchImpl;this.lookup=lookup;this.catalog=catalog??new AssetCatalog({root:catalogRoot});
  }
  async assertPublicHost(url){
   let addresses;try{addresses=await this.lookup(url.hostname);}catch{throw Error('E_REMOTE_ASSET_FETCH');}
@@ -127,35 +137,96 @@ export class RemoteCc0Fetcher{
   }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
  }
  async cached(key){
+  if(typeof key!=='string'||!/^[a-f0-9]{64}$/.test(key))return null;
+  try{await assertStorePath(this.cacheRoot);}catch{return null;}
   let receipt;try{receipt=JSON.parse((await safeFile(resolve(this.cacheRoot,key,'receipt.json'))).toString('utf8'));}catch{return null;}
-  if(receipt.format!=='tora-remote-cc0-1'||receipt.license!=='CC0-1.0')return null;
+  if(receipt?.format!=='tora-remote-cc0-1'||receipt.license!=='CC0-1.0'||!Array.isArray(receipt.files))return null;
   try{
-   const archive=await safeFile(resolve(this.cacheRoot,key,'archive.bin'));if('sha256:'+createHash('sha256').update(archive).digest('hex')!==receipt.archiveSha256)return null;
-   for(const file of receipt.files){if(!/^files\/\d{3}\.(?:png|jpg|wav|mp3)$/.test(file.storedPath))return null;const bytes=await safeFile(resolve(this.cacheRoot,key,file.storedPath));if(inspectMedia(bytes,file.mime).sha256!==file.sha256)return null;}
+   const source=assertRemoteUrl(receipt.sourceUrl);
+   const expectedCacheKey=computeCacheKey(source.href,receipt.packId??'',receipt.fileFilter??'');
+   if(expectedCacheKey!==key)return null;
+   const expectedPackKey=computePackKey(source.href);
+   const expectedProvider=source.hostname.endsWith('kenney.nl')?'kenney':'opengameart';
+   const expectedSourceId='remote-'+expectedPackKey.slice(0,24);
+   const expectedStyleFamily='remote-'+expectedPackKey.slice(0,16);
+   if(receipt.provider!==expectedProvider||receipt.sourceId!==expectedSourceId)return null;
+   if(receipt.packKey&&receipt.packKey!==expectedPackKey)return null;
+
+   const archive=await safeFile(resolve(this.cacheRoot,key,'archive.bin'));
+   if(sha256Prefixed(archive)!==receipt.archiveSha256)return null;
+
+   let pageHtml='',verifiedEvidence=false;
+   if(receipt.pageSha256){
+    const pageBytes=await safeFile(resolve(this.cacheRoot,key,'page.html'));
+    if(sha256Prefixed(pageBytes)!==receipt.pageSha256)return null;
+    pageHtml=pageBytes.toString('utf8');
+    verifyCc0Evidence(pageHtml);
+    verifiedEvidence=true;
+   }
+   if(deriveAuthor(expectedProvider,pageHtml)!==receipt.author)return null;
+
+   if(receipt.archiveLicenseEntry){
+    const entries=readZipEntries(archive,name=>name===receipt.archiveLicenseEntry);
+    if(entries.length!==1)return null;
+    verifyCc0Evidence(entries[0].bytes.toString('utf8'));
+    verifiedEvidence=true;
+   }else if(expectedProvider==='kenney'&&archive.length>=4&&archive.readUInt32LE(0)===0x04034b50){
+    return null;
+   }
+   if(!verifiedEvidence)return null;
+
+   for(const file of receipt.files){
+    if(!/^files\/\d{3}\.(?:png|jpg|wav|mp3)$/.test(file.storedPath))return null;
+    if(file.styleFamily!==expectedStyleFamily||file.sourceId!==expectedSourceId)return null;
+    const bytes=await safeFile(resolve(this.cacheRoot,key,file.storedPath));
+    if(inspectMedia(bytes,file.mime).sha256!==file.sha256)return null;
+   }
    return {...receipt,cacheKey:key,cached:true};
   }catch{return null;}
  }
  async normalize({path,bytes,mime,temp,rights}){
+  if(mime==='image/png'||mime==='image/jpeg'){
+   if(bytes.length===0||bytes.length>8_000_000)return null;
+   const id=remoteId(path+sha256Hex(bytes).slice(0,16));
+   try{
+    const registered=await registerSource(temp,{id,mime,data:bytes.toString('base64'),rights});
+    const outBytes=await readFile(resolve(temp,'sources/assets',registered.hash.slice(7)));
+    return {bytes:outBytes,mime:registered.mime};
+   }catch(error){
+    if(['E_NATIVE_ASSET_DECODE','E_NATIVE_ASSET_SIZE','E_NATIVE_ASSET_MIME'].includes(error.message))return null;
+    throw error;
+   }
+  }
   let normalized=bytes,outputMime=mime,inputPath=resolve(temp,'input'+extname(path));
   await writeFile(inputPath,bytes);
   if(mime==='audio/ogg'||bytes.length>700000){
-   outputMime=mime.startsWith('image/')?'image/png':'audio/wav';
-   const outputPath=resolve(temp,'output'+(outputMime==='image/png'?'.png':'.wav'));
-   const args=outputMime==='image/png'
-    ?['-v','error','-y','-i',inputPath,'-frames:v','1','-vf',"scale='min(1024,iw)':-2",'-compression_level','9',outputPath]
-    :['-v','error','-y','-i',inputPath,'-t','120','-ac','1','-ar','44100','-c:a','pcm_s16le',outputPath];
+   outputMime='audio/wav';
+   const outputPath=resolve(temp,'output.wav');
+   const args=['-v','error','-y','-i',inputPath,'-t','120','-ac','1','-ar','44100','-c:a','pcm_s16le',outputPath];
    try{await run('ffmpeg',args,{timeout:15000,maxBuffer:16384});normalized=await readFile(outputPath);}catch{return null;}
   }
-  if(normalized.length>700000)return null;
-  const id=remoteId(path+normalized.toString('base64').slice(0,32));
-  try{await registerSource(temp,{id,mime:outputMime,data:normalized.toString('base64'),rights});}catch(error){if(error.message==='E_NATIVE_ASSET_DECODE'||error.message==='E_NATIVE_ASSET_SIZE')return null;throw error;}
-  return {bytes:normalized,mime:outputMime};
+  if(normalized.length>8_000_000)return null;
+  const id=remoteId(path+sha256Hex(normalized).slice(0,16));
+  try{
+   const registered=await registerSource(temp,{id,mime:outputMime,data:normalized.toString('base64'),rights});
+   const outBytes=await readFile(resolve(temp,'sources/assets',registered.hash.slice(7)));
+   return {bytes:outBytes,mime:registered.mime};
+  }catch(error){
+   if(['E_NATIVE_ASSET_DECODE','E_NATIVE_ASSET_SIZE','E_NATIVE_ASSET_MIME'].includes(error.message))return null;
+   throw error;
+  }
  }
- async persist(key,receipt,archive,files){
+ async persist(key,receipt,archive,pageHtml,files){
+  await assertStorePath(this.cacheRoot);
+  await mkdir(this.cacheRoot,{recursive:true});
+  await assertStorePath(this.cacheRoot);
   const folder=resolve(this.cacheRoot,key),temporary=resolve(this.cacheRoot,'.staging-'+randomUUID());
   await mkdir(resolve(temporary,'files'),{recursive:true});
   try{
    await writeFile(resolve(temporary,'archive.bin'),archive,{flag:'wx'});
+   if(pageHtml){
+    await writeFile(resolve(temporary,'page.html'),pageHtml,{flag:'wx'});
+   }
    const publicFiles=[];
    for(let index=0;index<files.length;index++){
     const file=files[index],storedPath='files/'+String(index).padStart(3,'0')+(file.mime==='image/png'?'.png':file.mime==='image/jpeg'?'.jpg':file.mime==='audio/wav'?'.wav':'.mp3');
@@ -168,7 +239,8 @@ export class RemoteCc0Fetcher{
   }finally{await rm(temporary,{recursive:true,force:true});}
  }
  async fetchPack({sourceUrl,packId,fileFilter,signal}){
-  const source=assertRemoteUrl(sourceUrl),key=createHash('sha256').update(source.href+'\0'+(packId??'')+'\0'+JSON.stringify(fileFilter??'')).digest('hex'),cached=await this.cached(key);if(cached)return cached;
+  const source=assertRemoteUrl(sourceUrl),key=computeCacheKey(source.href,packId,fileFilter),packKey=computePackKey(source.href);
+  const cached=await this.cached(key);if(cached)return cached;
   const first=await this.download(source.href,{maxBytes:/\.zip(?:$|\?)/i.test(source.pathname)?maxZipBytes:maxSingleBytes,signal});
   let archive=first.bytes,pageHtml='',evidenceUrl=source.href,downloadUrl=source.href;
   const isZip=archive.length>=4&&archive.readUInt32LE(0)===0x04034b50;
@@ -180,33 +252,111 @@ export class RemoteCc0Fetcher{
    const downloaded=await this.download(downloadUrl,{maxBytes:/\.zip(?:$|\?)/i.test(downloadUrl)?maxZipBytes:maxSingleBytes,signal});archive=downloaded.bytes;
   }
   const provider=source.hostname.endsWith('kenney.nl')?'kenney':'opengameart',title=htmlText(pageHtml,/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)/i)??htmlText(pageHtml,/<title>([^<]+)/i)??source.pathname.split('/').filter(Boolean).pop()??'CC0 pack';
-  const author=provider==='kenney'?'Kenney':htmlText(pageHtml,/(?:submitted by|author)[\s\S]{0,200}?>([A-Za-z0-9 _.-]{2,80})</i)??'OpenGameArt contributor';
-  let licenseEvidence=pageHtml?evidenceUrl:'',selected;
+  const author=deriveAuthor(provider,pageHtml);
+  let licenseEvidence=pageHtml?evidenceUrl:'',archiveLicenseEntry=null,selected;
   if(archive.length>=4&&archive.readUInt32LE(0)===0x04034b50){
    const isLicense=name=>/(?:^|\/)(?:license|copying)(?:\.txt)?$/i.test(name);
    const entries=readZipEntries(archive,name=>isLicense(name)||Boolean(mimeFor(name)&&fileMatches(name,fileFilter)));
    const licenseEntry=entries.find(entry=>isLicense(entry.name));
-   if(licenseEntry){verifyCc0Evidence(licenseEntry.bytes.toString('utf8'));licenseEvidence+='; archive:'+licenseEntry.name;}else if(provider==='kenney'||!pageHtml)throw Error('E_ASSET_LICENSE_UNVERIFIED');
+   if(licenseEntry){verifyCc0Evidence(licenseEntry.bytes.toString('utf8'));archiveLicenseEntry=licenseEntry.name;licenseEvidence+=(licenseEvidence?'; ':'')+'archive:'+licenseEntry.name;}else if(provider==='kenney'||!pageHtml)throw Error('E_ASSET_LICENSE_UNVERIFIED');
    selected=entries.filter(entry=>mimeFor(entry.name)&&fileMatches(entry.name,fileFilter));
   }else{
    if(!pageHtml)throw Error('E_ASSET_LICENSE_UNVERIFIED');
    const path=new URL(downloadUrl).pathname;if(!mimeFor(path))throw Error('E_REMOTE_ASSET_MIME');selected=[{name:path.split('/').pop(),bytes:archive}];
   }
-  const temp=await (async()=>{await mkdir(this.cacheRoot,{recursive:true});return mkdtemp(resolve(this.cacheRoot,'.verify-'));})(),files=[];
+  const sourceId='remote-'+packKey.slice(0,24),styleFamily='remote-'+packKey.slice(0,16);
+  const temp=await (async()=>{await assertStorePath(this.cacheRoot);await mkdir(this.cacheRoot,{recursive:true});return mkdtemp(resolve(this.cacheRoot,'.verify-'));})(),files=[];
   try{
    for(const entry of selected.slice(0,100)){
     const originalMime=mimeFor(entry.name),rights=`${author}, CC0-1.0. ${source.href}`;
     const normalized=await this.normalize({path:entry.name,bytes:entry.bytes,mime:originalMime,temp,rights});if(!normalized)continue;
     const info=inspectMedia(normalized.bytes,normalized.mime),id=remoteId(source.href+'\0'+entry.name);
-    files.push({id,source:'remote',sourceId:'remote-'+key.slice(0,24),path:entry.name,name:entry.name.split('/').pop(),kind:info.mime.startsWith('image/')?'sprite':'audio',styleFamily:'remote-'+key.slice(0,16),tags:entry.name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean),data:normalized.bytes,...info});
+    files.push({id,source:'remote',sourceId,path:entry.name,name:entry.name.split('/').pop(),kind:info.mime.startsWith('image/')?'sprite':'audio',styleFamily,tags:entry.name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean),data:normalized.bytes,...info});
    }
   }finally{await rm(temp,{recursive:true,force:true});}
   if(!files.length)throw Error('E_REMOTE_ASSET_NO_SUPPORTED_MEDIA');
-  const receipt={format:'tora-remote-cc0-1',sourceId:'remote-'+key.slice(0,24),provider,packTitle:title,author,license:'CC0-1.0',licenseEvidence,sourceUrl:source.href,fetchedAt:new Date().toISOString(),archiveSha256:'sha256:'+createHash('sha256').update(archive).digest('hex'),files};
-  return this.persist(key,receipt,archive,files);
+  const receipt={
+   format:'tora-remote-cc0-1',
+   packKey,
+   packId:packId??'',
+   fileFilter:fileFilter??'',
+   sourceId,
+   provider,
+   packTitle:title,
+   author,
+   license:'CC0-1.0',
+   licenseEvidence,
+   ...(archiveLicenseEntry?{archiveLicenseEntry}:{}),
+   ...(pageHtml?{pageSha256:sha256Prefixed(Buffer.from(pageHtml,'utf8'))}:{}),
+   sourceUrl:source.href,
+   fetchedAt:new Date().toISOString(),
+   archiveSha256:sha256Prefixed(archive),
+   files,
+  };
+  return this.persist(key,receipt,archive,pageHtml,files);
  }
- async search({query,includeRemote=false,kind,styleFamily,signal}={}){
-  await this.catalog.load();const fallbackLocalMatches=this.catalog.list({query,kind,styleFamily});if(!includeRemote)return {online:false,assets:fallbackLocalMatches,remotePacks:[],fallbackLocalMatches};
+ async listCached({query='',kind,styleFamily,limit=40}={}){
+  try{await assertStorePath(this.cacheRoot);}catch{return [];}
+  let dirs;
+  try{dirs=await readdir(this.cacheRoot);}catch(e){if(e.code==='ENOENT')return [];throw e;}
+  const byId=new Map();
+  for(const key of dirs.sort()){
+   if(!/^[a-f0-9]{64}$/.test(key))continue;
+   const receipt=await this.cached(key);
+   if(!receipt)continue;
+   for(const file of receipt.files){
+    if(byId.has(file.id))continue;
+    byId.set(file.id,{
+     id:file.id,
+     source:'remote',
+     sourceId:receipt.sourceId,
+     packTitle:receipt.packTitle,
+     author:receipt.author,
+     license:receipt.license,
+     sourceUrl:receipt.sourceUrl,
+     path:file.path,
+     name:file.name,
+     kind:file.kind,
+     styleFamily:file.styleFamily,
+     tags:file.tags??[],
+     mime:file.mime,
+     bytes:file.bytes,
+     sha256:file.sha256,
+     ...(file.width!==undefined?{width:file.width,height:file.height}:{}),
+     ...(file.durationSec!==undefined?{durationSec:file.durationSec}:{}),
+     cached:true,
+    });
+   }
+  }
+  const words=String(query).toLowerCase().split(/\s+/).filter(Boolean);
+  return [...byId.values()].filter(entry=>
+   (!kind||entry.kind===kind)&&(!styleFamily||entry.styleFamily===styleFamily)&&
+   words.every(word=>(entry.name+' '+entry.tags.join(' ')+' '+entry.packTitle+' '+entry.sourceId).toLowerCase().includes(word))
+  ).sort((a,b)=>a.styleFamily.localeCompare(b.styleFamily)||a.name.localeCompare(b.name)).slice(0,Math.min(100,Math.max(1,limit)));
+ }
+ async getCachedFile(remoteAssetId){
+  if(typeof remoteAssetId!=='string'||!remoteAssetId.startsWith('remote-'))return null;
+  try{await assertStorePath(this.cacheRoot);}catch{return null;}
+  let dirs;
+  try{dirs=await readdir(this.cacheRoot);}catch(e){if(e.code==='ENOENT')return null;throw e;}
+  for(const key of dirs.sort()){
+   if(!/^[a-f0-9]{64}$/.test(key))continue;
+   const receipt=await this.cached(key);
+   if(!receipt)continue;
+   const file=receipt.files.find(entry=>entry.id===remoteAssetId);
+   if(!file)continue;
+   const bytes=await safeFile(resolve(this.cacheRoot,key,file.storedPath));
+   if(inspectMedia(bytes,file.mime).sha256!==file.sha256)continue;
+   return {receipt,file,bytes};
+  }
+  return null;
+ }
+ async search({query,includeRemote=false,kind,styleFamily,limit=40,signal}={}){
+  await this.catalog.load();
+  const localMatches=this.catalog.list({query,kind,styleFamily,limit});
+  const cachedRemoteMatches=await this.listCached({query,kind,styleFamily,limit});
+  const fallbackLocalMatches=[...localMatches,...cachedRemoteMatches].slice(0,Math.min(100,Math.max(1,limit)));
+  if(!includeRemote)return {online:false,assets:fallbackLocalMatches,cachedRemoteMatches,remotePacks:[],fallbackLocalMatches};
   const packs=[],seen=new Set(),failures=[];let reachedAny=false;
   const sources=[
    {provider:'kenney',url:`https://kenney.nl/assets?q=${encodeURIComponent(query??'')}`,match:href=>/^https:\/\/(?:www\.)?kenney\.nl\/assets\/[a-z0-9-]+(?:\/)?$/i.test(href)},
@@ -224,14 +374,16 @@ export class RemoteCc0Fetcher{
     }
    }catch{failures.push(source.provider);}
   }
-  if(!reachedAny)return {online:false,warning:'Remote CC0 sources are unavailable; using the verified local catalog.',assets:fallbackLocalMatches,remotePacks:[],fallbackLocalMatches};
+  if(!reachedAny)return {online:false,warning:'Remote CC0 sources are unavailable; using the verified local catalog.',assets:fallbackLocalMatches,cachedRemoteMatches,remotePacks:[],fallbackLocalMatches};
   const warning=failures.length?`Some remote CC0 sources were unavailable (${failures.join(', ')}); returning available remote packs and local CC0 matches.`:undefined;
-  return {online:true,...(warning?{warning}:{}),assets:[...fallbackLocalMatches,...packs],remotePacks:packs,fallbackLocalMatches};
+  return {online:true,...(warning?{warning}:{}),assets:[...fallbackLocalMatches,...packs],cachedRemoteMatches,remotePacks:packs,fallbackLocalMatches};
  }
  async fetchPackWithFallback(options){
   try{return await this.fetchPack(options);}catch(error){
    if(['E_REMOTE_ASSET_ORIGIN','E_BUILD_CANCELLED','E_REMOTE_ASSET_SIZE','E_REMOTE_ASSET_ARCHIVE','E_REMOTE_ASSET_ARCHIVE_LIMIT'].includes(error.message))throw error;
-   await this.catalog.load();return {online:false,warning:'Remote asset could not be verified or downloaded; use these local CC0 matches instead.',error:error.message,fallbackLocalMatches:this.catalog.list({query:options.fileFilter}),files:[]};
+   await this.catalog.load();
+   const fallbackLocalMatches=[...this.catalog.list({query:options.fileFilter}),...await this.listCached({query:options.fileFilter})];
+   return {online:false,warning:'Remote asset could not be verified or downloaded; use these local CC0 matches instead.',error:error.message,fallbackLocalMatches,files:[]};
   }
  }
 }

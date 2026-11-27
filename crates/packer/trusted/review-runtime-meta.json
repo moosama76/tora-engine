@@ -1,0 +1,57 @@
+{
+  "renderer": {
+    "backend": "webgl2-three",
+    "version": "tora-native-review-1"
+  },
+  "entry": "scripts/lean/native/runtime.mjs",
+  "compiler": {
+    "name": "esbuild",
+    "version": "0.28.2"
+  },
+  "preprocessor": {
+    "name": "typescript",
+    "version": "5.9.3",
+    "target": "es5",
+    "module": "esnext",
+    "downlevelIteration": true
+  },
+  "flags": {
+    "bundle": true,
+    "platform": "browser",
+    "target": "es2020",
+    "format": "iife",
+    "minify": true,
+    "charset": "ascii",
+    "legalComments": "none",
+    "sourcemap": false,
+    "globalName": "ToraNative"
+  },
+  "inputs": [
+    "scripts/lean/scene-document.mjs",
+    "scripts/lean/native/match-board.mjs",
+    "scripts/lean/native/interaction-gestures.mjs",
+    "scripts/lean/native/instance-steering.mjs",
+    "scripts/lean/native/erase-mask.mjs",
+    "scripts/lean/native/draw-stroke.mjs",
+    "scripts/lean/native/physics-2d.mjs",
+    "scripts/lean/native/physics-3d.mjs",
+    "node_modules/three/build/three.core.js",
+    "node_modules/three/build/three.module.js",
+    "scripts/lean/native/stage-3d.mjs",
+    "scripts/lean/native/path-network.mjs",
+    "scripts/lean/native/pixel-text.mjs",
+    "scripts/lean/native/presentation.mjs",
+    "packages/adapters/src/index.ts",
+    "packages/adapters/src/unity.ts",
+    "packages/adapters/src/applovin.ts",
+    "packages/adapters/src/ironsource.ts",
+    "packages/adapters/src/meta.ts",
+    "packages/adapters/src/google.ts",
+    "packages/adapters/src/mintegral.ts",
+    "packages/adapters/src/tiktok.ts",
+    "scripts/lean/native/runtime.mjs"
+  ],
+  "javascriptBytes": 828030,
+  "sha256": "sha256:b0e7a4f8016fc39185332a0d1abb9df3b5b6984e30593e462a771ade6f6fed14",
+  "externalImports": []
+}

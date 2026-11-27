@@ -19,18 +19,26 @@
 
 ## Quickstart
 
-**Prerequisites:** Node.js `>= 22`, Rust (`rustc` + `cargo`). WAV-to-MP3 optimization automatically uses local GStreamer or FFmpeg when available; otherwise Tora uses its deterministic PCM WAV fallback.
+### Option A — Zero-Rust CLI Setup (Recommended for Users)
 
-### 1. Install & Run Local Setup
+**Prerequisites:** Node.js `>= 22`. Prebuilt native binaries (`playable`) ship automatically via platform packages or SHA-256-verified GitHub Release downloads — no Rust toolchain required.
+
+```bash
+npx @tora-engine/tora init --client cursor   # or claude-code | codex | gemini | all | print
+npx @tora-engine/tora doctor                 # check Node, native binary, Chromium & workspace paths
+npx @tora-engine/tora editor                 # optional local visual studio on http://127.0.0.1:8001
+```
+
+### Option B — Contributor Source Checkout
+
+**Prerequisites:** Node.js `>= 22`, Rust (`rustc` + `cargo`, optional with `--prebuilt`). WAV-to-MP3 optimization automatically uses local GStreamer or FFmpeg when available; otherwise Tora uses its deterministic PCM WAV fallback.
 
 ```bash
 npm install
-npm run setup
+npm run setup              # or: npm run setup -- --prebuilt (skip Rust build)
 ```
 
-Setup builds the bounded Rust media inspector and optimizer (`inspect_native`, `optimize_native`) plus `playable-cli`, ensures Playwright Chromium is ready, compiles the editor, checks trusted runtime bundles, and prints an MCP configuration with your local paths.
-
-### 2. Connect Your AI Coding Agent (or Launch the Local Editor)
+Setup builds the bounded Rust media & artifact binary (`playable`) plus legacy decoders, ensures Playwright Chromium is ready, compiles the editor, checks trusted runtime & host bundles, and prints an MCP configuration with your local paths.
 
 See [`docs/TORA_AGENT_SETUP.md`](docs/TORA_AGENT_SETUP.md) for per-client commands, or start the local visual studio:
 
@@ -38,7 +46,7 @@ See [`docs/TORA_AGENT_SETUP.md`](docs/TORA_AGENT_SETUP.md) for per-client comman
 npm run dev:editor
 ```
 
-Open `http://127.0.0.1:8001/?view=new` to inspect demos, upload studio assets, and review playable revisions. Uploads default to `optimize:"auto"`; MCP also supports `lossless`, `none`, and `preserveResolution`.
+Open `http://127.0.0.1:8001/?view=new` to inspect demos, upload studio assets, and review playable revisions. Uploads default to `optimize:"auto"`; MCP also supports `lossless`, `none`, `preserveResolution`, verified CC0 discovery/staging (`tora_list_assets`, `tora_fetch_cc0_pack`, `tora_stage_cc0_assets`), and faithful mechanical sprite preparation (`tora_prep_assets`).
 
 ---
 

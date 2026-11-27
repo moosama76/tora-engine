@@ -2,8 +2,8 @@
 import {mkdir, writeFile, readFile, readdir, rm, lstat} from 'node:fs/promises';
 import {resolve, dirname, sep} from 'node:path';
 import {emptyProject, validateDocument} from './native/document.mjs';
+import {defaultStoreRoot, isAllowedStoreRoot, resolveWorkspaceRoot} from './runtime-paths.mjs';
 
-const ROOT = resolve(import.meta.dirname, '../..');
 const check = (value, code) => { if (!value) throw Error(code); };
 
 async function noLinks(path) {
@@ -17,9 +17,10 @@ async function noLinks(path) {
 }
 
 export class ProjectStore {
-  constructor(root = resolve(ROOT, '.tora/native-projects')) {
-    this.root = resolve(root);
-    check(this.root.startsWith(resolve(ROOT, '.tora') + sep) || this.root.startsWith(resolve(ROOT, 'reports') + sep), 'E_WORKSPACE_OUTSIDE_PROJECT');
+  constructor(root, {workspaceRoot} = {}) {
+    this.workspaceRoot = resolveWorkspaceRoot(workspaceRoot);
+    this.root = resolve(root ?? defaultStoreRoot(this.workspaceRoot));
+    check(isAllowedStoreRoot(this.root, this.workspaceRoot), 'E_WORKSPACE_OUTSIDE_PROJECT');
   }
 
   async createNative(input) {

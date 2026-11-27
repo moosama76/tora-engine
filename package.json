@@ -9,6 +9,9 @@
   },
   "funding": "https://github.com/sponsors/moosama76",
   "type": "module",
+  "bin": {
+    "tora": "./bin/tora.mjs"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -21,6 +24,7 @@
     "mcp:tora": "node scripts/lean/native/mcp-server.mjs",
     "agent": "node scripts/lean/native/agent-cli.mjs",
     "build:editor": "node scripts/build-editor.mjs",
+    "build:cli-package": "node scripts/build-cli-package.mjs",
     "build:pages-editor": "node scripts/build-pages-editor.mjs",
     "build:website": "node scripts/build-tora-website.mjs",
     "browsers:install": "playwright install chromium",
@@ -29,7 +33,7 @@
     "packer:generate": "node scripts/generate-packer-bundle.mjs",
     "packer:check": "node scripts/generate-packer-bundle.mjs --check",
     "typecheck": "node scripts/typecheck.mjs",
-    "lint": "eslint packages scripts tests eslint.config.mjs",
+    "lint": "eslint bin packages scripts tests eslint.config.mjs",
     "test:host": "node --test tests/host/*.test.mjs",
     "test:editor": "node --test tests/lean/scene-document.test.mjs tests/editor/*.test.mjs",
     "test:native": "node scripts/lean/native/verify.mjs",

@@ -1,0 +1,21 @@
+{
+  "format": "tora-qa-host-bundles-1",
+  "compiler": {
+    "name": "esbuild",
+    "version": "0.28.2"
+  },
+  "bundles": {
+    "mraid-host.iife.js": {
+      "entry": "packages/test-harness/src/mraid-host.ts",
+      "globalName": "MraidHost",
+      "javascriptBytes": 4399,
+      "sha256": "sha256:cdda71830c0a2de4614abb54adb3fb6b9949fa8b5dd21e8eb218ebe4cc51adba"
+    },
+    "vendor-hosts.iife.js": {
+      "entry": "packages/test-harness/src/vendor-hosts.ts",
+      "globalName": "VendorHost",
+      "javascriptBytes": 4950,
+      "sha256": "sha256:8aa9205f2dee7564215fa97d56da33e0105890ab5a7aad04e1a68edfff84414f"
+    }
+  }
+}

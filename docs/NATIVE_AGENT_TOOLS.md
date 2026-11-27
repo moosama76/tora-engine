@@ -80,7 +80,9 @@ Contract requests accept registered component contracts, behavior names, or
 units on all unit-bearing fields). The registry is returned only when explicitly requested;
 it is not attached to every mutation response. HTTP parity is available via
 `GET /api/creation/capabilities?format=compact&packs=...`, `GET /api/projects/:id?tree=1`,
-and `POST /api/projects/:id/assets` accepting `{expected, assets:[...]}` for atomic batch uploads.
+`GET /api/assets/catalog`, `POST /api/assets/fetch-cc0`, `POST /api/assets/prep`,
+`POST /api/projects/:id/stage-cc0`, and `POST /api/projects/:id/assets` accepting
+`{expected, assets:[...]}` for atomic batch uploads.
 
 Standalone HTML remains a browser draft. Every network output starts as
 `ASSEMBLED_UNVERIFIED`: Unity/AppLovin use MRAID, Meta uses FbPlayableAd, Google
@@ -93,19 +95,25 @@ visual, physical-device, official ad-network, or campaign acceptance.
 
 `tora_qa` and CLI `{"command":"qa","id":"my-game"}` run static/acoustic preflight and
 Playwright checks at 320×568, 390×844, 768×1024, and 844×390. They write a
-`tora-creative-qa-1` report, labeled individual viewport PNGs, and triage-only contact
-sheets (`screenshots/sheet-<state>.png` and `screenshots/contact-sheet.png`, marked
-`triageOnly: true`) under the project QA directory unless `output` is supplied. Contact
-sheets speed up mid-build visual triage, but individual full-size viewport PNGs (and
-gameplay footage for motion) remain mandatory to inspect before final delivery. Checks
-cover WAV clipping/silence, catalog role and valence, distinct win/loss bytes, mix
-hierarchy, unsupported pixel glyphs, stage/parent clipping, text fit, 44 CSS-pixel touch
-targets, interactive overlap, SDK safe zones, and a primary-input response within 150 ms.
+`tora-creative-qa-1` report, labeled individual viewport PNGs, triage-only contact
+sheets (`screenshots/sheet-<state>.png` and `screenshots/contact-sheet.png`), and
+post-SLA 390×844 motion filmstrips (`screenshots/filmstrip-interaction.png` plus
+`screenshots/filmstrip-end-card.png` when end-card is reached in `real-play` mode,
+marked `triageOnly: true`; opt out with `motionFilmstrip: false`). Pass
+`recordVideo: true` to record an opt-in WebM clip (`screenshots/gameplay.webm`).
+Contact sheets and filmstrips speed up mid-build visual & animation triage, but
+individual full-size viewport PNGs and real-device gameplay review remain mandatory
+before final delivery. Checks cover WAV clipping/silence, catalog role and valence,
+distinct win/loss bytes, mix hierarchy, unsupported pixel glyphs, stage/parent
+clipping, text fit, 44 CSS-pixel touch targets, interactive overlap, SDK safe zones,
+and a primary-input response within 150 ms.
 
 Standalone and Unity HTML exports run the same gate. Passing QA receipts are cached
 across MCP, HTTP, and intake services by artifact hash, QA/host-script checker version,
-Playwright/Chromium version, and target (verifying referenced screenshot hashes on disk
-before returning a hit). Because the 150 ms interaction check is timing-sensitive, a
+Playwright/Chromium version, target, and motion/video scenario (verifying referenced
+screenshot, filmstrip, and video hashes on disk before returning a hit). A failed
+video or filmstrip capture degrades to a warning so export remains eligible, but never
+poisons the receipt cache for subsequent retries. Because the 150 ms interaction check is timing-sensitive, a
 borderline passing result remains cached until the artifact, checker, Playwright/Chromium
 version, or stored screenshot artifacts change. Blockers reject export with `E_CREATIVE_QA`
 and the structured report; batch exports run QA for every target before writing any output

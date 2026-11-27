@@ -12,6 +12,11 @@ import {ReviewIntake} from './review-intake.mjs';
 import {reviewRuntimeBundle} from './compiler.mjs';
 import {composeFromFreePack,freePackPreview,listFreePacks} from './chat-compose.mjs';
 import {listDemosWithStatus,materializeDemo} from './demos.mjs';
+import {AssetCatalog} from './asset-catalog.mjs';
+import {RemoteCc0Fetcher} from './remote-cc0-fetcher.mjs';
+import {stageVerifiedCc0Assets} from './cc0-staging.mjs';
+import {prepAssets} from './asset-prep.mjs';
+import {PACKAGE_ROOT} from '../runtime-paths.mjs';
 
 const connectionErrors={
  E_REVIEW_KEY_FORMAT:400,E_REVIEW_KEY_SAVE:500,E_MODEL_AUTH:401,E_MODEL_FORBIDDEN:403,
@@ -19,8 +24,10 @@ const connectionErrors={
  E_MODEL_RATE_LIMIT:429,E_MODEL_TIMEOUT:504,E_MODEL_TRANSPORT:502,
  E_MODEL_UPSTREAM:502,E_MODEL_REQUEST:502,
 };
-export function nativeApi(service,connection=new ReviewConnection(service.store.root),{agentFactory}={}){
+export function nativeApi(service,connection=new ReviewConnection(service.store.root),{agentFactory,catalog,remoteFetcher}={}){
  const intakes=new ReviewIntake(service,{connection,agentFactory});
+ const assetCatalog=catalog??new AssetCatalog({root:PACKAGE_ROOT});
+ const cc0Fetcher=remoteFetcher??new RemoteCc0Fetcher({workspaceRoot:service.store.workspaceRoot,catalog:assetCatalog});
  const providerForConnection=async()=>{
   if(process.env.TORA_REVIEW_PROVIDER){
    const config=reviewProviderConfig();
@@ -71,15 +78,18 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
   });
  };
  return async(req,res,url,port)=>{
- const match=/^\/api\/projects\/([a-z][a-z0-9-]{1,47})(?:\/(transactions\/preview|transactions|history|accept|export|render|review|assets(?:\/[a-z][a-z0-9_.-]{0,95})?))?$/.exec(url.pathname);
+ const match=/^\/api\/projects\/([a-z][a-z0-9-]{1,47})(?:\/(transactions\/preview|transactions|history|accept|export|render|review|stage-cc0|assets(?:\/[a-z][a-z0-9_.-]{0,95})?))?$/.exec(url.pathname);
  const intake=/^\/api\/review-intakes(?:\/([a-f0-9-]{36})(?:\/(submit|assets|references|cancel|retry)(?:\/([a-z0-9_.-]+))?)?)?$/.exec(url.pathname);
  const previewMatch=/^\/api\/catalog\/preview\/([a-z0-9-]+)$/.exec(url.pathname);
  const connectionRoute=url.pathname==='/api/review/connection';
  const catalogRoute=url.pathname==='/api/catalog/packs';
+ const assetsCatalogRoute=url.pathname==='/api/assets/catalog';
+ const assetsFetchRoute=url.pathname==='/api/assets/fetch-cc0';
+ const assetsPrepRoute=url.pathname==='/api/assets/prep';
  const fromChatRoute=url.pathname==='/api/projects/from-chat';
  const demosRoute=url.pathname==='/api/demos';
  const demosOpenRoute=url.pathname==='/api/demos/open';
- const top=connectionRoute||catalogRoute||fromChatRoute||demosRoute||demosOpenRoute||['/api/open','/api/creation/capabilities','/api/projects'].includes(url.pathname);
+ const top=connectionRoute||catalogRoute||assetsCatalogRoute||assetsFetchRoute||assetsPrepRoute||fromChatRoute||demosRoute||demosOpenRoute||['/api/open','/api/creation/capabilities','/api/projects'].includes(url.pathname);
  if(!match&&!intake&&!previewMatch&&!top&&url.pathname!=='/review-runtime.js')return false;
  const json=(status,value)=>{res.writeHead(status,{'Content-Type':'application/json'});res.end(JSON.stringify(value));};
  try{check(req.headers.host==='127.0.0.1:'+port,'E_NATIVE_ORIGIN');
@@ -90,6 +100,21 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
  if(catalogRoute){
   check(req.method==='GET','E_NATIVE_METHOD');
   json(200,await listFreePacks());return true;
+ }
+ if(assetsCatalogRoute){
+  check(req.method==='GET','E_NATIVE_METHOD');
+  const limitParam=url.searchParams.get('limit');
+  const limit=limitParam!==null?Number(limitParam):40;
+  check(Number.isInteger(limit)&&limit>=1&&limit<=100,'E_NATIVE_ARGUMENT');
+  const result=await cc0Fetcher.search({
+   query:url.searchParams.get('query')??'',
+   kind:url.searchParams.get('kind')??undefined,
+   styleFamily:url.searchParams.get('styleFamily')??undefined,
+   includeRemote:url.searchParams.get('includeRemote')==='1'||url.searchParams.get('includeRemote')==='true',
+   limit,
+  });
+  json(200,{summary:assetCatalog.summary(),online:result.online,...(result.warning?{warning:result.warning}:{}),assets:result.assets,cachedRemoteCount:result.cachedRemoteMatches?.length??0,remotePacks:result.remotePacks});
+  return true;
  }
  if(demosRoute){
   check(req.method==='GET','E_NATIVE_METHOD');
@@ -147,6 +172,16 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
   json(201,await composeFromFreePack(service,body,{providerConfig,fetchImpl:connection.fetch}));
   return true;
  }
+ if(assetsFetchRoute){
+  check(exact(body,['sourceUrl','packId','fileFilter'])&&typeof body.sourceUrl==='string','E_NATIVE_ARGUMENT');
+  json(200,await cc0Fetcher.fetchPackWithFallback({sourceUrl:body.sourceUrl,packId:body.packId,fileFilter:body.fileFilter}));
+  return true;
+ }
+ if(assetsPrepRoute){
+  check(exact(body,['items'])&&Array.isArray(body.items),'E_NATIVE_ARGUMENT');
+  json(200,await prepAssets({workspaceRoot:service.store.workspaceRoot,items:body.items,catalog:assetCatalog,remoteFetcher:cc0Fetcher}));
+  return true;
+ }
  if(demosOpenRoute){
   check(exact(body,['id']),'E_NATIVE_ARGUMENT');
   json(200,await materializeDemo(service,body.id));
@@ -166,6 +201,7 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
  if(url.pathname==='/api/projects'){check(body.kind===undefined||body.kind==='native-scene','E_NATIVE_KIND');json(201,await service.create(body));return true;}
  check(match,'E_NATIVE_NOT_FOUND');const [,id,route]=match;const fields={history:['expected','action'],accept:['revisionId','contentHash'],export:['revisionId','target']}[route];if(fields)check(exact(body,fields)&&fields.every(key=>Object.hasOwn(body,key)),'E_NATIVE_ARGUMENT');
  if(route==='assets')check((exact(body,['expected','asset'])&&Object.hasOwn(body,'expected')&&Object.hasOwn(body,'asset'))||(exact(body,['expected','assets'])&&Object.hasOwn(body,'expected')&&Object.hasOwn(body,'assets')),'E_NATIVE_ARGUMENT');
+ if(route==='stage-cc0')check(exact(body,['expected','items'])&&Object.hasOwn(body,'expected')&&Array.isArray(body.items),'E_NATIVE_ARGUMENT');
  if(route==='review'){
   const review=await reviewForConnection();
   const saved=await review.post(id,body);
@@ -176,6 +212,7 @@ export function nativeApi(service,connection=new ReviewConnection(service.store.
  else if(route==='transactions/preview'){const {project,...preview}=await service.preview(id,body);void project;json(200,preview);}
  else if(route==='transactions')json(201,await service.transact(id,body));
  else if(route==='assets')json(201,Array.isArray(body.assets)?await service.uploadBatch(id,body):await service.upload(id,body));
+ else if(route==='stage-cc0')json(201,await stageVerifiedCc0Assets({service,projectId:id,expected:body.expected,items:body.items,catalog:assetCatalog,remoteFetcher:cc0Fetcher}));
  else if(route==='history')json(200,await service.navigate(id,body));
  else if(route==='accept')json(200,await service.accept(id,body));
  else if(route==='export')json(200,await service.export(id,body));

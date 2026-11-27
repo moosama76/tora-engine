@@ -1,6 +1,6 @@
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {createRequire} from 'node:module';
-import {readFile,mkdir,writeFile,rm} from 'node:fs/promises';
+import {readFile,mkdir,mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL,URL} from 'node:url';
 import {Buffer} from 'node:buffer';
@@ -10,6 +10,7 @@ import {loadCatalog} from './catalog-cache.mjs';
 import {moduleForProject} from './modules/index.mjs';
 import {isAudioMime} from './media-validate.mjs';
 import {getNetworkTarget} from './network-targets.mjs';
+import {IS_SOURCE_CHECKOUT} from '../runtime-paths.mjs';
 
 export const CREATIVE_QA_FORMAT='tora-creative-qa-1';
 export const INTERACTION_LIMIT_MS=150;
@@ -47,10 +48,13 @@ const canonical=value=>{
 const hash=value=>'sha256:'+createHash('sha256').update(value).digest('hex');
 const [qaSourceBytes,mraidHostBytes,vendorHostBytes]=await Promise.all([
  readFile(new URL(import.meta.url)),
- readFile(new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url)),
- readFile(new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url)),
+ readFile(new URL(IS_SOURCE_CHECKOUT?'../../../packages/test-harness/src/mraid-host.ts':'../../../crates/packer/trusted/mraid-host.iife.js',import.meta.url)),
+ readFile(new URL(IS_SOURCE_CHECKOUT?'../../../packages/test-harness/src/vendor-hosts.ts':'../../../crates/packer/trusted/vendor-hosts.iife.js',import.meta.url)),
 ]);
 export const CREATIVE_QA_CHECKER_VERSION='tora-creative-qa-1:'+hash(Buffer.concat([qaSourceBytes,mraidHostBytes,vendorHostBytes]));
+const DEFAULT_MOTION_OFFSETS_MS=Object.freeze([0,80,180,320,500,750,1050,1350]);
+const DEFAULT_ENDCARD_OFFSETS_MS=Object.freeze([0,150,350,650]);
+const MOTION_BEHAVIOR_KINDS=new Set(['emitter','animation','motion','physics-body','physics-3d','camera-follow','path-agent','oscillate','oscillate-3d']);
 let cachedBrowserVersionPromise=null;
 export function getPlaywrightBrowserVersion(){
  if(!cachedBrowserVersionPromise){
@@ -68,19 +72,32 @@ export function getPlaywrightBrowserVersion(){
  return cachedBrowserVersionPromise;
 }
 const hostInitCache=new Map();
+async function readVerifiedHostBundle(filename){
+ const [script,metaRaw]=await Promise.all([
+  readFile(new URL(`../../../crates/packer/trusted/${filename}`,import.meta.url),'utf8'),
+  readFile(new URL('../../../crates/packer/trusted/host-bundles-meta.json',import.meta.url),'utf8'),
+ ]);
+ const meta=JSON.parse(metaRaw);
+ const expected=meta?.bundles?.[filename]?.sha256;
+ if(typeof expected!=='string'||hash(script)!==expected)throw Error('E_NATIVE_HOST_CORRUPT');
+ return script;
+}
 async function getHostInit(networkTarget){
  const key=`${networkTarget.hostKind}:${networkTarget.mraidVersion??''}`;
  if(hostInitCache.has(key))return hostInitCache.get(key);
- const {build}=await import('esbuild');
  let script;
  if(networkTarget.hostKind==='mraid'){
-  const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'});
-  script=host.outputFiles[0].text+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
+  const base=IS_SOURCE_CHECKOUT
+   ?(await (await import('esbuild')).build({entryPoints:[new URL('../../../packages/test-harness/src/mraid-host.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'MraidHost',write:false,platform:'browser'})).outputFiles[0].text
+   :await readVerifiedHostBundle('mraid-host.iife.js');
+  script=base+`;MraidHost.installMraidHost({version:${JSON.stringify(networkTarget.mraidVersion)},state:"default",visible:true});`;
  }else{
   const installer={dapi:'installIronSourceHost',meta:'installMetaHost','google-exitapi':'installGoogleExitApiHost',mintegral:'installMintegralHost',tiktok:'installTikTokHost'}[networkTarget.hostKind];
   if(!installer)throw Error('E_NATIVE_UNSUPPORTED_TARGET');
-  const host=await build({entryPoints:[new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'VendorHost',write:false,platform:'browser'});
-  script=host.outputFiles[0].text+`;VendorHost.${installer}();`;
+  const base=IS_SOURCE_CHECKOUT
+   ?(await (await import('esbuild')).build({entryPoints:[new URL('../../../packages/test-harness/src/vendor-hosts.ts',import.meta.url).pathname],bundle:true,format:'iife',globalName:'VendorHost',write:false,platform:'browser'})).outputFiles[0].text
+   :await readVerifiedHostBundle('vendor-hosts.iife.js');
+  script=base+`;VendorHost.${installer}();`;
  }
  hostInitCache.set(key,script);
  return script;
@@ -107,12 +124,14 @@ function summarize(states,screenshots,blockers,warnings){
  const skippedStates=[...new Set(states.filter(row=>row.status!=='checked').map(row=>row.state))].sort((a,b)=>stateOrder.indexOf(a)-stateOrder.indexOf(b));
  return {blockers:blockers.length,warnings:warnings.length,viewports,checkedStates,skippedStates};
 }
-export function formatCreativeQaReport({scope='static',blockers=[],warnings=[],checks={},interactions=[],states=[],screenshots=[],contactSheets=[]}={}){
+export function formatCreativeQaReport({scope='static',blockers=[],warnings=[],checks={},interactions=[],states=[],screenshots=[],contactSheets=[],motionFilmstrips=[],video=null}={}){
  const normalizedBlockers=blockers.map(row=>({...row,componentId:row.componentId??null,viewport:normalizeViewport(row.viewport)})).sort(issueSort);
  const normalizedWarnings=warnings.map(row=>({...row,componentId:row.componentId??null,viewport:normalizeViewport(row.viewport)})).sort(issueSort);
  const normalizedStates=states.map(row=>({...row,viewport:normalizeViewport(row.viewport)})).sort((a,b)=>viewportKey(a.viewport).localeCompare(viewportKey(b.viewport))||stateOrder.indexOf(a.state)-stateOrder.indexOf(b.state));
  const normalizedScreenshots=screenshots.map(row=>({...row,viewport:normalizeViewport(row.viewport)})).sort(artifactSort);
  const normalizedSheets=contactSheets.map(row=>({...row,viewports:(row.viewports??[]).map(normalizeViewport),triageOnly:true}));
+ const normalizedFilmstrips=motionFilmstrips.map(row=>({...row,viewport:normalizeViewport(row.viewport),triageOnly:true})).sort((a,b)=>String(a.kind??'').localeCompare(String(b.kind??'')));
+ const normalizedVideo=video?{...video,viewport:normalizeViewport(video.viewport),triageOnly:true}:null;
  return canonical({
   format:CREATIVE_QA_FORMAT,ok:normalizedBlockers.length===0,scope,
   summary:summarize(normalizedStates,normalizedScreenshots,normalizedBlockers,normalizedWarnings),
@@ -120,6 +139,8 @@ export function formatCreativeQaReport({scope='static',blockers=[],warnings=[],c
   interactions:[...interactions].sort((a,b)=>viewportKey(a.viewport).localeCompare(viewportKey(b.viewport))),
   states:normalizedStates,screenshots:normalizedScreenshots,
   ...(normalizedSheets.length?{contactSheets:normalizedSheets}:{}),
+  ...(normalizedFilmstrips.length?{motionFilmstrips:normalizedFilmstrips}:{}),
+  ...(normalizedVideo?{video:normalizedVideo}:{}),
  });
 }
 export const formatQaReport=formatCreativeQaReport;
@@ -782,6 +803,157 @@ async function openPlaywrightSession({html,htmlPath,project,primaryComponentId,n
     return results;
    }finally{await sheetPage.close().catch(()=>{});}
   },
+  async captureMotionFilmstrip({screenshotDir,viewport=DEFAULT_VIEWPORTS[1],offsetsMs,kind='interaction',target,alreadyInState=false}){
+   const offsets=Array.isArray(offsetsMs)&&offsetsMs.length>=2&&offsetsMs.length<=12
+    ?offsetsMs.map(n=>Math.max(0,Math.min(2500,Math.round(Number(n)||0))))
+    :(kind==='end-card'?[...DEFAULT_ENDCARD_OFFSETS_MS]:[...DEFAULT_MOTION_OFFSETS_MS]);
+   const frames=[];
+   if(!alreadyInState){
+    await this.setViewport(viewport);
+    await this.load();
+   }else{
+    await this.setViewport(viewport);
+   }
+   const activeTarget=kind==='interaction'?(target??await this.getPrimaryTarget()):null;
+   if(kind==='interaction'&&!activeTarget)return null;
+
+   const firstBytes=await this.screenshot();
+   frames.push({elapsedMs:0,bytes:firstBytes,sha256:hash(firstBytes),changed:false,isStart:true});
+
+   const startedAt=Date.now();
+   if(kind==='interaction'){
+    await this.prepareClick(activeTarget);
+    await this.click(activeTarget);
+   }
+   for(let i=1;i<offsets.length;i++){
+    const waitMs=Math.max(0,offsets[i]-(Date.now()-startedAt));
+    if(waitMs>0)await delay(waitMs);
+    const bytes=await this.screenshot();
+    const digest=hash(bytes);
+    const elapsedMs=Date.now()-startedAt;
+    const changed=digest!==frames[frames.length-1].sha256;
+    frames.push({elapsedMs,bytes,sha256:digest,changed,isStart:false});
+   }
+
+   const uniqueFrames=new Set(frames.map(f=>f.sha256)).size;
+   const changedTransitions=frames.slice(1).filter(f=>f.changed).length;
+   const postInputTransitions=frames.slice(2).filter(f=>f.changed).length;
+
+   const sheetPage=await context.newPage();
+   try{
+    await sheetPage.goto('about:blank');
+    const tileInputs=frames.map(f=>({
+     label:`+${f.elapsedMs}ms`,
+     badge:f.isStart?'START':f.changed?'Δ':'=',
+     changed:f.changed,
+     isStart:f.isStart,
+     dataUrl:`data:image/png;base64,${f.bytes.toString('base64')}`,
+    }));
+    const title=`${kind.toUpperCase()} MOTION FILMSTRIP (${viewport.width}×${viewport.height}) · ${uniqueFrames}/${frames.length} UNIQUE · ${changedTransitions}Δ`;
+    const rendered=await sheetPage.evaluate(async({titleText,tiles})=>{
+     const loadImg=src=>new Promise((res,rej)=>{const img=new globalThis.Image();img.onload=()=>res(img);img.onerror=rej;img.src=src;});
+     const loaded=await Promise.all(tiles.map(async t=>({...t,img:await loadImg(t.dataUrl)})));
+     const cols=Math.min(4,loaded.length),rows=Math.ceil(loaded.length/cols);
+     const pad=14,gap=10,headerH=40,cardPad=6,labelH=22,maxTileW=240,maxTileH=380;
+     const sample=loaded[0].img;
+     const scale=Math.min(maxTileW/sample.naturalWidth,maxTileH/sample.naturalHeight,1);
+     const drawW=Math.max(1,Math.round(sample.naturalWidth*scale));
+     const drawH=Math.max(1,Math.round(sample.naturalHeight*scale));
+     const cardW=drawW+cardPad*2,cardH=drawH+labelH+cardPad*2;
+     const totalW=Math.max(680,pad*2+cols*cardW+(cols-1)*gap);
+     const totalH=pad+headerH+rows*cardH+(rows-1)*gap+pad;
+     const canvas=globalThis.document.createElement('canvas');
+     canvas.width=totalW;canvas.height=totalH;
+     const ctx=canvas.getContext('2d');
+     ctx.fillStyle='#12151c';ctx.fillRect(0,0,totalW,totalH);
+     ctx.fillStyle='#eef2f7';ctx.font='700 13px system-ui, -apple-system, sans-serif';ctx.textBaseline='middle';
+     ctx.fillText(titleText,pad,pad+headerH/2-1);
+     const badge='MOTION FILMSTRIP — NOT REAL-DEVICE FOOTAGE';
+     ctx.font='600 10px system-ui, -apple-system, sans-serif';
+     const badgeW=ctx.measureText(badge).width+14;
+     ctx.fillStyle='#2a2417';ctx.fillRect(totalW-pad-badgeW,pad+8,badgeW,22);
+     ctx.strokeStyle='#8c6a27';ctx.lineWidth=1;ctx.strokeRect(totalW-pad-badgeW+.5,pad+8.5,badgeW-1,21);
+     ctx.fillStyle='#f6d482';ctx.fillText(badge,totalW-pad-badgeW+7,pad+19);
+     for(let idx=0;idx<loaded.length;idx++){
+      const t=loaded[idx],col=idx%cols,row=Math.floor(idx/cols);
+      const x=pad+col*(cardW+gap),y=pad+headerH+row*(cardH+gap);
+      ctx.fillStyle='#1b202b';ctx.fillRect(x,y,cardW,cardH);
+      ctx.strokeStyle=t.changed?'#3b7a57':'#2f384a';ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,cardW-1,cardH-1);
+      ctx.fillStyle='#cbd5e1';ctx.font='700 11px system-ui, -apple-system, sans-serif';
+      ctx.fillText(t.label,x+cardPad,y+cardPad+labelH/2-1);
+      ctx.font='700 10px system-ui, -apple-system, sans-serif';
+      const pillW=ctx.measureText(t.badge).width+10;
+      ctx.fillStyle=t.isStart?'#26344a':t.changed?'#1b3c2a':'#282c36';
+      ctx.fillRect(x+cardW-cardPad-pillW,y+cardPad+3,pillW,16);
+      ctx.fillStyle=t.isStart?'#93c5fd':t.changed?'#86efac':'#94a3b8';
+      ctx.fillText(t.badge,x+cardW-cardPad-pillW+5,y+cardPad+11);
+      ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+      ctx.drawImage(t.img,x+cardPad,y+cardPad+labelH,drawW,drawH);
+     }
+     return {width:totalW,height:totalH,dataUrl:canvas.toDataURL('image/png')};
+    },{titleText:title,tiles:tileInputs});
+    const png=Buffer.from(rendered.dataUrl.slice('data:image/png;base64,'.length),'base64');
+    const filename=kind==='end-card'?'filmstrip-end-card.png':'filmstrip-interaction.png';
+    await writeFile(resolve(screenshotDir,filename),png);
+    return {
+     kind,
+     path:`screenshots/${filename}`,
+     width:rendered.width,
+     height:rendered.height,
+     sha256:hash(png),
+     viewport:normalizeViewport(viewport),
+     timestampsMs:frames.map(f=>f.elapsedMs),
+     uniqueFrames,
+     changedTransitions,
+     postInputTransitions,
+     motionDetected:changedTransitions>=1,
+     triageOnly:true,
+    };
+   }finally{await sheetPage.close().catch(()=>{});}
+  },
+  async recordGameplayVideo({screenshotDir,viewport=DEFAULT_VIEWPORTS[1],target}){
+   const tmpDir=await mkdtemp(resolve(screenshotDir,'.video-'+randomUUID().slice(0,8)+'-'));
+   let videoContext=null;
+   try{
+    videoContext=await browser.newContext({viewport,recordVideo:{dir:tmpDir,size:viewport}});
+    if(networkTarget?.hostKind==='google-exitapi'||networkTarget?.hostKind==='tiktok'){
+     const scriptUrl=networkTarget.hostKind==='google-exitapi'?'https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js':'https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js';
+     await videoContext.route(scriptUrl,route=>route.fulfill({status:200,contentType:'application/javascript',body:'/* declared vendor host supplied by the QA mock */'}));
+    }
+    const vPage=await videoContext.newPage();
+    if(hostInit)await vPage.addInitScript(hostInit);
+    if(url)await vPage.goto(url,{waitUntil:'load'});
+    else{if(hostInit)await vPage.evaluate(hostInit);await vPage.setContent(html,{waitUntil:'load'});}
+    await vPage.waitForFunction(()=>globalThis.toraRuntime);
+    await vPage.evaluate(async()=>{await globalThis.document.fonts?.ready;await new Promise(r=>globalThis.requestAnimationFrame(()=>globalThis.requestAnimationFrame(r)));});
+    await delay(250);
+    if(target){
+     if(target.interaction==='aim-launch'){await vPage.mouse.move(target.x,target.y);await vPage.mouse.down();await vPage.mouse.move(target.x-64,target.y+28);await vPage.mouse.up();}
+     else if(target.interaction==='drag-drop'||target.interaction==='swipe'||target.interaction==='draw'||target.interaction==='erase'){await vPage.mouse.move(target.x,target.y);await vPage.mouse.down();await vPage.mouse.move(target.endX,target.endY,{steps:5});await vPage.mouse.up();}
+     else if(target.interaction==='hold'){await vPage.mouse.move(target.x,target.y);await vPage.mouse.down();await vPage.waitForTimeout(80);await vPage.mouse.up();}
+     else await vPage.mouse.click(target.x,target.y);
+    }
+    await delay(1400);
+    const videoHandle=vPage.video();
+    await videoContext.close();
+    videoContext=null;
+    if(!videoHandle)throw Error('Playwright video handle unavailable');
+    const rawPath=await videoHandle.path();
+    const bytes=await readFile(rawPath);
+    if(!bytes.length||bytes.length>5*1024*1024)throw Error('Recorded gameplay video exceeds 5 MiB limit or is empty');
+    await writeFile(resolve(screenshotDir,'gameplay.webm'),bytes);
+    return {
+     path:'screenshots/gameplay.webm',
+     sha256:hash(bytes),
+     bytes:bytes.length,
+     viewport:normalizeViewport(viewport),
+     triageOnly:true,
+    };
+   }finally{
+    if(videoContext)await videoContext.close().catch(()=>{});
+    await rm(tmpDir,{recursive:true,force:true}).catch(()=>{});
+   }
+  },
   async close(){if(closed)return;closed=true;await context.close();if(!sharedBrowser)await browser.close();},
  };
 }
@@ -865,14 +1037,25 @@ async function interact(session,viewport,target,openingState,blockers){
 
 export async function runBrowserQa(options={}){
  const {outputDir,htmlPath,stateHook,browserAdapter,network='standalone',primaryComponentId}=options;
+ const wantFilmstrip=options.motionFilmstrip!==false;
+ const wantVideo=options.recordVideo===true;
  if(!outputDir)throw Error('A deterministic output directory is required');
  if(!htmlPath&&typeof options.html!=='string'&&typeof options.htmlString!=='string')throw Error('Supply an HTML artifact path or HTML string');
  const html=typeof options.html==='string'?options.html:typeof options.htmlString==='string'?options.htmlString:await readFile(htmlPath,'utf8');
  const project=options.project??projectFromHtml(html),blockers=[],warnings=[],interactions=[],states=[],screenshots=[];
- let contactSheets=[];
+ let contactSheets=[],motionFilmstrips=[],video=null;
  const screenshotDir=resolve(outputDir,'screenshots');await mkdir(screenshotDir,{recursive:true});
- await Promise.all([...DEFAULT_VIEWPORTS.flatMap(viewport=>stateOrder.map(state=>rm(resolve(screenshotDir,`${viewport.width}x${viewport.height}-${state}.png`),{force:true}))),...stateOrder.map(state=>rm(resolve(screenshotDir,`sheet-${state}.png`),{force:true})),rm(resolve(screenshotDir,'contact-sheet.png'),{force:true})]);
+ const staleCleanup=[
+  ...DEFAULT_VIEWPORTS.flatMap(viewport=>stateOrder.map(state=>rm(resolve(screenshotDir,`${viewport.width}x${viewport.height}-${state}.png`),{force:true}))),
+  ...stateOrder.map(state=>rm(resolve(screenshotDir,`sheet-${state}.png`),{force:true})),
+  rm(resolve(screenshotDir,'contact-sheet.png'),{force:true}),
+  ...(wantFilmstrip?[rm(resolve(screenshotDir,'filmstrip-interaction.png'),{force:true}),rm(resolve(screenshotDir,'filmstrip-end-card.png'),{force:true})]:[]),
+  ...(wantVideo?[rm(resolve(screenshotDir,'gameplay.webm'),{force:true})]:[]),
+ ];
+ await Promise.all(staleCleanup);
  const session=await createSession(browserAdapter,{html,htmlPath,project,network,primaryComponentId,stateHook,browser:options.browser});
+ let primaryMotionTarget=null;
+ const motionViewport=options.motionViewport??DEFAULT_VIEWPORTS[1];
  const capture=async(viewport,state)=>{
   const bytes=await session.screenshot(),filename=`${viewport.width}x${viewport.height}-${state}.png`;
   await writeFile(resolve(screenshotDir,filename),bytes);
@@ -905,6 +1088,7 @@ export async function runBrowserQa(options={}){
     blockers.push(issue('blocker','primary-interaction-missing',primaryComponentId??null,'Declare a click event on an enabled component in the start scene and bind meaningful feedback to it.',{viewport,detail:'No generic primary target could be derived from project click events.'}));
     states.push({viewport:normalizeViewport(viewport),state:'after-first-input',status:'unavailable',reason:'primary-interaction-missing'});
    }else{
+    if(viewport.width===motionViewport.width&&viewport.height===motionViewport.height)primaryMotionTarget=target;
     interactions.push(await interact(session,viewport,target,openingState,blockers));
     states.push({viewport:normalizeViewport(viewport),state:'after-first-input',status:'checked',componentId:target.componentId});
     await capture(viewport,'after-first-input');await audit(viewport,'after-first-input');
@@ -937,6 +1121,14 @@ export async function runBrowserQa(options={}){
    if(discovered&&!discovered.available){
     for(const viewport of DEFAULT_VIEWPORTS)states.push({viewport:normalizeViewport(viewport),state:'end-card',status:'unavailable',reason:'end-card-unreachable'});
    }else if(discovered?.available){
+    if(wantFilmstrip&&discovered.mode==='real-play'&&typeof session.captureMotionFilmstrip==='function'){
+     try{
+      const endStrip=await session.captureMotionFilmstrip({screenshotDir,viewport:motionViewport,kind:'end-card',alreadyInState:true});
+      if(endStrip)motionFilmstrips.push(endStrip);
+     }catch(error){
+      warnings.push(issue('warning','motion-filmstrip-failed',null,'Inspect end-card animation directly in a browser; end-card motion filmstrip capture failed.',{viewport:motionViewport,detail:error?.message??String(error),metrics:{kind:'end-card'}}));
+     }
+    }
     for(const viewport of DEFAULT_VIEWPORTS){
      await session.setViewport(viewport);
      states.push({viewport:normalizeViewport(viewport),state:'end-card',status:'checked',mode:discovered.mode});
@@ -974,6 +1166,28 @@ export async function runBrowserQa(options={}){
     }
    }
   }
+  if(wantFilmstrip&&typeof session.captureMotionFilmstrip==='function'){
+   try{
+    const strip=await session.captureMotionFilmstrip({screenshotDir,viewport:motionViewport,offsetsMs:options.motionTimestampsMs,kind:'interaction',target:primaryMotionTarget});
+    if(strip){
+     motionFilmstrips.push(strip);
+     const hasMotionBehaviors=Boolean(project?.gameplay?.some(b=>MOTION_BEHAVIOR_KINDS.has(b.kind)));
+     if(hasMotionBehaviors&&strip.postInputTransitions===0){
+      warnings.push(issue('warning','motion-static-after-input',primaryMotionTarget?.componentId??null,'Verify post-input animations, particles, and physics motion play visibly across frames after interaction.',{viewport:motionViewport,detail:'All post-input motion filmstrip frames were byte-identical despite motion/VFX behaviors declared in the project.',metrics:{uniqueFrames:strip.uniqueFrames,changedTransitions:strip.changedTransitions}}));
+     }
+    }
+   }catch(error){
+    warnings.push(issue('warning','motion-filmstrip-failed',null,'Inspect animation directly in a browser; interaction motion filmstrip capture failed.',{viewport:motionViewport,detail:error?.message??String(error),metrics:{kind:'interaction'}}));
+   }
+  }
+  if(wantVideo&&typeof session.recordGameplayVideo==='function'){
+   try{
+    video=await session.recordGameplayVideo({screenshotDir,viewport:motionViewport,target:primaryMotionTarget});
+   }catch(error){
+    video=null;
+    warnings.push(issue('warning','video-capture-failed',null,'Open the exported HTML in a browser or retry recordVideo:true; gameplay WebM recording failed.',{viewport:motionViewport,detail:error?.message??String(error)}));
+   }
+  }
   if(screenshots.length&&typeof session.composeContactSheets==='function'){
    try{
     contactSheets=await session.composeContactSheets({screenshotDir,screenshots});
@@ -983,7 +1197,7 @@ export async function runBrowserQa(options={}){
    }
   }
  }finally{await session.close?.();}
- const report=formatCreativeQaReport({scope:'browser',blockers,warnings,interactions,states,screenshots,contactSheets,checks:{viewports:DEFAULT_VIEWPORTS,browserContexts:1,primaryInteraction:'project-click-events',interactionLimitMs:INTERACTION_LIMIT_MS,minTouchPx:MIN_TOUCH_PX,stateHook:stateHook?typeof stateHook:'not-supplied'}});
+ const report=formatCreativeQaReport({scope:'browser',blockers,warnings,interactions,states,screenshots,contactSheets,motionFilmstrips,video,checks:{viewports:DEFAULT_VIEWPORTS,browserContexts:wantVideo?2:1,primaryInteraction:'project-click-events',interactionLimitMs:INTERACTION_LIMIT_MS,minTouchPx:MIN_TOUCH_PX,stateHook:stateHook?typeof stateHook:'not-supplied'}});
  await writeCreativeQaReport(report,outputDir);return report;
 }
 export const runBrowserAudit=runBrowserQa;
@@ -995,7 +1209,7 @@ export async function runCreativeQa(options={}){
  const project=options.project??(html?projectFromHtml(html):undefined);
  const staticReport=project?await runStaticPreflight(project,options):formatCreativeQaReport({scope:'static',warnings:[issue('warning','static-preflight-unavailable',null,'Supply the native project or embed it in the HTML artifact to enable static preflight.')],checks:{project:false}});
  const browserReport=await runBrowserQa({...options,html,project});
- const report=formatCreativeQaReport({scope:'static+browser',blockers:[...staticReport.blockers,...browserReport.blockers],warnings:[...staticReport.warnings,...browserReport.warnings],interactions:browserReport.interactions,states:browserReport.states,screenshots:browserReport.screenshots,contactSheets:browserReport.contactSheets??[],checks:{static:staticReport.checks,browser:browserReport.checks}});
+ const report=formatCreativeQaReport({scope:'static+browser',blockers:[...staticReport.blockers,...browserReport.blockers],warnings:[...staticReport.warnings,...browserReport.warnings],interactions:browserReport.interactions,states:browserReport.states,screenshots:browserReport.screenshots,contactSheets:browserReport.contactSheets??[],motionFilmstrips:browserReport.motionFilmstrips??[],video:browserReport.video??null,checks:{static:staticReport.checks,browser:browserReport.checks}});
  await writeCreativeQaReport(report,options.outputDir);return report;
 }
 

@@ -4,6 +4,8 @@ import {resolve} from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import process from 'node:process';
 import {setTimeout as delay} from 'node:timers/promises';
+import {assertStorePath} from './native/store-path.mjs';
+import {resolveEditorStateDir} from './runtime-paths.mjs';
 
 const sharedQueues=new Map();
 
@@ -13,12 +15,12 @@ function isPidAlive(pid){
 }
 
 export class EditorState{
- constructor(store,{lockTimeoutMs=15000,staleLockMs=30000}={}){
+ constructor(store,{lockTimeoutMs=15000,staleLockMs=30000,directory}={}){
   this.queues=sharedQueues;
   this.store=store;
   this.lockTimeoutMs=lockTimeoutMs;
   this.staleLockMs=staleLockMs;
-  this.directory=resolve(import.meta.dirname,'../../.tora/editor-state');
+  this.directory=directory?resolve(directory):resolveEditorStateDir(store?.workspaceRoot);
  }
  async readRevisionJournal(id){
   let state;
@@ -88,7 +90,7 @@ export class EditorState{
    }
   });
  }
- async file(id){await this.store.open(id);await mkdir(this.directory,{recursive:true});return resolve(this.directory,createHash('sha256').update(this.store.root+'\0'+id).digest('hex')+'.json');}
+ async file(id){await this.store.open(id);await assertStorePath(this.directory);await mkdir(this.directory,{recursive:true});await assertStorePath(this.directory);const target=resolve(this.directory,createHash('sha256').update(this.store.root+'\0'+id).digest('hex')+'.json');await assertStorePath(target);return target;}
  async write(id,state){const path=await this.file(id),temp=path+'.'+randomUUID()+'.tmp';await writeFile(temp,JSON.stringify(state));await rename(temp,path);}
  async lock(id,fn){id=this.store.root+'\0'+id;const prior=this.queues.get(id)??Promise.resolve();let release;const done=new Promise(r=>release=r);this.queues.set(id,done);await prior;try{return await fn();}finally{release();if(this.queues.get(id)===done)this.queues.delete(id);}}
 }

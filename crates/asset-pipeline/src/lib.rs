@@ -1,9 +1,11 @@
 //! Bounded, deterministic, single-worker PNG/JPEG tooling. No network or runtime decoder.
 mod compression;
+mod prep;
 pub use compression::{
     CompressionPolicy, SearchRecord, SearchReport, SearchTimings, encode_exact_png,
     policy_descriptor, search_atlas,
 };
+pub use prep::{PrepOptions, PrepOutput, PrepReport, SliceGridOptions, SliceOutputMode, prep_image_bytes};
 use image::{DynamicImage, ImageDecoder, ImageEncoder, ImageFormat, ImageReader, RgbaImage};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -14,10 +16,10 @@ use std::{
     path::{Component, Path},
 };
 pub const VERSION: &str = "assets-v2/exact-png-1/image-0.25.10/png-0.18.1";
-const MAX_FILE: u64 = 8 * 1024 * 1024;
+pub(crate) const MAX_FILE: u64 = 8 * 1024 * 1024;
 const MAX_PIXELS: u64 = 4 * 1024 * 1024;
 const MAX_TOTAL: u64 = 16 * 1024 * 1024;
-const MAX_SIDE: u32 = 2048;
+pub(crate) const MAX_SIDE: u32 = 2048;
 #[derive(Debug)]
 pub struct AssetError {
     pub code: &'static str,
@@ -30,7 +32,7 @@ impl fmt::Display for AssetError {
 }
 impl std::error::Error for AssetError {}
 type Result<T> = std::result::Result<T, AssetError>;
-fn err(code: &'static str, detail: impl ToString) -> AssetError {
+pub(crate) fn err(code: &'static str, detail: impl ToString) -> AssetError {
     AssetError {
         code,
         detail: detail.to_string(),
@@ -132,7 +134,7 @@ pub fn read_source(root: &Path, path: &str) -> Result<Vec<u8>> {
 fn supported(bytes: &[u8]) -> Result<ImageFormat> {
     supported_with_color_policy(bytes, true)
 }
-fn supported_with_color_policy(bytes: &[u8], reject_color_profile: bool) -> Result<ImageFormat> {
+pub(crate) fn supported_with_color_policy(bytes: &[u8], reject_color_profile: bool) -> Result<ImageFormat> {
     let format = image::guess_format(bytes).map_err(|e| err("E_ASSET_FORMAT", e))?;
     match format {
         ImageFormat::Png => {
@@ -625,8 +627,8 @@ pub fn build_atlas(root: &Path, requests: &[Request], side: u32) -> Result<Atlas
     Ok(winner)
 }
 
-const OPTIMIZE_MAX_PIXELS: u64 = 16_777_216;
-const OPTIMIZE_MAX_SOURCE_SIDE: u32 = 4096;
+pub(crate) const OPTIMIZE_MAX_PIXELS: u64 = 16_777_216;
+pub(crate) const OPTIMIZE_MAX_SOURCE_SIDE: u32 = 4096;
 const DELIVERY_BYTES: usize = 700_000;
 const SOFT_BYTES: usize = 450_000;
 
@@ -658,7 +660,7 @@ pub struct OptimizedImage {
     pub operations: Vec<String>,
 }
 
-fn resize_upload(pixels: &RgbaImage, width: u32, height: u32) -> RgbaImage {
+pub(crate) fn resize_upload(pixels: &RgbaImage, width: u32, height: u32) -> RgbaImage {
     let mut rgba = DynamicImage::ImageRgba8(pixels.clone()).into_rgba32f();
     for p in rgba.pixels_mut() {
         for c in 0..3 {
@@ -677,7 +679,7 @@ fn resize_upload(pixels: &RgbaImage, width: u32, height: u32) -> RgbaImage {
     DynamicImage::ImageRgba32F(resized).into_rgba8()
 }
 
-fn best_png(pixels: &RgbaImage) -> Result<(Vec<u8>, String)> {
+pub(crate) fn best_png(pixels: &RgbaImage) -> Result<(Vec<u8>, String)> {
     let mut winner = (png(pixels)?, "rgba/High/Adaptive".to_owned());
     compression::visit_encodings(pixels, |id, bytes| {
         if bytes.len() < winner.0.len() {

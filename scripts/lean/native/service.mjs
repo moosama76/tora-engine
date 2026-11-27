@@ -11,6 +11,7 @@ import {isAudioMime} from './media-validate.mjs';
 import {assertNetworkTarget} from './network-targets.mjs';
 import {NativeBuildCache,VerificationReceiptCache,buildCacheKey} from './build-cache.mjs';
 import {mapWithConcurrency} from './concurrency.mjs';
+import {assertSingleVisualStyleFamily} from './cc0-staging.mjs';
 const PREAPPLY_AUDIO_BLOCKERS=new Set(['audio-role-mismatch','audio-valence-mismatch','audio-win-loss-duplicate','audio-contour-mismatch','audio-clipping']);
 export const contentHash=p=>hash('tora-v2-hash/1\ndocument-content\n'+canonical(projectContent(p)));
 export function requireCreativeQa(report){
@@ -18,8 +19,28 @@ export function requireCreativeQa(report){
  const error=Error('E_CREATIVE_QA');error.code='E_CREATIVE_QA';error.creativeQa=report;throw error;
 }
 async function defaultQaRunner(options){const {runCreativeQa}=await import('./creative-qa.mjs');return runCreativeQa(options);}
-async function verifyAndCopyQaArtifacts(cachedOutputDir,targetOutputDir,report){
- const files=[...(report.screenshots??[]),...(report.contactSheets??[])];
+function qaScenarioTag({motionFilmstrip=true,recordVideo=false}={}){
+ return `motion=${motionFilmstrip?1:0};video=${recordVideo?1:0}`;
+}
+function qaReportSatisfiesOptions(report,{motionFilmstrip=true,recordVideo=false,isDefaultRunner=true}={}){
+ const warningKinds=new Set((report?.warnings??[]).map(w=>w?.defectKind));
+ if(recordVideo){
+  if(!report?.video?.path||!report?.video?.sha256||warningKinds.has('video-capture-failed'))return false;
+ }
+ if(motionFilmstrip){
+  if(warningKinds.has('motion-filmstrip-failed'))return false;
+  if(isDefaultRunner&&(report?.interactions?.length??0)>0&&!(report?.motionFilmstrips?.length>0))return false;
+ }
+ return true;
+}
+async function verifyAndCopyQaArtifacts(cachedOutputDir,targetOutputDir,report,options={}){
+ if(!qaReportSatisfiesOptions(report,options))return false;
+ const files=[
+  ...(report.screenshots??[]),
+  ...(report.contactSheets??[]),
+  ...(report.motionFilmstrips??[]),
+  ...(report.video?[report.video]:[]),
+ ];
  for(const entry of files){
   if(!entry?.path||!entry?.sha256)return false;
   try{
@@ -82,7 +103,7 @@ export class NativeService{
   return this.buildCache.getOrBuild(key,()=>compileNative(project,{assets,target}));
  }
  async render(id,revisionId){check(typeof revisionId==='string','E_NATIVE_ARGUMENT');const {project}=await this.read(id,revisionId),assets=await lowerAssets(resolve(this.store.root,id),project.assets),artifact=await compileNative(project,{assets});return {assets,artifact:artifact.manifest};}
- async upload(id,{expected,asset}){const current=await this.read(id),input={...asset};if(input.sourceHash){input.data=(await readOriginal(resolve(this.store.root,id),input.sourceHash)).toString('base64');delete input.sourceHash;}const metadata=await registerSource(resolve(this.store.root,id),input),{optimization,...record}=metadata,kind=current.project.assets.some(asset=>asset.id===record.id)?'updateAsset':'registerAsset',envelope={format:'tora-transaction-1',expected,operations:[{kind,asset:record}]};const preview=await this.preview(id,envelope);return {...await this.transact(id,{...envelope,previewDigest:preview.previewDigest}),asset:{...record,...(optimization?{optimization}:{})}};}
+ async upload(id,{expected,asset,provenance}){const current=await this.read(id),input={...asset};const explicitProvenance=provenance??input.provenance;delete input.provenance;if(input.sourceHash){input.data=(await readOriginal(resolve(this.store.root,id),input.sourceHash)).toString('base64');delete input.sourceHash;}if(explicitProvenance)assertSingleVisualStyleFamily(current.project.assets,[{mime:input.mime,provenance:explicitProvenance}]);const metadata=await registerSource(resolve(this.store.root,id),input,explicitProvenance?{provenance:explicitProvenance}:{}),{optimization,...record}=metadata,kind=current.project.assets.some(asset=>asset.id===record.id)?'updateAsset':'registerAsset',envelope={format:'tora-transaction-1',expected,operations:[{kind,asset:record}]};const preview=await this.preview(id,envelope);return {...await this.transact(id,{...envelope,previewDigest:preview.previewDigest}),asset:{...record,...(optimization?{optimization}:{})}};}
  async uploadBatch(id,{expected,assets}){
   check(Array.isArray(assets)&&assets.length>=1&&assets.length<=32,'E_NATIVE_ARGUMENT');
   check(expected&&exact(expected,['revisionId','contentHash']),'E_NATIVE_ENVELOPE');
@@ -90,11 +111,14 @@ export class NativeService{
   check(new Set(ids).size===ids.length,'E_NATIVE_DUPLICATE');
   const current=await this.read(id);
   check(expected.revisionId===current.revisionId&&expected.contentHash===current.contentHash,'E_NATIVE_STALE');
+  assertSingleVisualStyleFamily(current.project.assets,assets);
   const projectRoot=resolve(this.store.root,id);
   const registered=await mapWithConcurrency(assets,4,async item=>{
    const input={...item};
+   const explicitProvenance=input.provenance;
+   delete input.provenance;
    if(input.sourceHash){input.data=(await readOriginal(projectRoot,input.sourceHash)).toString('base64');delete input.sourceHash;}
-   return registerSource(projectRoot,input);
+   return registerSource(projectRoot,input,explicitProvenance?{provenance:explicitProvenance}:{});
   });
   const existingIds=new Set(current.project.assets.map(a=>a.id));
   const operations=registered.map(metadata=>{
@@ -106,27 +130,29 @@ export class NativeService{
   const committed=await this.transact(id,{...envelope,previewDigest:preview.previewDigest});
   return {...committed,assets:registered.map(({optimization,...record})=>({...record,...(optimization?{optimization}:{})}))};
  }
- async runQa(id,{revisionId,target='standalone-browser-draft',outputDir}={}){
+ async runQa(id,{revisionId,target='standalone-browser-draft',outputDir,motionFilmstrip=true,recordVideo=false}={}){
   assertNetworkTarget(target);
   const current=await this.read(id,revisionId),effectiveRevisionId=current.revisionId;
-  const resolvedOut=resolve(outputDir??resolve(this.store.root,id,'qa',effectiveRevisionId,target));
+  const qaDirSuffix=recordVideo?'-video':motionFilmstrip?'':'-nomotion';
+  const resolvedOut=resolve(outputDir??resolve(this.store.root,id,'qa',effectiveRevisionId,target+qaDirSuffix));
   const artifact=await this.build(id,current.project,target);
   const isDefaultRunner=this.qaRunner===defaultQaRunner;
   const cacheEnabled=this.useVerifyCache??isDefaultRunner;
+  const scenario=qaScenarioTag({motionFilmstrip,recordVideo});
   let receiptKey;
   if(cacheEnabled){
    const browserVersion=await getPlaywrightBrowserVersion();
-   receiptKey=this.verifyCache.receiptKey({artifactHash:artifact.manifest.artifactHash,checkerVersion:`${CREATIVE_QA_CHECKER_VERSION}:${browserVersion}`,kind:'creative-qa',host:target});
+   receiptKey=this.verifyCache.receiptKey({artifactHash:artifact.manifest.artifactHash,checkerVersion:`${CREATIVE_QA_CHECKER_VERSION}:${browserVersion}`,kind:'creative-qa',host:target,scenario});
    const cached=await this.verifyCache.read(receiptKey);
    if(cached?.report?.ok===true&&cached.report.format===CREATIVE_QA_FORMAT&&typeof cached.outputDir==='string'){
-    if(await verifyAndCopyQaArtifacts(cached.outputDir,resolvedOut,cached.report)){
+    if(await verifyAndCopyQaArtifacts(cached.outputDir,resolvedOut,cached.report,{motionFilmstrip,recordVideo,isDefaultRunner})){
      return {...cached.report,cacheHit:true};
     }
    }
   }
   const browser=isDefaultRunner&&this.browserProvider?await this.browserProvider():undefined;
-  const report=await this.qaRunner({html:artifact.html,outputDir:resolvedOut,network:target,...(browser?{browser}:{})});
-  if(cacheEnabled&&report?.ok===true&&receiptKey){
+  const report=await this.qaRunner({html:artifact.html,outputDir:resolvedOut,network:target,motionFilmstrip,recordVideo,...(browser?{browser}:{})});
+  if(cacheEnabled&&report?.ok===true&&receiptKey&&qaReportSatisfiesOptions(report,{motionFilmstrip,recordVideo,isDefaultRunner})){
    await this.verifyCache.write(receiptKey,{report,outputDir:resolvedOut});
   }
   return {...report,cacheHit:false};

@@ -1,0 +1,150 @@
+name: Release Prebuilt Binaries & npm Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish_npm:
+        description: 'Publish @tora-engine/tora and platform packages to npm'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-native:
+    name: Build playable (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            rust_target: aarch64-apple-darwin
+            os: macos-14
+            bin: playable
+          - target: darwin-x64
+            rust_target: x86_64-apple-darwin
+            os: macos-14
+            bin: playable
+          - target: linux-x64-gnu
+            rust_target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+            bin: playable
+          - target: linux-arm64-gnu
+            rust_target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            bin: playable
+          - target: win32-x64-msvc
+            rust_target: x86_64-pc-windows-msvc
+            os: windows-2022
+            bin: playable.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Install Rust toolchain and target
+        shell: bash
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal
+          rustup target add ${{ matrix.rust_target }} --toolchain 1.98.1
+      - name: Build release playable binary
+        shell: bash
+        run: |
+          cargo build --release --locked --target ${{ matrix.rust_target }} -p playable-cli
+          mkdir -p dist/native/${{ matrix.target }}
+          cp target/${{ matrix.rust_target }}/release/${{ matrix.bin }} dist/native/${{ matrix.target }}/${{ matrix.bin }}
+          if [ "${{ matrix.bin }}" = "playable" ]; then
+            strip dist/native/${{ matrix.target }}/playable || true
+          fi
+      - name: Upload target binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.target }}
+          path: dist/native/${{ matrix.target }}/${{ matrix.bin }}
+
+  package-and-smoke:
+    name: Stage packages & no-Rust smoke test
+    needs: build-native
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Download built native binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: dist/native
+          merge-multiple: false
+      - name: Normalize artifact layout & generate SHA256SUMS + release-manifest.json
+        shell: bash
+        run: |
+          mkdir -p dist/release-assets
+          node -e '
+            const fs = require("node:fs");
+            const path = require("node:path");
+            const crypto = require("node:crypto");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            const tag = process.env.GITHUB_REF_NAME?.startsWith("v") ? process.env.GITHUB_REF_NAME : "v" + pkg.version;
+            const version = tag.replace(/^v/, "");
+            const targets = {};
+            const sums = [];
+            for (const dir of fs.readdirSync("dist/native").sort()) {
+              if (!dir.startsWith("native-")) continue;
+              const target = dir.slice(7);
+              const binName = target.startsWith("win32-") ? "playable.exe" : "playable";
+              const src = path.join("dist/native", dir, binName);
+              const outName = target + "-" + binName;
+              const dst = path.join("dist/release-assets", outName);
+              fs.copyFileSync(src, dst);
+              const bytes = fs.readFileSync(dst);
+              const hex = crypto.createHash("sha256").update(bytes).digest("hex");
+              sums.push(hex + "  " + outName);
+              targets[target] = {
+                filename: outName,
+                sha256: "sha256:" + hex,
+                bytes: bytes.length,
+                url: "https://github.com/moosama76/tora-engine/releases/download/" + tag + "/" + outName,
+              };
+            }
+            fs.writeFileSync("dist/release-assets/SHA256SUMS.txt", sums.join("\n") + "\n");
+            const manifest = { format: "tora-release-manifest-1", version, tag, targets };
+            fs.writeFileSync("dist/release-assets/release-manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+            fs.writeFileSync("crates/packer/trusted/release-manifest.json", JSON.stringify(manifest, null, 2) + "\n");
+          '
+      - name: Install JS deps & verify trusted bundles
+        run: |
+          npm ci --ignore-scripts
+          npm run schema:check
+          npm run packer:check
+          npm run browsers:install -- --with-deps
+      - name: Build CLI + platform npm packages
+        run: node scripts/build-cli-package.mjs --bin-dir dist/release-assets
+      - name: Isolated zero-Rust smoke test
+        env:
+          TORA_NATIVE_BIN: ${{ github.workspace }}/dist/release-assets/linux-x64-gnu-playable
+        run: |
+          chmod +x "$TORA_NATIVE_BIN"
+          node --test tests/native/distribution-cli.test.mjs
+      - name: Upload GitHub Release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/release-assets/* \
+            --title "Tora ${GITHUB_REF_NAME}" \
+            --generate-notes
+      - name: Publish npm packages
+        if: (startsWith(github.ref, 'refs/tags/v') || inputs.publish_npm == true) && secrets.NPM_TOKEN != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          for dir in dist/packages/native-*; do
+            npm publish "$dir" --access public
+          done
+          npm publish dist/packages/tora --access public

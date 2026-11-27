@@ -7,6 +7,7 @@ import {NativeAgentTools} from './agent-tools.mjs';
 import {check,exact} from './document.mjs';
 import {RemoteCc0Fetcher} from './remote-cc0-fetcher.mjs';
 import {mapWithConcurrency} from './concurrency.mjs';
+import {assertSingleVisualStyleFamily} from './cc0-staging.mjs';
 
 const identity=value=>({revisionId:value.revisionId,contentHash:value.contentHash});
 const compactAsset=asset=>({id:asset.id,name:asset.name,mime:asset.mime,kind:asset.kind??(asset.mime.startsWith('image/')?'sprite':'audio'),bytes:asset.bytes,width:asset.width,height:asset.height,durationSec:asset.durationSec,styleFamily:asset.styleFamily,license:asset.license??'creator-declared',source:asset.source??'studio',sourceUrl:asset.sourceUrl,author:asset.author});
@@ -95,9 +96,6 @@ export class IntakeCreatorTools{
    candidates.push({id:file.id,mime:file.mime,bytes,rights:`${receipt.author}, CC0-1.0. ${receipt.sourceUrl}`,source:'remote',styleFamily:file.styleFamily,provenance});
   }
   const existingById=new Map(current.project.assets.map(asset=>[asset.id,asset]));
-  const families=new Set(current.project.assets.filter(asset=>asset.mime.startsWith('image/')).map(asset=>{
-   try{return JSON.parse(asset.provenance).styleFamily;}catch{return asset.provenance?.styleFamily;}
-  }).filter(Boolean));
   const pendingById=new Map(),plan=[];
   for(const item of candidates){
    assertAssetSourceAllowed(this.intake.assetSource??'studio-assets',item.source);
@@ -108,15 +106,14 @@ export class IntakeCreatorTools{
     check(prior.provenance.sourceHash===item.provenance.sourceHash,'E_ASSET_DUPLICATE_ID');
     plan.push({duplicateOf:item.id});continue;
    }
-   if(item.mime.startsWith('image/')&&item.styleFamily)families.add(item.styleFamily);
    pendingById.set(item.id,item);plan.push({item});
   }
-  check(families.size<=1,'E_ASSET_STYLE_FAMILY');
   const toRegister=[...pendingById.values()],projectRoot=resolve(this.service.store.root,this.intake.projectId);
+  assertSingleVisualStyleFamily(current.project.assets,toRegister);
   const registeredList=await mapWithConcurrency(toRegister,4,async item=>{
-   const metadata=await registerSource(projectRoot,{id:item.id,mime:item.mime,data:item.bytes.toString('base64'),rights:item.rights});
+   const metadata=await registerSource(projectRoot,{id:item.id,mime:item.mime,data:item.bytes.toString('base64'),rights:item.rights},{provenance:JSON.stringify(item.provenance)});
    const record={...metadata};delete record.optimization;
-   return {...record,provenance:JSON.stringify(item.provenance)};
+   return record;
   });
   const registeredById=new Map(registeredList.map(asset=>[asset.id,asset]));
   if(registeredList.length){

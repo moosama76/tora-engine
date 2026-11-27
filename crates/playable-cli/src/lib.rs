@@ -3,7 +3,7 @@ mod artifact;
 mod assets;
 mod rules;
 
-const HELP: &str = "Usage: playable artifact check <index.html> --network <profile> [--confirm-reviewed YYYY-MM-DD] [--json]\n       playable rules status (--network <profile-id> | --file <rule-pack.json>) [--as-of YYYY-MM-DD] [--confirm-reviewed YYYY-MM-DD] [--json]\n       playable assets inspect <directory> <relative-image-path>...\n       playable [--help | --version]\n\nOffline Tora Native rule review, bounded image decoding, and closed-format static checks for Unity Ads (MRAID 3.0) and AppLovin (MRAID 2.0).\nStatic checks never grant human visual approval, physical device sign-off, or official ad-network acceptance.\nMintegral adapter is not implemented; Mintegral remains BLOCKED.\n";
+const HELP: &str = "Usage: playable artifact check <index.html|archive.zip> --network <profile> [--confirm-reviewed YYYY-MM-DD] [--json]\n       playable rules status (--network <profile-id> | --file <rule-pack.json>) [--as-of YYYY-MM-DD] [--confirm-reviewed YYYY-MM-DD] [--json]\n       playable assets inspect <directory> <relative-image-path>...\n       playable assets optimize <directory> <input-rel> <output-rel> <options-json>\n       playable assets prep <directory> <input-rel> <output-dir-rel> <options-json>\n       playable [--help | --version]\n\nOffline Tora Native rule review, bounded image inspection/optimization/prep, and closed-format static checks.\nStatic checks never grant human visual approval, physical device sign-off, or official ad-network acceptance.\n";
 
 pub struct CommandOutput {
     pub stdout: String,

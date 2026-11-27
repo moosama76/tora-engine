@@ -51,5 +51,6 @@
     "scripts/lean/native/runtime.mjs"
   ],
   "javascriptBytes": 201782,
+  "sha256": "sha256:d85af25f59e1d2f2879ce0b7d8da7a135030c0f44e12a0f95afbeebff182896d",
   "externalImports": []
 }
