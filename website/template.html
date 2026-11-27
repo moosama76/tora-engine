@@ -36,16 +36,16 @@
         <span class="kicker-pill">Open Source · Local MCP-First · $0 Extra API Cost</span>
         <h1 id="hero-title">Build editable 2D &amp; 3D <em>playable ads</em> from your AI coding agent.</h1>
         <p class="hero-sub">
-          Clone Tora locally, connect <strong>Claude Code, Cursor, OpenAI Codex, or Gemini CLI</strong> via MCP — or optionally plug in your own API key (Gemini, OpenAI, Claude, OpenRouter, DeepSeek, Kimi, Qwen, GLM) — and ship auto-optimized playables across <strong>7 free ad networks</strong> built strictly with real assets.
+          Set up Tora locally with a single <code>npx</code> command, connect <strong>Claude Code, Cursor, OpenAI Codex, or Gemini CLI</strong> via MCP — or optionally plug in your own API key (Gemini, OpenAI, Claude, OpenRouter, DeepSeek, Kimi, Qwen, GLM) — and ship auto-optimized playables across <strong>7 free ad networks</strong> built strictly with real assets.
         </p>
         <div class="hero-actions">
           <a class="btn btn-coral btn-lg" href="editor/">Launch Live Editor →</a>
-          <a class="btn btn-sun btn-lg" href="https://github.com/moosama76/tora-engine" target="_blank" rel="noopener">Clone on GitHub ↗</a>
+          <a class="btn btn-sun btn-lg" href="https://github.com/moosama76/tora-engine" target="_blank" rel="noopener">View on GitHub ↗</a>
         </div>
         <div class="trust-row" aria-label="Key capabilities">
           <span class="pill-mint">✓ 2D + 3D Native Engine</span>
           <span class="pill-mint">✓ Auto Asset Optimization (8 MiB → ≤ 700 KB)</span>
-          <span class="pill-mint">✓ 4-Viewport Creative QA</span>
+          <span class="pill-mint">✓ 4-Viewport + Motion QA</span>
           <span class="pill-mint">✓ 7 Free Ad-Network Exporters</span>
         </div>
       </div>
@@ -53,37 +53,42 @@
       <aside class="card quickstart-card" aria-label="2-step local quickstart">
         <div class="card-head">
           <strong>2-Step Local Quickstart</strong>
-          <span class="pill-sun">Node ≥ 22 · Rust</span>
+          <span class="pill-sun">Node ≥ 22</span>
         </div>
 
         <div class="code-box">
           <div class="code-box-head">
-            <span>1. Install &amp; run local setup</span>
-            <button type="button" class="copy-btn" data-copy="git clone https://github.com/moosama76/tora-engine.git&#10;cd tora-engine&#10;npm install &amp;&amp; npm run setup">Copy</button>
+            <span>1. Install Node.js 22+ (skip if installed)</span>
+            <button type="button" class="copy-btn" id="node-copy-btn">Copy</button>
           </div>
-          <pre><code>git clone https://github.com/moosama76/tora-engine.git
-cd tora-engine
-npm install &amp;&amp; npm run setup</code></pre>
+          <div class="tab-row" role="tablist" aria-label="Node.js installation by OS" data-tab-group="os">
+            <button type="button" class="tab-btn" role="tab" aria-selected="true" data-tab="macos">macOS</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="windows">Windows</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="linux">Linux</button>
+          </div>
+          <pre><code id="node-snippet">brew install node@22</code></pre>
         </div>
 
         <div class="code-box">
           <div class="code-box-head">
-            <span>2. Connect your agent or open studio</span>
+            <span>2. Create a folder &amp; connect your client</span>
             <button type="button" class="copy-btn" id="mcp-copy-btn">Copy</button>
           </div>
-          <div class="tab-row" role="tablist" aria-label="Client setup">
+          <div class="tab-row" role="tablist" aria-label="Client setup" data-tab-group="client">
             <button type="button" class="tab-btn" role="tab" aria-selected="true" data-tab="claude">Claude Code</button>
-            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="cursor">Cursor / Gemini</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="cursor">Cursor</button>
             <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="codex">Codex</button>
-            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="studio">Local Studio</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="gemini">Gemini</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-tab="studio">Studio</button>
           </div>
-          <pre><code id="mcp-snippet">claude mcp add tora \
-  -e TORA_PROJECT_STORE="$(pwd)/.tora/native-projects" \
-  -- node "$(pwd)/scripts/lean/native/mcp-server.mjs"</code></pre>
+          <pre><code id="mcp-snippet">mkdir my-playable
+cd my-playable
+npx @tora-editor/tora init --client claude-code
+npx @tora-editor/tora doctor</code></pre>
         </div>
 
         <p class="card-note">
-          Your art, audio, and API keys stay 100% on your machine. Run <code>npm run dev:editor</code> anytime for visual review notes, side-by-side comparison, and one-click exports.
+          Restart your AI client after <code>init</code>. Run <code>npx @tora-editor/tora editor</code> anytime for the visual studio on <code>:8001</code> — your art, audio, and API keys stay 100% on your machine.
         </p>
       </aside>
     </section>
@@ -180,13 +185,13 @@ npm install &amp;&amp; npm run setup</code></pre>
         </article>
         <article class="card feature-card">
           <span class="step-badge">03</span>
-          <h3>Automatic Asset Optimization &amp; Real Provenance</h3>
-          <p>Drop raw PNG, JPEG, WAV, or MP3 files up to <strong>8 MiB</strong>. Tora preserves untouched original masters, auto-optimizes delivery bytes under 700 KB (with lossless/opt-out controls), and records SHA-256 receipts — zero AI art slop.</p>
+          <h3>Automatic Asset Optimization &amp; Verified CC0</h3>
+          <p>Drop studio PNG, JPEG, WAV, or MP3 files up to <strong>8 MiB</strong> or fetch allowlisted CC0 Kenney/OpenGameArt packs. Tora keeps original masters, auto-optimizes delivery bytes under 700 KB, trims/slices sprites mechanically, and records SHA-256 receipts.</p>
         </article>
         <article class="card feature-card">
           <span class="step-badge">04</span>
-          <h3>Deterministic 4-Viewport Creative QA</h3>
-          <p>Before export, Tora’s built-in Playwright QA runner tests portrait &amp; landscape phone viewports, muted-until-tap audio unlock, acoustic levels, text clipping, primary gameplay, and Store CTA wiring.</p>
+          <h3>4-Viewport &amp; Motion Filmstrip QA</h3>
+          <p>Before export, Tora’s built-in Playwright QA runner tests portrait &amp; landscape phone viewports, muted-until-tap audio unlock, text clipping, primary gameplay, and saves 8-frame motion filmstrips (plus optional WebM video).</p>
         </article>
       </div>
     </section>
@@ -323,7 +328,7 @@ npm install &amp;&amp; npm run setup</code></pre>
       <div class="card export-note">
         <span class="pill-mint">All 7 Exporters Included Free</span>
         <p>
-          Automated <code>playable-cli</code> rule checks and mock-host Playwright tests verify engineering compliance; official ad-network preview tools (Unity, AppLovin, Meta, Google, ironSource, Playturbo, TikTok) and physical iOS/Android devices remain separate acceptance gates before live campaigns.
+          Automated <code>tora check</code> rule checks and mock-host Playwright tests verify engineering compliance; official ad-network preview tools (Unity, AppLovin, Meta, Google, ironSource, Playturbo, TikTok) and physical iOS/Android devices remain separate acceptance gates before live campaigns.
         </p>
       </div>
     </section>

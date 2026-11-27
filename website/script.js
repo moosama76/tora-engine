@@ -1,47 +1,57 @@
-const SNIPPETS = {
-  claude: `claude mcp add tora \\
-  -e TORA_PROJECT_STORE="$(pwd)/.tora/native-projects" \\
-  -- node "$(pwd)/scripts/lean/native/mcp-server.mjs"`,
-  cursor: `{
-  "mcpServers": {
-    "tora": {
-      "command": "node",
-      "args": ["<path-to-tora>/scripts/lean/native/mcp-server.mjs"],
-      "env": {
-        "TORA_PROJECT_STORE": "<path-to-tora>/.tora/native-projects"
-      }
-    }
-  }
-}`,
-  codex: `codex mcp add tora \\
-  --env TORA_PROJECT_STORE="$(pwd)/.tora/native-projects" \\
-  -- node "$(pwd)/scripts/lean/native/mcp-server.mjs"`,
-  studio: `# Start the local visual Studio UI (BYOK + $0 MCP handoff)
-npm run dev:editor
+const NODE_SNIPPETS = {
+  macos: `brew install node@22`,
+  windows: `winget install OpenJS.NodeJS.LTS`,
+  linux: `curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs`,
+};
 
-# Open http://127.0.0.1:8001/?view=new`,
+const CLIENT_SNIPPETS = {
+  claude: `mkdir my-playable
+cd my-playable
+npx @tora-editor/tora init --client claude-code
+npx @tora-editor/tora doctor`,
+  cursor: `mkdir my-playable
+cd my-playable
+npx @tora-editor/tora init --client cursor
+npx @tora-editor/tora doctor`,
+  codex: `mkdir my-playable
+cd my-playable
+npx @tora-editor/tora init --client codex
+npx @tora-editor/tora doctor`,
+  gemini: `mkdir my-playable
+cd my-playable
+npx @tora-editor/tora init --client gemini
+npx @tora-editor/tora doctor`,
+  studio: `mkdir my-playable
+cd my-playable
+npx @tora-editor/tora editor`,
 };
 
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
-const snippetEl = document.getElementById('mcp-snippet');
-const mcpCopyBtn = document.getElementById('mcp-copy-btn');
-const tabs = [...document.querySelectorAll('.tab-btn')];
+function bindTabGroup(groupName, snippets, snippetId, copyBtnId, defaultKey) {
+  const snippetEl = document.getElementById(snippetId);
+  const copyBtn = document.getElementById(copyBtnId);
+  const tabs = [...document.querySelectorAll(`.tab-row[data-tab-group="${groupName}"] .tab-btn`)];
 
-function selectTab(key) {
-  const code = SNIPPETS[key] ?? SNIPPETS.claude;
-  if (snippetEl) snippetEl.textContent = code;
-  if (mcpCopyBtn) mcpCopyBtn.dataset.copy = code;
-  for (const btn of tabs) {
-    btn.setAttribute('aria-selected', String(btn.dataset.tab === key));
+  function selectTab(key) {
+    const code = snippets[key] ?? snippets[defaultKey];
+    if (snippetEl) snippetEl.textContent = code;
+    if (copyBtn) copyBtn.dataset.copy = code;
+    for (const btn of tabs) {
+      btn.setAttribute('aria-selected', String(btn.dataset.tab === key));
+    }
   }
+
+  for (const btn of tabs) {
+    btn.addEventListener('click', () => selectTab(btn.dataset.tab));
+  }
+  selectTab(defaultKey);
 }
 
-for (const btn of tabs) {
-  btn.addEventListener('click', () => selectTab(btn.dataset.tab));
-}
-selectTab('claude');
+bindTabGroup('os', NODE_SNIPPETS, 'node-snippet', 'node-copy-btn', 'macos');
+bindTabGroup('client', CLIENT_SNIPPETS, 'mcp-snippet', 'mcp-copy-btn', 'claude');
 
 for (const btn of document.querySelectorAll('.copy-btn')) {
   btn.addEventListener('click', async () => {

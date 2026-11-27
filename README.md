@@ -1,56 +1,116 @@
 # Tora — Local MCP-First Playable Ad Framework
 [![M8ven Score](https://m8ven.ai/badge/mcp/moosama76-tora-engine-cd3fcm?v=86d74ba3d885cd01144d1e74220cd1d2)](https://m8ven.ai/mcp/moosama76-tora-engine-cd3fcm?s=readme)
 
-**Build editable, responsive 2D & 3D HTML5 playable ads directly from Claude Code, Cursor, OpenAI Codex, or Gemini CLI at $0 extra API cost.** Tora is open source, with deterministic authoring, automatic non-destructive asset optimization, 4-viewport Creative QA, real-assets-only provenance, and seven free ad-network exporters.
+**Build editable, responsive 2D & 3D HTML5 playable ads directly from Claude Code, Cursor, OpenAI Codex, or Gemini CLI at $0 extra API cost.**
 
----
-
-## Why Tora?
-
-- **MCP-First ($0 Extra API Cost):** Connect Tora's local stdio MCP server to the AI coding subscription your dev team already pays for. No cloud credit burn, no vendor lock-in, and your game assets never leave your machine.
-- **Automatic Asset Optimization:** Drop raw PNG, JPEG, WAV, or MP3 uploads up to 8 MiB. Tora retains every original master, records optimization receipts, and produces verified delivery assets up to 700 KB without changing the Creative Project 2.1 schema.
-- **Seven Free Exporters:** Ship Unity Ads, AppLovin, Meta, Google Ads, ironSource / Unity LevelPlay, Mintegral, and TikTok builds with no paid network packs.
-- **Editable Native Scene Graph (2D + 3D):** Playables compile from a strict, validated `tora-native` project document with scenes, transforms, sprites, UI, 2D/3D physics, path networks, audio, events, and bindings — every edit is atomic, revision-checked, and undoable.
-- **Deterministic Creative QA:** Built-in Playwright checks cover four phone viewports, audio unlock/level/clipping metrics, text/UI overflow, primary gameplay interaction, and final package size.
-- **Real Assets Only:** Use studio uploads or verified commercial-use CC0 packs with full license and SHA-256 provenance receipts. Originals remain available for lossless re-optimization.
-- **Optional Local Studio UI & BYOK Beta:** Launch the visual browser editor to play demos, leave pinned visual review notes, run `$0` MCP handoffs, or connect a verified Gemini, OpenAI, Anthropic, OpenAI-compatible, or local model provider.
+- **Fast Local Setup:** Install with `npx` using Node.js `>= 22`. Native binaries and headless Chromium set up automatically.
+- **Works With Your Existing AI Agent:** Connects locally over MCP — no cloud credit burn, no vendor lock-in, and your assets never leave your machine.
+- **Real Assets & Auto-Optimization:** Drop studio PNG/JPEG/WAV/MP3 files up to 8 MiB (auto-optimized to `<= 700 KB` with untouched masters kept) or pull verified CC0 Kenney/OpenGameArt packs with license receipts.
+- **Editable 2D & 3D Scene Graph:** Revision-checked, undoable scene documents instead of fragile throwaway HTML rewrites.
+- **Built-In Creative QA:** Automated 4-viewport mobile layout, audio unlock/level checks, 8-frame interaction motion filmstrips, and optional WebM capture.
+- **7 Free Ad-Network Exporters:** Unity Ads, AppLovin, Meta, Google Ads, ironSource / LevelPlay, Mintegral, and TikTok — all open source.
 
 ---
 
 ## Quickstart
 
-### Option A — Zero-Rust CLI Setup (Recommended for Users)
+### 1. Install Node.js (`>= 22`)
 
-**Prerequisites:** Node.js `>= 22`. Prebuilt native binaries (`playable`) ship automatically via platform packages or SHA-256-verified GitHub Release downloads — no Rust toolchain required.
+Check if you already have Node.js 22+ installed (`node -v`). If not, install it for your OS (or download the LTS installer from [nodejs.org](https://nodejs.org/)):
 
+**macOS (Homebrew)**
 ```bash
-npx @tora-editor/tora init --client cursor   # or claude-code | codex | gemini | all | print
-npx @tora-editor/tora doctor                 # check Node, native binary, Chromium & workspace paths
-npx @tora-editor/tora editor                 # optional local visual studio on http://127.0.0.1:8001
+brew install node@22
 ```
 
-### Option B — Contributor Source Checkout
-
-**Prerequisites:** Node.js `>= 22`, Rust (`rustc` + `cargo`, optional with `--prebuilt`). WAV-to-MP3 optimization automatically uses local GStreamer or FFmpeg when available; otherwise Tora uses its deterministic PCM WAV fallback.
-
-```bash
-npm install
-npm run setup              # or: npm run setup -- --prebuilt (skip Rust build)
+**Windows (PowerShell)**
+```powershell
+winget install OpenJS.NodeJS.LTS
 ```
 
-Setup builds the bounded Rust media & artifact binary (`playable`) plus legacy decoders, ensures Playwright Chromium is ready, compiles the editor, checks trusted runtime & host bundles, and prints an MCP configuration with your local paths.
-
-See [`docs/TORA_AGENT_SETUP.md`](docs/TORA_AGENT_SETUP.md) for per-client commands, or start the local visual studio:
-
+**Linux (Ubuntu / Debian)**
 ```bash
-npm run dev:editor
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
 ```
 
-Open `http://127.0.0.1:8001/?view=new` to inspect demos, upload studio assets, and review playable revisions. Uploads default to `optimize:"auto"`; MCP also supports `lossless`, `none`, `preserveResolution`, verified CC0 discovery/staging (`tora_list_assets`, `tora_fetch_cc0_pack`, `tora_stage_cc0_assets`), and faithful mechanical sprite preparation (`tora_prep_assets`).
+*(Restart your terminal after installing Node.js so `node` and `npx` are on your `PATH`.)*
+
+### 2. Create a folder and connect your AI client
+
+Create a folder for your playable (works on macOS, Linux, Windows PowerShell, and CMD):
+
+```bash
+mkdir my-playable
+cd my-playable
+```
+
+Run **one** setup command for the AI client you use:
+
+| AI Client | Command | What it configures |
+|---|---|---|
+| **Cursor** | `npx @tora-editor/tora init --client cursor` | `.cursor/mcp.json` |
+| **Claude Code** | `npx @tora-editor/tora init --client claude-code` | `claude mcp add` (or `.mcp.json`) |
+| **OpenAI Codex** | `npx @tora-editor/tora init --client codex` | `codex mcp add` |
+| **Gemini CLI** | `npx @tora-editor/tora init --client gemini` | `~/.gemini/settings.json` |
+
+> Add `--dry-run` to preview config changes without writing files, or `--client print` to print the MCP JSON block manually.
+
+`tora init` automatically downloads/verifies the native binary, installs Playwright Chromium if missing, and merges `tora` into your MCP config without overwriting other servers (saving a `.bak` backup).
+
+Verify your setup, then **restart your AI coding client**:
+
+```bash
+npx @tora-editor/tora doctor
+```
+
+### 3. Build by prompting your AI agent
+
+Open `my-playable` in your AI client and describe the playable you want:
+
+> *"Build a 2D portrait playable ad where the player taps matching crates to fill a delivery truck before time runs out, using verified CC0 Kenney sprites and audio. Run Creative QA and show me the contact sheet and motion filmstrip."*
+
+Your agent can upload studio files from your workspace (`tora_upload_assets`), search/fetch/slice verified CC0 packs (`tora_list_assets`, `tora_fetch_cc0_pack`, `tora_prep_assets`, `tora_stage_cc0_assets`), edit scenes atomically (`tora_edit`), run 4-viewport + motion QA (`tora_qa`), and export for ad networks (`tora_export`).
+
+### 4. Playtest & leave visual review notes (optional)
+
+Launch the local browser Studio UI anytime:
+
+```bash
+npx @tora-editor/tora editor
+```
+
+Open `http://127.0.0.1:8001/?view=new` to play demos, test your builds at phone aspect ratios, upload assets visually, pin review notes for your MCP agent, or try BYOK providers (Gemini, OpenAI, Anthropic, OpenRouter, local Ollama/vLLM).
+
+---
+
+## Ad-Network Exports (7 Free Targets)
+
+| Target | Package & Limit | Host Bridge | Automated Check Scope |
+|---|---|---|---|
+| **Standalone HTML5 Draft** | Single HTML | Browser | Static + 4-viewport Creative QA |
+| **Unity Ads** | Single HTML, `< 5 MB` | MRAID 3.0 | Static rules + mock-host lifecycle QA |
+| **AppLovin** | Single HTML, `<= 5 MB` | MRAID 2.0 | Static rules + mock-host lifecycle QA |
+| **Meta** | Single HTML, `<= 2 MB` | `FbPlayableAd` | Static rules + mock-host lifecycle QA |
+| **Google Ads** | ZIP (`index.html`), `<= 5 MB` | `ExitApi` | Static rules + mock-host lifecycle QA |
+| **ironSource / LevelPlay** | Single HTML, `<= 5 MB` | DAPI | Static rules + mock-host lifecycle QA |
+| **Mintegral** | ZIP (`<id>/<id>.html`), `<= 5 MB` | Mintegral globals | Static rules + mock-host lifecycle QA |
+| **TikTok** | ZIP (`index.html` + `config.json`), `<= 5 MB` | Playable SDK | Static rules + mock-host lifecycle QA |
+
+Unity and AppLovin require a real store URL in the project. Validate any exported artifact from the CLI:
+
+```bash
+npx @tora-editor/tora check index.html --network unity-ads-ua-playable --confirm-reviewed YYYY-MM-DD
+npx @tora-editor/tora check tiktok.zip --network tiktok-ads-playable --confirm-reviewed YYYY-MM-DD
+```
+
+> **Honest QA Boundary:** Local `STATIC_PASS` and mock-host QA verify engineering compliance — not human creative approval, physical-device behavior, official ad-network acceptance, or campaign performance. Always inspect real screenshots/filmstrips, test on physical iOS/Android devices, and run each network's official preview tool before launching paid campaigns.
 
 ---
 
 ## Built-In Showcase Demos
+
+Open `npx @tora-editor/tora editor` to play and inspect all three built-in demos:
 
 | Demo | Engine Mode | Core Loop |
 |---|---|---|
@@ -58,52 +118,36 @@ Open `http://127.0.0.1:8001/?view=new` to inspect demos, upload studio assets, a
 | **Traffic Tycoon** | 2D Native + Path Economy | Tap-to-dispatch intersection management with path networks and escalating feedback |
 | **Mini Golf 3D** | 3D Native (`Stage3D` + `Physics3D`) | Drag-to-aim miniature golf with camera follow, bounces, capture zone, and celebration |
 
-```bash
-npm run build:pages-editor   # Static hosted editor demo bundle (dist/pages-editor)
-npm run build:website        # Complete static site: landing page, demos, live editor & manifest (dist/website)
-```
-
 ---
 
-## Ad-Network Export Matrix (Honest Status)
+## Contributor Setup (From Source)
 
-| Target | Package and limit | Host bridge | Verification scope |
-|---|---|---|---|
-| **Standalone HTML5 Draft** | Single HTML | Browser | Automated static + 4-viewport Creative QA |
-| **Unity Ads** | Single HTML, `< 5,000,000` B | MRAID 3.0 | Static rules + mock-host lifecycle QA |
-| **AppLovin** | Single HTML, `<= 5,000,000` B | MRAID 2.0 | Static rules + mock-host lifecycle QA |
-| **Meta** | Single HTML, `<= 2,000,000` B | `FbPlayableAd` | Static rules + mock-host lifecycle QA |
-| **Google Ads** | ZIP with root `index.html`, `<= 5,000,000` B | `ExitApi` | Static rules + mock-host lifecycle QA |
-| **ironSource / LevelPlay** | Single HTML, `<= 5,000,000` B | DAPI | Static rules + mock-host lifecycle QA |
-| **Mintegral** | ZIP with `<id>/<id>.html`, `<= 5,000,000` B | Mintegral globals | Static rules + mock-host lifecycle QA |
-| **TikTok** | ZIP with `index.html` + `config.json`, `<= 5,000,000` B | Playable SDK | Static rules + mock-host lifecycle QA |
-
-Unity and AppLovin require a real store URL in the project. Other profiles leave destination configuration to the network dashboard where supported, but still reject unresolved placeholders.
-
-> **Honest QA Boundary:** `STATIC_PASS` means the exact artifact passed local static and mock-host checks. It does not establish human creative approval, physical-device behavior, official network acceptance, or campaign effectiveness. Always inspect real screenshots/video, test physical iOS/Android devices, and run each official preview tool before launching paid campaigns.
-
-Check an exported artifact with:
+Only needed if you are contributing to Tora itself. Requires Node.js `>= 22` and Rust (or pass `--prebuilt` to skip compiling Rust).
 
 ```bash
-cargo run -p playable-cli -- artifact check index.html --network unity-ads-ua-playable --confirm-reviewed YYYY-MM-DD
-cargo run -p playable-cli -- artifact check tiktok.zip --network tiktok-ads-playable --confirm-reviewed YYYY-MM-DD
+git clone https://github.com/moosama76/tora-engine.git
+cd tora-engine
+npm install
+npm run setup
 ```
 
----
-
-## Key Commands
+Common repo commands:
 
 ```bash
-npm run setup              # Toolchain, Rust builds, browser check, MCP snippet
 npm run dev:editor         # Local visual editor on http://127.0.0.1:8001
-npm run mcp:tora           # Local MCP stdio server
+npm run mcp:tora           # Local MCP stdio server from checkout
 npm run verify             # Full schema, packer, typecheck, lint, Rust, JS/browser gate
 npm run test:mcp           # MCP server + editor integration tests
+npm run build:website      # Static showcase site + bundled live editor (dist/website)
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
 
 ## Documentation
 
-- [`docs/TORA_AGENT_SETUP.md`](docs/TORA_AGENT_SETUP.md) — MCP setup and tool reference
+- [`docs/TORA_AGENT_SETUP.md`](docs/TORA_AGENT_SETUP.md) — Detailed MCP client setup & full 23-tool reference
 - [`docs/PLAYABLE_BRIEF.md`](docs/PLAYABLE_BRIEF.md) — Creative, audio, and game-feel quality brief
 - [`docs/TORA_CREATION_API.md`](docs/TORA_CREATION_API.md) — HTTP and document authoring contract
 - [`docs/NATIVE_AGENT_TOOLS.md`](docs/NATIVE_AGENT_TOOLS.md) — Compact deterministic agent CLI
@@ -112,13 +156,9 @@ npm run test:mcp           # MCP server + editor integration tests
 
 ## Sponsor Tora
 
-Tora and all seven ad-network exporters remain 100% open source. Monthly sponsorships and one-time donations on [GitHub Sponsors](https://github.com/sponsors/moosama76) fund ongoing maintenance, ad-network SDK updates, and creative tooling.
+Tora and all seven ad-network exporters remain 100% open source. Monthly sponsorships and one-time donations on [GitHub Sponsors](https://github.com/sponsors/moosama76) fund maintenance, ad-network SDK updates, and creative tooling.
 
 - **Community Backer ($25/mo):** README Backers credit, sponsor badge, feature/template voting.
 - **Studio Sponsor ($250/mo):** Company logo in `README.md` & site credits, priority GitHub issue triage, early feedback access, quarterly roadmap input.
 - **Enterprise Patron ($3,500/mo):** Headline partner placement, priority ad-network SDK & rule-pack updates + dedicated exporter parity, private Slack/Discord channel, monthly sync & 6 hrs/mo MCP/CI support, fast-track bug fixes.
 - **Custom / One-Time Donation:** Back a specific feature or send any custom amount on [GitHub Sponsors](https://github.com/sponsors/moosama76).
-
-### Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
