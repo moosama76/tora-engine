@@ -76,7 +76,7 @@ export function buildMcpClientEntry({workspaceRoot,localBin=IS_SOURCE_CHECKOUT}=
  }
  return {
   command:'npx',
-  args:['-y','@tora-engine/tora','mcp','--workspace',ws],
+  args:['-y','@tora-editor/tora','mcp','--workspace',ws],
  };
 }
 

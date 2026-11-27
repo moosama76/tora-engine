@@ -24,9 +24,9 @@
 **Prerequisites:** Node.js `>= 22`. Prebuilt native binaries (`playable`) ship automatically via platform packages or SHA-256-verified GitHub Release downloads — no Rust toolchain required.
 
 ```bash
-npx @tora-engine/tora init --client cursor   # or claude-code | codex | gemini | all | print
-npx @tora-engine/tora doctor                 # check Node, native binary, Chromium & workspace paths
-npx @tora-engine/tora editor                 # optional local visual studio on http://127.0.0.1:8001
+npx @tora-editor/tora init --client cursor   # or claude-code | codex | gemini | all | print
+npx @tora-editor/tora doctor                 # check Node, native binary, Chromium & workspace paths
+npx @tora-editor/tora editor                 # optional local visual studio on http://127.0.0.1:8001
 ```
 
 ### Option B — Contributor Source Checkout

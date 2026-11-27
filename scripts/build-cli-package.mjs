@@ -1,4 +1,4 @@
-/** Build lean, Node-22-safe publishable npm packages (@tora-engine/tora + 5 platform binary wrappers). */
+/** Build lean, Node-22-safe publishable npm packages (@tora-editor/tora + 5 platform binary wrappers). */
 import {build} from 'esbuild';
 import {existsSync} from 'node:fs';
 import {chmod,cp,mkdir,readdir,readFile,rm,stat,writeFile} from 'node:fs/promises';
@@ -140,7 +140,7 @@ export async function buildCliPackage({
  const playwrightVersion=rootPkg.devDependencies.playwright;
 
  const cliPackageJson={
-  name:'@tora-engine/tora',
+  name:'@tora-editor/tora',
   version:pkgVersion,
   description:'Local MCP-first 2D & 3D HTML5 playable ad engine with Creative QA and 7 ad-network exporters.',
   license:rootPkg.license??'Apache-2.0',
@@ -215,5 +215,5 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  const outIdx=args.indexOf('--out');
  const outRoot=outIdx!==-1?resolve(args[outIdx+1]):resolve(ROOT,'dist/packages');
  const res=await buildCliPackage({outRoot,binDir});
- globalThis.console.log(`Built @tora-engine/tora v${res.version} in ${relative(ROOT,res.cliDir)} (${(res.totalCliBytes/1024/1024).toFixed(2)} MiB total, ${(res.starterBytes/1024).toFixed(1)} KiB offline starter CC0).`);
+ globalThis.console.log(`Built @tora-editor/tora v${res.version} in ${relative(ROOT,res.cliDir)} (${(res.totalCliBytes/1024/1024).toFixed(2)} MiB total, ${(res.starterBytes/1024).toFixed(1)} KiB offline starter CC0).`);
 }

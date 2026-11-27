@@ -4,16 +4,16 @@ Connect Tora once via local MCP, then describe the playable ad you want using yo
 
 ## 1. Zero-Rust CLI Setup (or Local Source Setup)
 
-### Packaged CLI (`@tora-engine/tora`, no Rust required)
+### Packaged CLI (`@tora-editor/tora`, no Rust required)
 
 From your game workspace (Node `>= 22` only):
 
 ```bash
-npx @tora-engine/tora init --client cursor   # or claude-code | codex | gemini | all | print
-npx @tora-engine/tora doctor                 # verify Node, prebuilt native binary, Chromium & workspace
+npx @tora-editor/tora init --client cursor   # or claude-code | codex | gemini | all | print
+npx @tora-editor/tora doctor                 # verify Node, prebuilt native binary, Chromium & workspace
 ```
 
-`tora init` resolves or downloads the SHA-256-verified prebuilt `playable` binary, ensures Playwright Chromium is installed, and non-destructively configures your MCP client to run `npx -y @tora-engine/tora mcp --workspace <your-workspace>`. Use `--dry-run` to preview edits without modifying files.
+`tora init` resolves or downloads the SHA-256-verified prebuilt `playable` binary, ensures Playwright Chromium is installed, and non-destructively configures your MCP client to run `npx -y @tora-editor/tora mcp --workspace <your-workspace>`. Use `--dry-run` to preview edits without modifying files.
 
 ### From a Source Checkout
 
@@ -37,7 +37,7 @@ Use `tora init --client <client>` above, or add the single `tora mcp` command ma
   "mcpServers": {
     "tora": {
       "command": "npx",
-      "args": ["-y", "@tora-engine/tora", "mcp", "--workspace", "<path-to-workspace>"]
+      "args": ["-y", "@tora-editor/tora", "mcp", "--workspace", "<path-to-workspace>"]
     }
   }
 }
@@ -51,13 +51,13 @@ From a source checkout, use `"command": "node"` with `"args": ["<path-to-tora>/b
 ### Claude Code
 
 ```bash
-claude mcp add tora -- npx -y @tora-engine/tora mcp --workspace "<path-to-workspace>"
+claude mcp add tora -- npx -y @tora-editor/tora mcp --workspace "<path-to-workspace>"
 ```
 
 ### OpenAI Codex
 
 ```bash
-codex mcp add tora -- npx -y @tora-engine/tora mcp --workspace "<path-to-workspace>"
+codex mcp add tora -- npx -y @tora-editor/tora mcp --workspace "<path-to-workspace>"
 ```
 
 Optionally install the repository skill in Codex by copying or symlinking `skills/tora-playables` into `~/.codex/skills/`. Reopen your agent session after updating MCP settings.

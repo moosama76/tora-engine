@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_npm:
-        description: 'Publish @tora-engine/tora and platform packages to npm'
+        description: 'Publish @tora-editor/tora and platform packages to npm'
         type: boolean
         default: false
       release_tag:

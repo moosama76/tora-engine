@@ -11,11 +11,11 @@ import {IS_SOURCE_CHECKOUT,PACKAGE_ROOT,resolveUserCacheDir} from '../runtime-pa
 const require=createRequire(import.meta.url);
 
 export const PLATFORM_TARGETS=Object.freeze({
- 'darwin:arm64':Object.freeze({target:'darwin-arm64',pkg:'@tora-engine/native-darwin-arm64',bin:'playable',rustTarget:'aarch64-apple-darwin'}),
- 'darwin:x64':Object.freeze({target:'darwin-x64',pkg:'@tora-engine/native-darwin-x64',bin:'playable',rustTarget:'x86_64-apple-darwin'}),
- 'linux:x64':Object.freeze({target:'linux-x64-gnu',pkg:'@tora-engine/native-linux-x64-gnu',bin:'playable',rustTarget:'x86_64-unknown-linux-gnu'}),
- 'linux:arm64':Object.freeze({target:'linux-arm64-gnu',pkg:'@tora-engine/native-linux-arm64-gnu',bin:'playable',rustTarget:'aarch64-unknown-linux-gnu'}),
- 'win32:x64':Object.freeze({target:'win32-x64-msvc',pkg:'@tora-engine/native-win32-x64-msvc',bin:'playable.exe',rustTarget:'x86_64-pc-windows-msvc'}),
+ 'darwin:arm64':Object.freeze({target:'darwin-arm64',pkg:'@tora-editor/native-darwin-arm64',bin:'playable',rustTarget:'aarch64-apple-darwin'}),
+ 'darwin:x64':Object.freeze({target:'darwin-x64',pkg:'@tora-editor/native-darwin-x64',bin:'playable',rustTarget:'x86_64-apple-darwin'}),
+ 'linux:x64':Object.freeze({target:'linux-x64-gnu',pkg:'@tora-editor/native-linux-x64-gnu',bin:'playable',rustTarget:'x86_64-unknown-linux-gnu'}),
+ 'linux:arm64':Object.freeze({target:'linux-arm64-gnu',pkg:'@tora-editor/native-linux-arm64-gnu',bin:'playable',rustTarget:'aarch64-unknown-linux-gnu'}),
+ 'win32:x64':Object.freeze({target:'win32-x64-msvc',pkg:'@tora-editor/native-win32-x64-msvc',bin:'playable.exe',rustTarget:'x86_64-pc-windows-msvc'}),
 });
 
 export function packageVersion(packageRoot=PACKAGE_ROOT){

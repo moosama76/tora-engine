@@ -153,7 +153,7 @@ test('tora init merges Cursor config non-destructively and supports --dry-run',a
 
  const entry=buildMcpClientEntry({workspaceRoot:ws,localBin:false});
  assert.equal(entry.command,'npx');
- assert.deepEqual(entry.args,['-y','@tora-engine/tora','mcp','--workspace',ws]);
+ assert.deepEqual(entry.args,['-y','@tora-editor/tora','mcp','--workspace',ws]);
 
  // Dry-run leaves file untouched.
  const dry=await mergeJsonMcpConfig(cursorCfg,'tora',entry,{dryRun:true});
@@ -173,13 +173,13 @@ test('tora init merges Cursor config non-destructively and supports --dry-run',a
  assert.equal(doctorCode,0);
 });
 
-test('packed @tora-engine/tora runs zero-Rust MCP (offline starter CC0 + QA + export) and editor review from read-only node_modules',async t=>{
+test('packed @tora-editor/tora runs zero-Rust MCP (offline starter CC0 + QA + export) and editor review from read-only node_modules',async t=>{
  const sandbox=await mkdtemp(resolve('/tmp/tora-pack-smoke-'));
  const stagedOut=resolve(sandbox,'staged');
  const pkgHost=resolve(sandbox,'host');
  const userWs=resolve(sandbox,'user-game');
  const binDir=resolve(sandbox,'native-bin');
- const installedPkg=resolve(pkgHost,'node_modules/@tora-engine/tora');
+ const installedPkg=resolve(pkgHost,'node_modules/@tora-editor/tora');
  t.after(async()=>{
   await chmodRecursive(installedPkg,0o755).catch(()=>{});
   await rm(sandbox,{recursive:true,force:true});
@@ -189,7 +189,7 @@ test('packed @tora-engine/tora runs zero-Rust MCP (offline starter CC0 + QA + ex
  const built=await buildCliPackage({outRoot:stagedOut});
  assert.ok(built.starterBytes<=1_500_000,`starter CC0 should be <= 1.5 MB, got ${built.starterBytes}`);
  const stagedPkgJson=JSON.parse(await readFile(resolve(built.cliDir,'package.json'),'utf8'));
- assert.equal(stagedPkgJson.name,'@tora-engine/tora');
+ assert.equal(stagedPkgJson.name,'@tora-editor/tora');
  assert.deepEqual(Object.keys(stagedPkgJson.bin),['tora']);
  assert.deepEqual(Object.keys(stagedPkgJson.dependencies).sort(),['ajv','playwright']);
 
@@ -203,15 +203,15 @@ test('packed @tora-engine/tora runs zero-Rust MCP (offline starter CC0 + QA + ex
  const tgzName=packed.stdout.trim().split('\n').pop().trim();
  const tgzPath=resolve(sandbox,tgzName);
 
- await mkdir(resolve(pkgHost,'node_modules/@tora-engine'),{recursive:true});
+ await mkdir(resolve(pkgHost,'node_modules/@tora-editor'),{recursive:true});
  await mkdir(resolve(pkgHost,'node_modules/.bin'),{recursive:true});
  await mkdir(userWs,{recursive:true});
  await mkdir(binDir,{recursive:true});
 
- const untar=spawnSync('tar',['-xzf',tgzPath,'-C',resolve(pkgHost,'node_modules/@tora-engine')],{encoding:'utf8'});
+ const untar=spawnSync('tar',['-xzf',tgzPath,'-C',resolve(pkgHost,'node_modules/@tora-editor')],{encoding:'utf8'});
  assert.equal(untar.status,0,untar.stderr);
  const {rename}=await import('node:fs/promises');
- await rename(resolve(pkgHost,'node_modules/@tora-engine/package'),installedPkg);
+ await rename(resolve(pkgHost,'node_modules/@tora-editor/package'),installedPkg);
 
  // Link only declared runtime deps (ajv@8 + transitive deps, playwright, playwright-core) — explicitly NOT esbuild, typescript, or three.
  await symlink(resolve(PACKAGE_ROOT,'packages/creative-project/node_modules/ajv'),resolve(pkgHost,'node_modules/ajv'));
